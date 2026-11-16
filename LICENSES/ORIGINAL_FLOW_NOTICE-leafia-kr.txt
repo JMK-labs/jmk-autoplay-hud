@@ -1,0 +1,123 @@
+NEEV.KOR.03 revision 7 (.03-r7) original-flow derivative
+
+The authority is the supplied HMG_Leafia_Plus_Wireless_CarPlay_AA-v1.0.5.zip,
+SHA256 cd1fbd48ebaa691ed82c04c84e994bc2c29aa01715cb5b4156d6f55421fc80fe.
+All 34 shell files from its nested package (upstream id wireless.carplay.aa) are unchanged.
+This derivative supplies corrected Korean TBT intermediates and final CarPlay
+bridge deltas, including PR95 source switching, the UTF-8 receiver fix, and
+a narrow zero-angle simple-maneuver fallback for CarPlay TBT. The latter
+changes only DiPO mapping data/code; original installation scripts are retained.
+Revision 2 also ports the optional Phone Projection menu correction to the
+authenticated Korean BtSettings APK/ODEX. Only Korean REGION=0 bypasses the
+wireless-page choice, reusing its existing non-wireless, step-dependent launcher.
+The builder adds one hash-gated Korean optional-menu row/delta. All original
+optional rows and other regional data remain unchanged. KR data/selectors and
+visible version/BUILD metadata are updated; license/provenance files are added.
+Revision 3 integrates the existing DiPO wireless CP bridge with the authenticated
+OEM PhoneProjection action/state interface. It registers one process-stable
+action listener, binds its current service owner, scopes requests to that peer,
+and publishes completion only after native finalization and live inactivity.
+The BtSettings deletion hook retains an active wireless CP record until the
+matching disconnected-status fanout finishes, then rechecks peer/profile/live
+inactivity before invoking the original delete API. It preserves the existing
+Korean menu selector. In revision 3 both apps used their existing original
+installer parts and the other ten functional outputs remained identical to
+revision 2 (revision 4 changes are listed below).
+The existing owner retains pending-target and preference policy. No new owner
+APK is installed and no AA active-projection guard is removed. A separately
+reviewed lifecycle extension uses new metadata hooks and an execute-type USB
+entry for verified updates and removal reboot. All34 original shell files
+remain as components and compatibility sources, not the complete active flow.
+Explicit cancellation/deletion controls and
+queued-work ownership checks are covered by separate candidate evidence.
+Revision 4 corrects the DiPO CP owner for same-type phone switching and the
+BtSettings deferred deletion. persist.leafia.owner.r4bridge=0 turns off only
+the new detach of another phone's live Bluetooth iAP2 attach; the other
+revision-4 owner corrections (watchdog, supersede/cancel, bridge address,
+carried end, queued-work token) stay active, so it is not a full revision-3
+rollback (that is removal followed by installing .03-r3 or .02). In BtSettings
+only the Android Auto deferral is gated (persist.leafia.delete.aa=1); the
+pending-peer and pre-confirmation corrections are always active. Revision 4
+also added lane capture and experimental lane encodings to GPM, Navi_ExSL and
+DiPO (its lane modes 1 to 4 are retired by revision 5, below) and optional
+CarPlay lane identification to Iap2ServerApp (persist.leafia.cp.lanes, default
+0 = revision-3 identification). Lane file capture is on by default
+(persist.leafia.lane.log unset = on, 0 = off): the three apps, including the
+stock navigation app, append to /data/data/<app>/files/leafia-lane.log (at most
+2 x 512 KB per app). Restore does not delete these lane log files. In revision
+4 these five apps changed and the other seven functional outputs remained
+identical to revision 3. Every verified restore resets the five
+persist.leafia.* switches to unset. The revision-4 updater also restored an
+installed .03-r3 from its own lifecycle archive before installing.
+Revision 5 (lanes-v2) changes only the lane helper in GPM, Navi_ExSL and DiPO:
+persist.leafia.lane.mode 5, 6 and 7 write stock-style lane frames (one
+recommended lane, usable and not-on-route states, pocket byte, one arrow per
+lane; when Android Auto highlights no lane, one lane is chosen from the turn
+side) for Android Auto and CarPlay frames; 0, unset and the retired revision-4
+values 1 to 4 send revision-3 frame bytes. Stock navigation frames are only
+captured. Iap2ServerApp, BtSettings and the other seven functional outputs
+remain identical to revision 4. The updater restores an installed .03-r4 (or
+.03-r3) from its own lifecycle archive before installing, and resets the five
+persist.leafia.* switches as before.
+Revision 6 (lanes-v3) changes the lane helpers in GPM, Navi_ExSL and DiPO and the
+Iap2ServerApp log line: lane source gates (persist.leafia.lane.src; during phone
+guidance the stock navigation 0x17ef lane frame can be blocked or get one lane
+highlighted), a non-persistent sys.leafia.aa/cp hint, a lane distance label via
+NavigationCluster.updateRemainDis, an Android Auto big-arrow split
+(persist.leafia.turn.split), one log switch (persist.leafia.log), unset lane mode
+= 6 and mode 7 retired. The install ZIP carries LEAFIA-KR-SETTINGS.ini, applied
+after final verification (absent keys = defaults); eleven persist.leafia.*
+switches are reset on every restore. The updater restores an installed .03-r5
+(or .03-r4/.03-r3) from its own lifecycle archive before installing.
+Revision 7 registers the package under its own NEMESIS id wireless.cp.aa.neev.kor
+(name "Wireless CarPlay/AA NEEV.KOR (Leafia KR port)") instead of the upstream id,
+so HMG-API 1.0.0 core (which refuses wireless.carplay.aa) can be installed beside it.
+Only the registration identity changes: the inner member is
+packages/wireless.cp.aa.neev.kor.zip and the inner NEMESIS.data id/name lines are
+rewritten. The 34 original shells, their /data/nemesis/wireless.carplay.aa.* state
+file names, the lifecycle archive layout, persist.leafia.*/sys.leafia.* and the INI
+keys stay. The updater accepts an installed .02..03-r6 (old id) or .03-r7 (new id),
+refuses before uninstalling anything while a package that changes the same files is
+installed, and a plain Manager install refuses in preinstall while the old id is
+registered. Recovery unregisters either id or both. lane.dim and lane.gate join the
+persist.leafia.* switches reset on every restore (thirteen).
+The requested version remains .03; r7 distinguishes this build from immutable
+earlier .03/.03-r2/.03-r3/.03-r4/.03-r5/.03-r6 deliverables. Off-car tests do not qualify physical switching,
+native callback ordering, Bluetooth pairing or persistent database behavior.
+
+The original component behavior is retained, including its BASIC fallback and
+conditional network ADB changes, build.prop configuration, WPA/setting snapshots
+and restoration,
+optional Wi-Fi client marker handling, per-part backups/reverse removal, ordinary
+property service calls, app-release traps, and best-effort read-only remount,
+restorecon and cache handling. The new verified KR entry requires all eight
+staged outputs, twelve final functional files and five parts; BASIC-only or
+skipped-menu results do not satisfy the new full-install gate. Native dexopt
+failure in an original component can defer optimization to boot, although
+missing TBT DiPO/iAP2 ODEX can prevent the next bridge snapshot.
+The bundle's failure undo handles completed parts; a partially failed current
+part is not always undone automatically. Consult the component logs/backups.
+
+The original public GPL-3.0 libev6aac.so converter is included byte-identically
+(SHA256 f581f4f5b8f991f3463afaa3759d319e64d94083012bf01bad09db6299c3b070).
+It is not a manufacturer library. Korean Utils already has native converters,
+so the original install skips adding it on the authenticated input. The original
+audio removal deletes the converter path if present. The verified KR entry
+refuses an unrelated pre-existing converter before changing the system rather
+than treating that file as a disposable package-owned original.
+The original lpatch tool is also public GPL-3.0. See LICENSE and UPSTREAM_NOTICE.md.
+NEMESIS-derived scripts retain their AGPL-3.0 terms; see LICENSES/AGPL-3.0.txt.
+
+No full manufacturer APK, ODEX, JAR, or native library is shipped. The package
+rebuilds apps from the head unit's own exact stock data and applies the original
+hash-gated native recipes. The Recovery supplies code and catalogs only and
+requires a verified device-side lifecycle archive with the original baseline.
+Normal native removal may drop registration even after a hook failure; the
+external archive survives and no failed-restore reboot is armed. The new manual
+Recovery validates every required original before writes and restores/validates
+again after manager cleanup. It cannot restore NEEV.KOR.01 or older custom
+transaction backups.
+
+Build/source integrity and host fixture tests do not establish vehicle success.
+The original software's installed message and a host fixture reboot request do
+not prove actual projection, navigation, audio, Wi-Fi, or post-reboot operation.
