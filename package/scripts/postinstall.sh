@@ -22,7 +22,7 @@ lock() {
     write_status locked "$1"
     log "locked: $1 (nothing changed)"
     [ -d "$R/data/nemesis/backup/projection.tbt" ] && log "note: /data/nemesis/backup/projection.tbt (the snapshot of Leafia / projection.tbt) is still there: its uninstall may not have finished"
-    report postinstall-locked "$1"
+    report postinstall-locked "$1; product $(getprop ro.build.product); live $(live_sums)"
     exit 0
 }
 fail() {   # nothing of this run is left in /system
@@ -54,6 +54,8 @@ SET=$(pick_set) || { SET=; lock "no patch set for $(getprop ro.build.product): i
 load_targets || lock "patch set $SET has no targets"
 echo "$SET" > "$SET_FILE"
 log "patch set $SET ($(car_name "$SET"))"
+# 0.1.1: another model than ours: once, which set it took (the server sees nothing else of the add-on)
+case "$(getprop ro.build.product)" in NEEV.KOR.*) ;; *) report other-model-set "set $SET; product $(getprop ro.build.product)" ;; esac
 [ -f "$R/system/etc/permissions/com.hkmc.software.connectivity.carplay_wireless.xml" ] ||
     log "note: the wireless CarPlay feature is not on yet (JMK Wireless AutoPlay does that); turn-by-turn works without it"
 

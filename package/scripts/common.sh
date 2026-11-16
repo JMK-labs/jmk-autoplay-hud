@@ -175,6 +175,23 @@ set_matches() {
     return 0
 }
 
+# 0.1.1: the live md5 of every file the sets name, for the locked report: tells which firmware's files this car has
+# (a set for it can only come from that firmware's own stock files, so the report says which ones to look for).
+live_sums() {
+    local d f s seen= out=
+    for d in "$PATCHES"/*/stock; do
+        [ -f "$d" ] || continue
+        while read -r f s || [ -n "$f" ]; do
+            case "$f" in ''|'#'*) continue ;; esac
+            case " $seen " in *" $f "*) continue ;; esac
+            seen="$seen $f"
+            s=$(md5of "$(live_of "$f")")
+            out="$out $f=${s:-none}"
+        done < "$d"
+    done
+    echo "${out# }"
+}
+
 # The set for this car: the one an earlier install used, else patches/cars by product, else the first set whose stock
 # files are exactly this car's (the md5 gate below checks every file again either way).
 pick_set() {

@@ -208,7 +208,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis"; }
     check "install: exit 0" [ $rc -eq 0 ]
     check "install: state=reboot" [ "$(st state)" = reboot ]
     check "install: set=neev_kr" [ "$(st set)" = neev_kr ]
-    check "install: ver=0.1.0" [ "$(st ver)" = 0.1.0 ]
+    check "install: ver=0.1.1" [ "$(st ver)" = 0.1.1 ]
     check "install: patched = every target + the audio recipe" [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]
     check "install: knobs=log,lane_dist,cp_lanes" [ "$(st knobs)" = "log,lane_dist,cp_lanes" ]
     check "install: reason empty" [ -z "$(st reason)" ]
@@ -348,15 +348,30 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis"; }
     setup
     sed -i '' 's/^ro.build.product=.*/ro.build.product=CV.KOR.0000.V030.001.260101/' "$PROPFILE"
     echo "other firmware" > "$ROOT/system/app/HKMC_DiPO.odex"
+    mkdir -p "$ROOT/data/local/tmp/jmk-map-menu/outbox"
     hook postinstall; rc=$?
     check "unknown car, files match no set: locked" eval '[ $rc -eq 0 ] && [ "$(st state)" = locked ] && [ -z "$(st set)" ]'
     check "unknown car: the reason says no patch set" eval 'case "$(st reason)" in *"no patch set"*) true ;; *) false ;; esac'
+    R=$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-postinstall-locked.json
+    check "unknown car (0.1.1): the locked report names the product" grep -q 'product CV.KOR.0000.V030.001.260101; live ' "$R"
+    check "unknown car (0.1.1): ... and the live md5 of the changed file" grep -q "HKMC_DiPO.odex=$(md5 -q "$ROOT/system/app/HKMC_DiPO.odex")" "$R"
+    check "unknown car (0.1.1): ... and of a stock one" grep -q "HKMC_GPM.apk=$(md5 -q "$ROOT/system/app/HKMC_GPM.apk")" "$R"
+    check "unknown car: no other-model-set report (nothing applied)" eval '[ ! -e "${R%postinstall-locked.json}other-model-set.json" ]'
 )
 (
     setup
     sed -i '' 's/^ro.build.product=.*/ro.build.product=NEEV.KOR.0000.V040.001.270101/' "$PROPFILE"
     hook postinstall; rc=$?
     check "product not in cars but every stock file matches: set picked by md5" eval '[ $rc -eq 0 ] && [ "$(st set)" = neev_kr ] && [ "$(st state)" = reboot ]'
+)
+(
+    setup
+    sed -i '' 's/^ro.build.product=.*/ro.build.product=NEEV.USA.0000.V100.001.270101/' "$PROPFILE"
+    mkdir -p "$ROOT/data/local/tmp/jmk-map-menu/outbox"
+    hook postinstall; rc=$?
+    check "another region, its stock files are the KR set's: applied (0.1.1)" eval '[ $rc -eq 0 ] && [ "$(st set)" = neev_kr ] && [ "$(st state)" = reboot ]'
+    check "another region: one other-model-set report with the set and product" \
+        grep -q '"detail":"set neev_kr; product NEEV.USA.0000.V100.001.270101"' "$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-other-model-set.json"
 )
 
 # ---------------------------------------------------------------- failures put the stock files back

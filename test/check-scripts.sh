@@ -125,7 +125,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.0" grep -q '^package-version=0.1.0$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.1" grep -q '^package-version=0.1.1$' "$PKG/NEMESIS.data"
 check "NEMESIS.data: id, depends, os" eval 'grep -q "^id=jmk-autoplay-hud$" "$PKG/NEMESIS.data" && grep -q "^depends=\"jmk-autoplay\"$" "$PKG/NEMESIS.data" && grep -q "^os=\"\*.KOR.\*\"$" "$PKG/NEMESIS.data"'
 
 # ---------------------------------------------------------------- 4. zips
@@ -136,7 +136,8 @@ for variant in "" "--sets neev_kr"; do
     b=$(cd "$P" && JMK_BUILT_DATE=2026-11-17 python3 build_nemesis_package.py $variant | grep '^md5' )
     check "zip ${variant:-full}: two builds give the same bytes ($a)" [ "$a" = "$b" ]
 done
-for z in "$P/dist/jmk-autoplay-hud-0.1.0.zip" "$P/dist/jmk-autoplay-hud-0.1.0-kr.zip"; do
+V=$(sed -n 's/^package-version=//p' "$PKG/NEMESIS.data")
+for z in "$P/dist/jmk-autoplay-hud-$V.zip" "$P/dist/jmk-autoplay-hud-$V-kr.zip"; do
     list=$(unzip -Z1 "$z")
     for need in LICENSE NOTICE.md README.md LICENSES/GPL-3.0.txt NEMESIS.data tools/lpatch scripts/common.sh svc/hud.sh; do
         check "${z##*/}: has $need" eval 'echo "$list" | grep -qx "$need"'
@@ -146,8 +147,8 @@ for z in "$P/dist/jmk-autoplay-hud-0.1.0.zip" "$P/dist/jmk-autoplay-hud-0.1.0-kr
     rm -rf "$T/x"; mkdir "$T/x"; unzip -q "$z" -d "$T/x"
     for f in $scripts; do check "${z##*/}: ${f#./} as in package/" cmp -s "$PKG/$f" "$T/x/$f"; done
 done
-check "kr zip: only the neev_kr set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-0.1.0-kr.zip" | grep "^patches/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "cars neev_kr " ]'
-check "full zip: every set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-0.1.0.zip" | grep "^patches/.*/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "common dl3hev ev6 ev6_ca neev neev_ca neev_kr " ]'
+check "kr zip: only the neev_kr set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V-kr.zip" | grep "^patches/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "cars neev_kr " ]'
+check "full zip: every set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V.zip" | grep "^patches/.*/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "common dl3hev ev6 ev6_ca neev neev_ca neev_kr " ]'
 # a release (published, open: not obfuscated) is the full test zip itself, byte for byte
 for r in "$P"/dist/release/*.zip; do
     [ -e "$r" ] || continue
