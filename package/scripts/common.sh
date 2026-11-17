@@ -32,6 +32,8 @@ APPLIED=$STORE/applied              # "<file> <md5>" of every file this package 
 BOOT_FILE=$STORE/boot               # the boot that wrote them: state=reboot until another boot
 HOLD_FILE=$STORE/stopped            # apps stopped for the file swap, started again by every way out
 WORK=$STORE/build                   # the rebuilt files, before they go into /system
+AUTO=$STORE/auto                    # 0.1.4: the set the by-code build made for this car (stock, manifest, built/, profile)
+BYCODE=$PATCHES/bycode              # 0.1.4: <profile>/manifest: patches keyed to the code inside each stock .odex
 BACKUP=$R/data/nemesis/backups/$ID  # the stock copies, put back by a real uninstall
 LOG=$R/data/nemesis/$ID.log
 REPORTED=$R/data/nemesis/$ID.reported
@@ -96,8 +98,10 @@ record() {
 #   patches/<set>/stock       <file> <md5 of the stock file>
 #   patches/<set>/manifest    2_tbt <app|file> <name> <patch> <md5 of the rebuilt file>
 #   patches/<set>/knobs       the menu config keys this set's builds read (ours; absent = none)
-set_ok() { [ -n "$1" ] && [ -s "$PATCHES/$1/stock" ] && [ -s "$PATCHES/$1/manifest" ]; }
-stock_sum() { lookup "$PATCHES/$SET/stock" "$1"; }
+# 0.1.4: "auto" is the set the by-code build made for this car (in our state, so it outlives package updates)
+set_dir() { if [ "$1" = auto ]; then echo "$AUTO"; else echo "$PATCHES/$1"; fi; }
+set_ok() { local d; [ -n "$1" ] || return 1; d=$(set_dir "$1"); [ -s "$d/stock" ] && [ -s "$d/manifest" ]; }
+stock_sum() { lookup "$(set_dir "$SET")/stock" "$1"; }
 
 car_set() {
     local p pre set name
@@ -112,6 +116,7 @@ car_set() {
 
 car_name() {
     local pre set name
+    if [ "$1" = auto ]; then [ -f "$AUTO/profile" ] && read -r name < "$AUTO/profile" && echo "this car (code of the $name profile)"; return 0; fi
     [ -f "$PATCHES/cars" ] || return 1
     while read -r pre set name || [ -n "$pre" ]; do
         case "$pre" in ''|'#'*) continue ;; esac
@@ -132,7 +137,7 @@ load_targets() {
     set_ok "$SET" || return 1
     while read -r part kind name patch want || [ -n "$part" ]; do
         [ "$part" = 3_bridge ] && bridged="$bridged $name "
-    done < "$PATCHES/$SET/manifest"
+    done < "$(set_dir "$SET")/manifest"
     while read -r part kind name patch want || [ -n "$part" ]; do
         case "$kind" in app|file) ;; *) continue ;; esac
         [ -n "$want" ] || continue
@@ -140,7 +145,7 @@ load_targets() {
             2_tbt) case "$bridged" in *" $name "*) continue ;; esac; tbt="$tbt $kind|$name|$patch|$want|$part" ;;
             3_bridge) br="$br $kind|$name|$patch|$want|$part" ;;
         esac
-    done < "$PATCHES/$SET/manifest"
+    done < "$(set_dir "$SET")/manifest"
     TARGETS="$tbt$br"
     [ -n "$TARGETS" ]
 }
@@ -196,10 +201,25 @@ live_sums() {
 # md5 of the dex inside the app's odex. That is the same on cars whose apps run the same code whatever their framework
 # (gen5w-Evergreen keys its universal patches with it), so the locked report tells whether a set made from one car's
 # code (Ioniq 5 Korea) fits this one. Empty when it cannot run; never more than about 20 s (the report waits for it).
-code_sums() {
-    local d f s seen= args= jar pid n out=
+# codesum <args>: the one line tools/codesum.jar prints, empty when it cannot run; never more than about 20 s
+codesum() {
+    local jar pid n out=
     jar=$(cd "$PKG" 2>/dev/null && pwd)/tools/codesum.jar
     [ -f "$jar" ] || return 0
+    mkdir -p "$STORE" 2>/dev/null
+    rm -f "$STORE/codesum.out"
+    CLASSPATH=$jar app_process /system/bin jmkhud.CodeSum "$@" > "$STORE/codesum.out" 2>/dev/null &
+    pid=$!
+    n=0
+    while kill -0 "$pid" 2>/dev/null && [ $n -lt 20 ]; do sleep 1; n=$((n + 1)); done
+    kill "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    [ -f "$STORE/codesum.out" ] && read -r out < "$STORE/codesum.out"
+    rm -f "$STORE/codesum.out"
+    echo "$out"
+}
+code_sums() {
+    local d f s seen= args=
     for d in "$PATCHES"/*/stock; do
         [ -f "$d" ] || continue
         while read -r f s || [ -n "$f" ]; do
@@ -210,17 +230,7 @@ code_sums() {
         done < "$d"
     done
     [ -n "$args" ] || return 0
-    mkdir -p "$STORE" 2>/dev/null
-    rm -f "$STORE/codesum.out"
-    CLASSPATH=$jar app_process /system/bin jmkhud.CodeSum $args > "$STORE/codesum.out" 2>/dev/null &
-    pid=$!
-    n=0
-    while kill -0 "$pid" 2>/dev/null && [ $n -lt 20 ]; do sleep 1; n=$((n + 1)); done
-    kill "$pid" 2>/dev/null
-    wait "$pid" 2>/dev/null
-    [ -f "$STORE/codesum.out" ] && read -r out < "$STORE/codesum.out"
-    rm -f "$STORE/codesum.out"
-    echo "$out"
+    codesum $args
 }
 
 # The set for this car: the one an earlier install used, else patches/cars by product, else the first set whose stock
@@ -241,6 +251,132 @@ pick_set() {
     done
     [ -n "$named" ] && { echo "$named"; return 0; }
     return 1
+}
+
+# ---------------------------------------------------------------- by code (0.1.4)
+# A set rebuilds each app's modified code from one car's exact stock .odex. An .odex is the app's dex plus a header with
+# its framework's checksums, so a car whose app runs the same code has the same dex inside a different .odex.
+# patches/bycode/<profile>/manifest keys the same patches to that dex (src/mkbycode.py; "us" is gen5w-Evergreen's
+# universal list):
+#   <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
+#   <part> file <library> <md5 of the stock library> <patch> <md5 of the result>
+# For a car no set fits, each part (2_tbt, 3_bridge) whose every line has this car's code is rebuilt from this car's
+# own stock files: the code comes out of its .odex (tools/codesum.jar extract), lpatch rebuilds the modified code from
+# it, that must have the line's md5 (so it is byte for byte the code the profile's car runs), and zipadd puts it into
+# this car's own .apk. The results and this car's stock md5s become the set "auto" ($AUTO, the usual set layout,
+# patch "prebuilt:<file>"), so the gate, the swap, the boot and the uninstall work as for any other set. A part with a
+# line this car's code does not have is left out (K8 HEV Korea: turn-by-turn yes, its PhoneProjection differs, so no
+# CarPlay bridge); no part fits = no auto set.
+
+# the stock copy of a file before any set is known: our backup when the live file is ours, else the live file
+plan_src() {
+    local f=$1 live
+    live=$(live_of "$f")
+    if [ -f "$BACKUP/$f" ] && ours "$f" "$(md5of "$live")"; then echo "$BACKUP/$f"; else echo "$live"; fi
+}
+
+# the apps any profile names, once
+bycode_apps() {
+    local d p k n c x w out=" "
+    for d in "$BYCODE"/*/manifest; do
+        [ -f "$d" ] || continue
+        while read -r p k n c x w || [ -n "$p" ]; do
+            case "$p" in ''|'#'*) continue ;; esac
+            [ "$k" = app ] || continue
+            case "$out" in *" $n "*) ;; *) out="$out$n " ;; esac
+        done < "$d"
+    done
+    echo $out
+}
+
+# bycode_part_fits <profile dir> <part> <" App.code=<md5> ..." of this car>: every line of the part matches
+bycode_part_fits() {
+    local p k n c x w any=
+    while read -r p k n c x w || [ -n "$p" ]; do
+        case "$p" in ''|'#'*) continue ;; esac
+        [ "$p" = "$2" ] || continue
+        any=1
+        if [ "$k" = app ]; then
+            case "$3" in *" $n.code=$c "*) ;; *) return 1 ;; esac
+        else
+            [ "$(md5of "$(plan_src "$n")")" = "$c" ] || return 1
+        fi
+    done < "$1/manifest"
+    [ -n "$any" ]
+}
+
+# bycode_make <profile dir> <parts>: the auto set from this car's stock files; 1 (and $AUTO untouched) on any miss
+bycode_make() {
+    local dir=$1 parts=$2 new=$AUTO.new p k n c x w src apk got bridged= seen=" "
+    rm -rf "$new"
+    mkdir -p "$new/built" || return 1
+    : > "$new/stock"; : > "$new/manifest"
+    while read -r p k n c x w || [ -n "$p" ]; do
+        case "$p" in 3_bridge) case " $parts " in *" 3_bridge "*) bridged="$bridged $n " ;; esac ;; esac
+    done < "$dir/manifest"
+    while read -r p k n c x w || [ -n "$p" ]; do
+        case "$p" in ''|'#'*) continue ;; esac
+        case " $parts " in *" $p "*) ;; *) continue ;; esac
+        # the bridge build of an app is its turn-by-turn build plus the bridge: only that one when both parts fit
+        [ "$p" = 2_tbt ] && case "$bridged" in *" $n "*) continue ;; esac
+        if [ "$k" = app ]; then
+            src=$(plan_src "$n.odex"); apk=$(plan_src "$n.apk")
+            [ -f "$apk" ] || { echo "$(date) by code: no $n.apk" >> "$LOG"; rm -rf "$new"; return 1; }
+            got=$(codesum extract "$src" "$new/code.dex")
+            [ "$got" = "code=$c" ] || { echo "$(date) by code: $n's code is ${got#code=}, not $c" >> "$LOG"; rm -rf "$new"; return 1; }
+            rm -f "$new/classes.dex"
+            "$LPATCH" delta "$PATCHES/$x" "$new/code.dex" "$new/classes.dex" >> "$LOG" 2>&1 &&
+                [ "$(md5of "$new/classes.dex")" = "$w" ] &&
+                "$LPATCH" zipadd "$apk" "$new/classes.dex" "$new/built/$p.$n.apk" >> "$LOG" 2>&1 || {
+                echo "$(date) by code: $n ($p) did not rebuild to the profile's code $w" >> "$LOG"; rm -rf "$new"; return 1; }
+            rm -f "$new/code.dex" "$new/classes.dex"
+            echo "$p app $n prebuilt:$p.$n.apk $(md5of "$new/built/$p.$n.apk")" >> "$new/manifest"
+            case "$seen" in *" $n "*) ;; *)
+                seen="$seen$n "
+                echo "$n.apk $(md5of "$apk")" >> "$new/stock"
+                echo "$n.odex $(md5of "$src")" >> "$new/stock" ;;
+            esac
+        else
+            src=$(plan_src "$n")
+            "$LPATCH" delta "$PATCHES/$x" "$src" "$new/built/$p.$n" >> "$LOG" 2>&1 && [ "$(md5of "$new/built/$p.$n")" = "$w" ] || {
+                echo "$(date) by code: $n ($p) did not rebuild to $w" >> "$LOG"; rm -rf "$new"; return 1; }
+            echo "$p file $n prebuilt:$p.$n $w" >> "$new/manifest"
+            echo "$n $c" >> "$new/stock"
+        fi
+    done < "$dir/manifest"
+    [ -f "$dir/knobs" ] && cp "$dir/knobs" "$new/knobs"
+    echo "${dir##*/}" > "$new/profile"
+    echo "${parts# }" > "$new/parts"
+    getprop ro.build.product > "$new/product"
+    rm -rf "$AUTO"
+    mv "$new" "$AUTO"
+}
+
+# bycode_build: 0 and $AUTO made when a profile has a part this car's code fits (quiet: the caller logs)
+bycode_build() {
+    local n args= codes dir parts part
+    [ -d "$BYCODE" ] || return 1
+    for n in $(bycode_apps); do args="$args $(plan_src "$n.odex")"; done
+    [ -n "$args" ] || return 1
+    codes=" $(codesum $args) "
+    echo "$(date) by code: this car's code:$codes" >> "$LOG"
+    for dir in "$BYCODE"/*; do
+        [ -s "$dir/manifest" ] || continue
+        parts=
+        for part in 2_tbt 3_bridge; do bycode_part_fits "$dir" "$part" "$codes" && parts="$parts $part"; done
+        [ -n "$parts" ] || continue
+        bycode_make "$dir" "$parts" && return 0
+    done
+    rm -rf "$AUTO"
+    return 1
+}
+
+# set_fits <set>: every target of the set is this car's stock file, or ours with the stock copy in $BACKUP
+set_fits() {
+    local SET=$1 TARGETS t T_HOW REASON
+    load_targets || return 1
+    for t in $TARGETS; do split_target "$t"; check_target || return 1; done
+    return 0
 }
 
 # ---------------------------------------------------------------- the stock md5 gate
@@ -292,6 +428,14 @@ build_target() {
     local out got
     mkdir -p "$WORK" || { REASON="cannot create $WORK"; return 1; }
     chmod 0755 "$LPATCH" 2>/dev/null
+    case "$T_PATCH" in prebuilt:*)   # the auto set (0.1.4): built from this car's own stock files by bycode_make
+        if [ "$T_KIND" = app ]; then out=$WORK/$T_NAME.apk; else out=$WORK/$T_NAME; fi
+        cp "$AUTO/built/${T_PATCH#prebuilt:}" "$out" 2>/dev/null || { REASON="the by-code build of $T_NAME is gone"; return 1; }
+        got=$(md5of "$out")
+        [ "$got" = "$T_WANT" ] || { rm -f "$out"; REASON="by-code ${out##*/} has md5 ${got:-none}, want $T_WANT"; return 1; }
+        log "took ${out##*/} from this car's by-code build ($T_WANT)"
+        return 0 ;;
+    esac
     case "$T_KIND" in
         app)
             out=$WORK/$T_NAME.apk
@@ -657,11 +801,11 @@ patched_list() {
 }
 knob_keys() {
     local l
-    [ -n "$SET" ] && [ -f "$PATCHES/$SET/knobs" ] || return 0
+    [ -n "$SET" ] && [ -f "$(set_dir "$SET")/knobs" ] || return 0
     while IFS= read -r l || [ -n "$l" ]; do
         case "$l" in ''|'#'*) continue ;; esac
         echo $l
-    done < "$PATCHES/$SET/knobs"
+    done < "$(set_dir "$SET")/knobs"
 }
 knobs_list() { local k out=; for k in $(knob_keys); do out="$out,$k"; done; echo "${out#,}"; }
 

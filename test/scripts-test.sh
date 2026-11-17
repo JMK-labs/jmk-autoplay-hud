@@ -216,7 +216,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis"; }
     check "install: exit 0" [ $rc -eq 0 ]
     check "install: state=reboot" [ "$(st state)" = reboot ]
     check "install: set=neev_kr" [ "$(st set)" = neev_kr ]
-    check "install: ver=0.1.3" [ "$(st ver)" = 0.1.3 ]
+    check "install: ver=0.1.4" [ "$(st ver)" = 0.1.4 ]
     check "install: patched = every target + the audio recipe" [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]
     check "install: knobs=log,lane_dist,cp_lanes" [ "$(st knobs)" = "log,lane_dist,cp_lanes" ]
     check "install: reason empty" [ -z "$(st reason)" ]
@@ -420,6 +420,81 @@ open(sys.argv[2],'wb').write(dex)" "$ROOT/system/app/HKMC_DiPO.odex" "$ROOT/dipo
     echo "other firmware" > "$ROOT/system/app/HKMC_DiPO.odex"
     hook postinstall; rc=$?
     check "product named for a set, files match no set: locked on the named set (0.1.2)" eval '[ $rc -eq 0 ] && [ "$(st state)" = locked ]'
+)
+
+# ---------------------------------------------------------------- by code (0.1.4)
+# mkodex <app> <seed>: the app's stock odex becomes a Dalvik odex ("dey" header, its framework's bytes after the dex);
+# prints the md5 of the dex inside (what tools/codesum.jar reads)
+mkodex() {
+    python3 -c "
+import struct,sys,hashlib
+dex=b'dex\n035\0'+(sys.argv[2].encode()*64)[:300]
+hdr=b'dey\n036\0'+struct.pack('<8I',40,len(dex),0,0,0,0,0,0)
+for p in sys.argv[3:]: open(p,'wb').write(hdr+dex+b'framework checksums of this car')
+print(hashlib.md5(dex).hexdigest())" "$1" "$2" "$ROOT/stock/$1.odex" "$ROOT/system/app/$1.odex"
+}
+# bycode_setup <PhoneProjection seed of the profile>: a car no set fits (GL3HEV), its apps' code = the kr profile's
+bycode_setup() {
+    setup
+    sed -i '' 's/^ro.build.product=.*/ro.build.product=GL3HEV.KOR.0000.V039.001.260902/' "$PROPFILE"
+    mkdir -p "$HP/patches/bycode/kr" "$ROOT/data/local/tmp/jmk-map-menu/outbox"
+    local a c pp
+    : > "$HP/patches/bycode/kr/manifest"
+    for a in HKMC_GPM HKMC_DiPO Iap2ServerApp HKMC_Navi_ExSL; do
+        c=$(mkodex "$a" "$a-code")
+        echo "FAKELPD $c $a-tbt" > "$HP/patches/bycode/kr/$a.tbt.lpd"
+        echo "2_tbt app $a $c bycode/kr/$a.tbt.lpd $(want_file "$a-tbt")" >> "$HP/patches/bycode/kr/manifest"
+    done
+    echo "FAKELPD $(q "$ROOT/stock/libautoreceiver_infobank.so") lib-tbt" > "$HP/patches/bycode/kr/lib.tbt.lpd"
+    echo "2_tbt file libautoreceiver_infobank.so $(q "$ROOT/stock/libautoreceiver_infobank.so") bycode/kr/lib.tbt.lpd $(want_file lib-tbt)" >> "$HP/patches/bycode/kr/manifest"
+    pp=$(mkodex PhoneProjection PhoneProjection-code)
+    [ "$1" = other ] && pp=0123456789abcdef0123456789abcdef
+    for a in HKMC_DiPO Iap2ServerApp; do
+        c=$(python3 -c "import struct,hashlib;d=open('$ROOT/stock/$a.odex','rb').read();o,l=struct.unpack_from('<II',d,8);print(hashlib.md5(d[o:o+l]).hexdigest())")
+        echo "FAKELPD $c $a-bridge" > "$HP/patches/bycode/kr/$a.bridge.lpd"
+        echo "3_bridge app $a $c bycode/kr/$a.bridge.lpd $(want_file "$a-bridge")" >> "$HP/patches/bycode/kr/manifest"
+    done
+    echo "FAKELPD $pp PhoneProjection-bridge" > "$HP/patches/bycode/kr/PhoneProjection.bridge.lpd"
+    echo "3_bridge app PhoneProjection $pp bycode/kr/PhoneProjection.bridge.lpd $(want_file PhoneProjection-bridge)" >> "$HP/patches/bycode/kr/manifest"
+    echo "log lane_dist cp_lanes" > "$HP/patches/bycode/kr/knobs"
+}
+(
+    bycode_setup other
+    snap "$ROOT/before"
+    hook postinstall; rc=$?
+    check "by code (0.1.4): no set fits, the code does: set auto, reboot" eval '[ $rc -eq 0 ] && [ "$(st set)" = auto ] && [ "$(st state)" = reboot ]'
+    check "by code: turn-by-turn only (PhoneProjection's code differs: no bridge)" eval '[ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/parts")" = 2_tbt ]'
+    check "by code: DiPO is its turn-by-turn build in this car's own apk" eval '[ "$(cat "$ROOT/system/app/HKMC_DiPO.apk")" = "$(cat "$ROOT/stock/HKMC_DiPO.apk"; echo "dex HKMC_DiPO-tbt")" ]'
+    check "by code: GPM, Navi and the library patched too" eval 'grep -q "dex HKMC_GPM-tbt" "$ROOT/system/app/HKMC_GPM.apk" && grep -q "dex HKMC_Navi_ExSL-tbt" "$ROOT/system/app/HKMC_Navi_ExSL.apk" && grep -q "dex lib-tbt" "$ROOT/system/lib/libautoreceiver_infobank.so"'
+    check "by code: PhoneProjection untouched" same_file "$ROOT/stock/PhoneProjection.apk" "$ROOT/system/app/PhoneProjection.apk"
+    check "by code: the profile's knobs" eval '[ "$(st knobs)" = log,lane_dist,cp_lanes ]'
+    R=$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-other-model-set.json
+    check "by code: one report with profile, parts and code" grep -q 'set auto (profile kr, parts 2_tbt); product GL3HEV.KOR.0000.V039.001.260902; code .*HKMC_DiPO.code=' "$R"
+    hook postinstall; rc=$?
+    check "by code: again (an update): every target in place, nothing changed" eval '[ $rc -eq 0 ] && [ "$(st set)" = auto ] && grep -q "every target is in place already" "$ROOT/postinstall.out"'
+    hook preuninstall; rc=$?
+    check "by code: uninstall puts every stock file back" eval '[ $rc -eq 0 ] && all_stock'
+    check "by code: uninstall leaves no auto set" eval '[ ! -e "$ROOT/data/nemesis/jmk-autoplay-hud/auto" ]'
+)
+(
+    bycode_setup same
+    hook postinstall; rc=$?
+    check "by code: PhoneProjection's code fits too: both parts" eval '[ $rc -eq 0 ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/parts")" = "2_tbt 3_bridge" ]'
+    check "by code: DiPO and Iap2 are their bridge builds, PhoneProjection patched" eval 'grep -q "dex HKMC_DiPO-bridge" "$ROOT/system/app/HKMC_DiPO.apk" && grep -q "dex Iap2ServerApp-bridge" "$ROOT/system/app/Iap2ServerApp.apk" && grep -q "dex PhoneProjection-bridge" "$ROOT/system/app/PhoneProjection.apk"'
+)
+(
+    bycode_setup other
+    sed -i '' 's/^\(2_tbt app HKMC_GPM [0-9a-f]* [^ ]*\) .*/\1 ffffffffffffffffffffffffffffffff/' "$HP/patches/bycode/kr/manifest"
+    snap "$ROOT/before"
+    hook postinstall; rc=$?
+    snap "$ROOT/after"
+    check "by code: a rebuilt code that is not the profile's: locked, nothing changed" eval '[ $rc -eq 0 ] && [ "$(st state)" = locked ] && cmp -s "$ROOT/before" "$ROOT/after"'
+    check "by code: ... and no auto set left" eval '[ ! -e "$ROOT/data/nemesis/jmk-autoplay-hud/auto" ]'
+)
+(
+    bycode_setup other
+    CODESUM_HANG=1 hook postinstall; rc=$?
+    check "by code: the helper does not answer: locked (no auto set), exit 0" eval '[ $rc -eq 0 ] && [ "$(st state)" = locked ]'
 )
 
 # ---------------------------------------------------------------- failures put the stock files back

@@ -90,6 +90,21 @@ for s in $sets; do
         check "set $s: $part $name: result md5 well formed" eval '[[ "$want" =~ ^[0-9a-f]{32}$ ]]'
     done < <(effective "$s")
 done
+# 0.1.4: by-code profiles: every line's delta is there, starts from the line's code (or stock library) md5 and ends at its
+# result md5 (the .lpd header holds both), and a part has the apps a set has for it
+lpd_dst() { xxd -s 28 -l 16 -p "$1" 2>/dev/null; }
+for m in "$PKG"/patches/bycode/*/manifest; do
+    prof=${m%/manifest}; prof=${prof##*/}
+    check "by code $prof: has 2_tbt lines" grep -q '^2_tbt ' "$m"
+    while read -r part kind name code patch want; do
+        case "$part" in ''|'#'*) continue ;; esac
+        lpd="$PKG/patches/$patch"
+        check "by code $prof: $part $name: $patch is an lpatch delta" eval '[ -s "$lpd" ] && lpd_magic "$lpd"'
+        check "by code $prof: $part $name: starts from $code" [ "$(lpd_src "$lpd")" = "$code" ]
+        check "by code $prof: $part $name: ends at $want" [ "$(lpd_dst "$lpd")" = "$want" ]
+        check "by code $prof: $part $name: kind app or file" eval 'case "$kind" in app|file) true ;; *) false ;; esac'
+    done < "$m"
+done
 while read -r pre set name; do
     case "$pre" in ''|'#'*) continue ;; esac
     check "cars: $pre -> $set exists" [ -f "$PKG/patches/$set/manifest" ]
@@ -125,7 +140,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.3" grep -q '^package-version=0.1.3$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.4" grep -q '^package-version=0.1.4$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]
@@ -154,7 +169,7 @@ for z in "$P/dist/jmk-autoplay-hud-$V.zip" "$P/dist/jmk-autoplay-hud-$V-kr.zip";
     for f in $scripts; do check "${z##*/}: ${f#./} as in package/" cmp -s "$PKG/$f" "$T/x/$f"; done
 done
 check "kr zip: only the neev_kr set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V-kr.zip" | grep "^patches/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "cars neev_kr " ]'
-check "full zip: every set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V.zip" | grep "^patches/.*/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "common dl3hev ev6 ev6_ca neev neev23_260903 neev_ca neev_kr nq5 " ]'
+check "full zip: every set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V.zip" | grep "^patches/.*/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "bycode common dl3hev ev6 ev6_ca neev neev23_260903 neev_ca neev_kr nq5 " ]'
 # a release (published, open: not obfuscated) is the full test zip itself, byte for byte
 for r in "$P"/dist/release/*.zip; do
     [ -e "$r" ] || continue

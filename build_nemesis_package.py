@@ -17,7 +17,7 @@ from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parent
 PACKAGE = PROJECT / 'package'
-TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'src/build-codesum.sh')   # 0.1.3: tools/codesum.jar's source rides along
+TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'src/build-codesum.sh', 'src/mkbycode.py')   # 0.1.3: tools/codesum.jar's source rides along
 FIXED = (2026, 1, 1, 0, 0, 0)   # deterministic zip times
 EXEC = ('.sh',)
 EXEC_FILES = ('tools/lpatch',)
@@ -82,6 +82,8 @@ def main():
         if not path.is_file() or path.name.startswith('.') or '__pycache__' in path.parts:
             continue
         rel = path.relative_to(PACKAGE).as_posix()
+        if rel.startswith('patches/bycode/') and sets is not None:
+            continue   # 0.1.4: the by-code profiles ride with the full build only (a --sets build is one car's test zip)
         if rel.startswith('patches/'):
             parts = rel.split('/')
             if len(parts) == 3:

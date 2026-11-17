@@ -41,7 +41,7 @@ if [ -f "$STOCK_LIST" ] || [ -f "$ADDED" ]; then
     sync
 fi
 leafia_props_clear
-rm -rf "$BACKUP" "$WORK"
+rm -rf "$BACKUP" "$WORK" "$AUTO" "$AUTO.new"
 rm -f "$STOCK_LIST" "$APPLIED" "$ADDED" "$SET_FILE" "$BOOT_FILE" "$STATUS" "$STATUS.tmp" "$INSTALLED" "$STORE/svc.pid"
 [ -f "$HOLD_FILE" ] && log "WARNING: still stopped: $(cat "$HOLD_FILE") (start them with pm enable)"
 rmdir "$STORE" 2>/dev/null

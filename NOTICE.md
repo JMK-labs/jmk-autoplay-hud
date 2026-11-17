@@ -39,11 +39,16 @@ patch data is data; the binaries are listed below with their sources).
   EV6, Ioniq 5 and K5 builds; it reaches the car through those sets' HKMC_DiPO patches.
 - **`package/tools/codesum.jar`** (0.1.3, JMK's own, AGPL-3.0): built from `src/jmkhud/CodeSum.java` by
   `src/build-codesum.sh` (javac + the Android SDK's d8, a fixed timestamp, so the same source gives the same bytes),
-  sha256 2830cec97ede77cb66da62a6a0c67727c1303d68922cf4857bb9f734ff2963dd. It reads the md5 of the dex inside an app's odex for the locked report.
+  sha256 bd08914c7713ec97d66ebe16159de940730f8f8df9611ee1bd5a5ce7ce3ad30c. It reads the md5 of the dex inside an app's odex for the locked report.
 - **gen5w-Evergreen** by zpoon (https://github.com/zpoon/gen5w-Evergreen, commit 573fdae), GPL-3.0, a community fork of
   HMG Leafia Plus: the `nq5` (Kia Sportage / Sportage Hybrid, US 260507) and `neev23_260903` (Hyundai Ioniq 5 US
   260903) patch sets and their `patches/cars` lines, unmodified (0.1.2). Its notice is kept as
   `LICENSES/UPSTREAM_NOTICE-gen5w-evergreen.md`; combined here under section 13 as above.
+  0.1.4: its universal patches (`patches/universal/`, unmodified) as the by-code profile `patches/bycode/us`.
+- **By-code profile `kr`** (`patches/bycode/kr`, 0.1.4): the `neev_kr` set's builds (Leafia Plus NEEV.KOR.03-r8.2,
+  above) keyed to the code inside each stock .odex instead of the .odex file, made by `src/mkbycode.py` (JMK's own,
+  AGPL-3.0) from that set and the Ioniq 5 Korea stock files: the same result code, for Korean head units whose apps
+  run the same code (K8 Hybrid Korea, first seen 2026-11-17). Only deltas and md5s; no stock file ships.
 - Thanks, as upstream: W-Floyd.
 
 No manufacturer APK, odex, jar or library is shipped: the head unit rebuilds each file from its own exact stock copy,

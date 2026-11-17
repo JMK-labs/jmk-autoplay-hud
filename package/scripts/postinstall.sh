@@ -50,12 +50,30 @@ rollback() {   # $1 = why: every stock file back, the added converter gone, then
     exit 1
 }
 
-SET=$(pick_set) || { SET=; lock "no patch set for $(getprop ro.build.product): its stock files match none of the sets"; }
+SET=$(pick_set) || SET=
+# 0.1.4: no set has this car's files (or it is the by-code set, made again from the stock files each time): the parts
+# whose code this car runs, rebuilt from its own files (bycode_build)
+if [ -z "$SET" ] || [ "$SET" = auto ] || ! set_fits "$SET"; then
+    named=$SET
+    if bycode_build; then
+        SET=auto
+        log "by code: profile $(cat "$AUTO/profile"), parts $(cat "$AUTO/parts") from this car's own stock files"
+    elif [ "$SET" = auto ]; then
+        SET=
+    fi
+fi
+[ -n "$SET" ] || lock "no patch set for $(getprop ro.build.product): its stock files match none of the sets, nor its code a profile"
 load_targets || lock "patch set $SET has no targets"
 echo "$SET" > "$SET_FILE"
 log "patch set $SET ($(car_name "$SET"))"
 # 0.1.1: another model than ours: once, which set it took (the server sees nothing else of the add-on)
-case "$(getprop ro.build.product)" in NEEV.KOR.*) ;; *) report other-model-set "set $SET; product $(getprop ro.build.product)" ;; esac
+case "$(getprop ro.build.product)" in NEEV.KOR.*) ;; *)
+    if [ "$SET" = auto ]; then
+        report other-model-set "set auto (profile $(cat "$AUTO/profile"), parts $(cat "$AUTO/parts")); product $(getprop ro.build.product); code $(code_sums)"
+    else
+        report other-model-set "set $SET; product $(getprop ro.build.product)"
+    fi ;;
+esac
 [ -f "$R/system/etc/permissions/com.hkmc.software.connectivity.carplay_wireless.xml" ] ||
     log "note: the wireless CarPlay feature is not on yet (JMK Wireless AutoPlay does that); turn-by-turn works without it"
 
