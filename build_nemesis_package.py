@@ -17,7 +17,7 @@ from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parent
 PACKAGE = PROJECT / 'package'
-TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md')
+TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'src/build-codesum.sh')   # 0.1.3: tools/codesum.jar's source rides along
 FIXED = (2026, 1, 1, 0, 0, 0)   # deterministic zip times
 EXEC = ('.sh',)
 EXEC_FILES = ('tools/lpatch',)

@@ -22,7 +22,7 @@ lock() {
     write_status locked "$1"
     log "locked: $1 (nothing changed)"
     [ -d "$R/data/nemesis/backup/projection.tbt" ] && log "note: /data/nemesis/backup/projection.tbt (the snapshot of Leafia / projection.tbt) is still there: its uninstall may not have finished"
-    report postinstall-locked "$1; product $(getprop ro.build.product); live $(live_sums)"
+    report postinstall-locked "$1; product $(getprop ro.build.product); live $(live_sums); code $(code_sums)"
     exit 0
 }
 fail() {   # nothing of this run is left in /system

@@ -125,7 +125,12 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.1" grep -q '^package-version=0.1.1$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.3" grep -q '^package-version=0.1.3$' "$PKG/NEMESIS.data"
+before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
+if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
+    check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]
+fi
+check "NOTICE names tools/codesum.jar with its sha256" grep -q "$before" "$P/NOTICE.md"
 check "NEMESIS.data: id, depends, os" eval 'grep -q "^id=jmk-autoplay-hud$" "$PKG/NEMESIS.data" && grep -q "^depends=\"jmk-autoplay\"$" "$PKG/NEMESIS.data" && grep -q "^os=\"\*.KOR.\*\"$" "$PKG/NEMESIS.data"'
 
 # ---------------------------------------------------------------- 4. zips
@@ -142,13 +147,14 @@ for z in "$P/dist/jmk-autoplay-hud-$V.zip" "$P/dist/jmk-autoplay-hud-$V-kr.zip";
     for need in LICENSE NOTICE.md README.md LICENSES/GPL-3.0.txt NEMESIS.data tools/lpatch scripts/common.sh svc/hud.sh; do
         check "${z##*/}: has $need" eval 'echo "$list" | grep -qx "$need"'
     done
-    check "${z##*/}: no dex, jar or apk (nothing compiled or obfuscated of ours)" eval '! echo "$list" | grep -qE "\.(dex|jar|apk)$"'
+    check "${z##*/}: no dex, jar or apk but tools/codesum.jar (nothing compiled or obfuscated of ours without its source)" eval '! echo "$list" | grep -vx "tools/codesum.jar" | grep -qE "\.(dex|jar|apk)$"'
+    check "${z##*/}: tools/codesum.jar's source and build script inside" eval 'echo "$list" | grep -qx src/jmkhud/CodeSum.java && echo "$list" | grep -qx src/build-codesum.sh'
     check "${z##*/}: scripts and lpatch executable" eval '[ -z "$(unzip -Z "$z" | grep -E "(\.sh|tools/lpatch)$" | grep -vE "^[-?]rwxr-xr-x")" ]'
     rm -rf "$T/x"; mkdir "$T/x"; unzip -q "$z" -d "$T/x"
     for f in $scripts; do check "${z##*/}: ${f#./} as in package/" cmp -s "$PKG/$f" "$T/x/$f"; done
 done
 check "kr zip: only the neev_kr set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V-kr.zip" | grep "^patches/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "cars neev_kr " ]'
-check "full zip: every set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V.zip" | grep "^patches/.*/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "common dl3hev ev6 ev6_ca neev neev_ca neev_kr " ]'
+check "full zip: every set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V.zip" | grep "^patches/.*/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "common dl3hev ev6 ev6_ca neev neev23_260903 neev_ca neev_kr nq5 " ]'
 # a release (published, open: not obfuscated) is the full test zip itself, byte for byte
 for r in "$P"/dist/release/*.zip; do
     [ -e "$r" ] || continue

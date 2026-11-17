@@ -32,6 +32,12 @@ setprop() {
     echo "$1=$2" >> "$JMK_HUD_TEST_ROOT/setprop.log"
     grep -v "^$1=" "$PROPFILE" > "$PROPFILE.n"; echo "$1=$2" >> "$PROPFILE.n"; command mv "$PROPFILE.n" "$PROPFILE"
 }
+app_process() {   # the JVM runs the package's own CodeSum class (compiled from src/ into $CODESUM_CLASSES)
+    [ -n "$CODESUM_HANG" ] && { command sleep 60; return 0; }
+    [ "$1 $2" = "/system/bin jmkhud.CodeSum" ] || return 1
+    shift 2
+    command java -cp "$CODESUM_CLASSES" jmkhud.CodeSum "$@"
+}
 pm() {
     local d=$JMK_HUD_TEST_ROOT/pm.disabled
     touch "$d"; echo "pm $*" >> "$JMK_HUD_TEST_ROOT/pm.log"
@@ -50,6 +56,8 @@ pm() {
 EOF
 }
 
+CODESUM_CLASSES=$WORK/codesum-classes; export CODESUM_CLASSES
+mkdir -p "$CODESUM_CLASSES" && javac -d "$CODESUM_CLASSES" "$here/../src/jmkhud/CodeSum.java"
 APPS="HKMC_GPM HKMC_DiPO Iap2ServerApp HKMC_Navi_ExSL PhoneProjection"
 LIBS="libautoreceiver_infobank.so libCarPlayAudio.so libCarPlayCore.so libCarPlayUtils.so"
 PM_PKGS="com.google.android.projection.sink com.daudio.app.dipo com.tcc.iap2server com.mnsoft.navi com.daudio.app.phoneprojection"
@@ -208,7 +216,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis"; }
     check "install: exit 0" [ $rc -eq 0 ]
     check "install: state=reboot" [ "$(st state)" = reboot ]
     check "install: set=neev_kr" [ "$(st set)" = neev_kr ]
-    check "install: ver=0.1.1" [ "$(st ver)" = 0.1.1 ]
+    check "install: ver=0.1.3" [ "$(st ver)" = 0.1.3 ]
     check "install: patched = every target + the audio recipe" [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]
     check "install: knobs=log,lane_dist,cp_lanes" [ "$(st knobs)" = "log,lane_dist,cp_lanes" ]
     check "install: reason empty" [ -z "$(st reason)" ]
@@ -360,6 +368,32 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis"; }
 )
 (
     setup
+    sed -i '' 's/^ro.build.product=.*/ro.build.product=CV.KOR.0000.V030.001.260101/' "$PROPFILE"
+    # a Dalvik odex for DiPO ("dey" header, the dex at 40): its code md5 is the md5 of those dex bytes
+    python3 -c "
+import struct,sys
+dex=b'dex\\n035\\0'+bytes(range(256))*2
+hdr=b'dey\\n036\\0'+struct.pack('<8I',40,len(dex),0,0,0,0,0,0)
+open(sys.argv[1],'wb').write(hdr+dex+b'deps and opt data of this framework')
+open(sys.argv[2],'wb').write(dex)" "$ROOT/system/app/HKMC_DiPO.odex" "$ROOT/dipo.dex"
+    mkdir -p "$ROOT/data/local/tmp/jmk-map-menu/outbox"
+    hook postinstall; rc=$?
+    R=$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-postinstall-locked.json
+    check "locked report (0.1.3): the code md5 of DiPO's odex" grep -q "code .*HKMC_DiPO.code=$(md5 -q "$ROOT/dipo.dex")" "$R"
+    check "locked report (0.1.3): an odex that is not a Dalvik odex reads none" grep -q "HKMC_GPM.code=none" "$R"
+    check "locked report (0.1.3): still exit 0, locked" eval '[ $rc -eq 0 ] && [ "$(st state)" = locked ]'
+)
+(
+    setup
+    sed -i '' 's/^ro.build.product=.*/ro.build.product=CV.KOR.0000.V030.001.260101/' "$PROPFILE"
+    echo "other firmware" > "$ROOT/system/app/HKMC_DiPO.odex"
+    mkdir -p "$ROOT/data/local/tmp/jmk-map-menu/outbox"
+    t0=$(date +%s); CODESUM_HANG=1 hook postinstall; rc=$?; t1=$(date +%s)
+    R=$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-postinstall-locked.json
+    check "locked report (0.1.3): a hanging helper is stopped after ~20 s, the report goes out" eval '[ $rc -eq 0 ] && [ $((t1 - t0)) -le 30 ] && grep -q "; code" "$R"'
+)
+(
+    setup
     sed -i '' 's/^ro.build.product=.*/ro.build.product=NEEV.KOR.0000.V040.001.270101/' "$PROPFILE"
     hook postinstall; rc=$?
     check "product not in cars but every stock file matches: set picked by md5" eval '[ $rc -eq 0 ] && [ "$(st set)" = neev_kr ] && [ "$(st state)" = reboot ]'
@@ -372,6 +406,20 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis"; }
     check "another region, its stock files are the KR set's: applied (0.1.1)" eval '[ $rc -eq 0 ] && [ "$(st set)" = neev_kr ] && [ "$(st state)" = reboot ]'
     check "another region: one other-model-set report with the set and product" \
         grep -q '"detail":"set neev_kr; product NEEV.USA.0000.V100.001.270101"' "$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-other-model-set.json"
+)
+
+(
+    setup
+    sed -i '' 's/^ro.build.product=.*/ro.build.product=CVEV.USA.0000.V020.001.270101/' "$PROPFILE"
+    hook postinstall; rc=$?
+    check "product named for a set whose files it lacks, files are another set's: that one (0.1.2)" eval '[ $rc -eq 0 ] && [ "$(st set)" = neev_kr ] && [ "$(st state)" = reboot ]'
+)
+(
+    setup
+    sed -i '' 's/^ro.build.product=.*/ro.build.product=CVEV.USA.0000.V020.001.270101/' "$PROPFILE"
+    echo "other firmware" > "$ROOT/system/app/HKMC_DiPO.odex"
+    hook postinstall; rc=$?
+    check "product named for a set, files match no set: locked on the named set (0.1.2)" eval '[ $rc -eq 0 ] && [ "$(st state)" = locked ]'
 )
 
 # ---------------------------------------------------------------- failures put the stock files back

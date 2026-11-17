@@ -192,17 +192,54 @@ live_sums() {
     echo "${out# }"
 }
 
+# 0.1.3: "<App>.code=<md5>" for every app the sets name, from tools/codesum.jar (our own, src/jmkhud/CodeSum.java): the
+# md5 of the dex inside the app's odex. That is the same on cars whose apps run the same code whatever their framework
+# (gen5w-Evergreen keys its universal patches with it), so the locked report tells whether a set made from one car's
+# code (Ioniq 5 Korea) fits this one. Empty when it cannot run; never more than about 20 s (the report waits for it).
+code_sums() {
+    local d f s seen= args= jar pid n out=
+    jar=$(cd "$PKG" 2>/dev/null && pwd)/tools/codesum.jar
+    [ -f "$jar" ] || return 0
+    for d in "$PATCHES"/*/stock; do
+        [ -f "$d" ] || continue
+        while read -r f s || [ -n "$f" ]; do
+            case "$f" in *.odex) ;; *) continue ;; esac
+            case " $seen " in *" $f "*) continue ;; esac
+            seen="$seen $f"
+            [ -f "$(live_of "$f")" ] && args="$args $(live_of "$f")"
+        done < "$d"
+    done
+    [ -n "$args" ] || return 0
+    mkdir -p "$STORE" 2>/dev/null
+    rm -f "$STORE/codesum.out"
+    CLASSPATH=$jar app_process /system/bin jmkhud.CodeSum $args > "$STORE/codesum.out" 2>/dev/null &
+    pid=$!
+    n=0
+    while kill -0 "$pid" 2>/dev/null && [ $n -lt 20 ]; do sleep 1; n=$((n + 1)); done
+    kill "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    [ -f "$STORE/codesum.out" ] && read -r out < "$STORE/codesum.out"
+    rm -f "$STORE/codesum.out"
+    echo "$out"
+}
+
 # The set for this car: the one an earlier install used, else patches/cars by product, else the first set whose stock
 # files are exactly this car's (the md5 gate below checks every file again either way).
 pick_set() {
     local s d
     if [ -f "$SET_FILE" ]; then read -r s < "$SET_FILE"; set_ok "$s" && { echo "$s"; return 0; }; fi
-    s=$(car_set) && { echo "$s"; return 0; }
+    # 0.1.2: the product's set only when this car's files are that set's; else any set that has exactly them (a firmware
+    # the cars list maps to an older set, e.g. a 260903 Ioniq 5 under "NEEV23.USA." before its own line), else the
+    # product's set anyway (the md5 gate then locks it and the report names the live files)
+    local named=
+    named=$(car_set) && set_matches "$named" && { echo "$named"; return 0; }
     for d in "$PATCHES"/*; do
         s=${d##*/}
         set_ok "$s" || continue
+        [ "$s" = "$named" ] && continue
         set_matches "$s" && { echo "$s"; return 0; }
     done
+    [ -n "$named" ] && { echo "$named"; return 0; }
     return 1
 }
 

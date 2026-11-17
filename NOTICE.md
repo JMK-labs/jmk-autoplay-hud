@@ -4,7 +4,7 @@ This package is free software under the **GNU Affero General Public License vers
 the parts named below; their licence notices are kept (`LICENSES/`). It comes with no warranty.
 
 Source: https://github.com/JongMinKim-93/jmk-autoplay-hud (the zip itself is the complete source of the scripts; the
-patch data is data; the two binaries are listed below with their sources).
+patch data is data; the binaries are listed below with their sources).
 
 ## Upstream
 
@@ -37,6 +37,13 @@ patch data is data; the two binaries are listed below with their sources).
 - **CarPlay turn-by-turn maneuver fix** by Isaac Wisdom (https://github.com/isaacwisdom): the DiPO route-guidance
   parser wrote maneuver indexes into a copy of the index array, so every maneuver read as -1. Applied by Leafia to the
   EV6, Ioniq 5 and K5 builds; it reaches the car through those sets' HKMC_DiPO patches.
+- **`package/tools/codesum.jar`** (0.1.3, JMK's own, AGPL-3.0): built from `src/jmkhud/CodeSum.java` by
+  `src/build-codesum.sh` (javac + the Android SDK's d8, a fixed timestamp, so the same source gives the same bytes),
+  sha256 2830cec97ede77cb66da62a6a0c67727c1303d68922cf4857bb9f734ff2963dd. It reads the md5 of the dex inside an app's odex for the locked report.
+- **gen5w-Evergreen** by zpoon (https://github.com/zpoon/gen5w-Evergreen, commit 573fdae), GPL-3.0, a community fork of
+  HMG Leafia Plus: the `nq5` (Kia Sportage / Sportage Hybrid, US 260507) and `neev23_260903` (Hyundai Ioniq 5 US
+  260903) patch sets and their `patches/cars` lines, unmodified (0.1.2). Its notice is kept as
+  `LICENSES/UPSTREAM_NOTICE-gen5w-evergreen.md`; combined here under section 13 as above.
 - Thanks, as upstream: W-Floyd.
 
 No manufacturer APK, odex, jar or library is shipped: the head unit rebuilds each file from its own exact stock copy,
