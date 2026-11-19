@@ -123,6 +123,9 @@ if [ -f "$LEAFIA_LC/stock.md5" ] && [ -f "$LEAFIA_LC/final.md5" ]; then
     while read -r a b c d e; do
         [ "$b" = app ] && f=app/$c.apk || f=lib/$c
         fin=$(grep " $f\$" "$LEAFIA_LC/final.md5" | cut -d' ' -f1)
+        # 0.1.5: GPM and DiPO carry our guidance-end fix (TBT_INFO DisplayType 8, not 0: the cluster spun), so their
+        # results are Leafia KR's plus that change; every other target is still Leafia KR's byte for byte
+        case "$c" in HKMC_GPM|HKMC_DiPO) check "neev_kr result $c is ours (0.1.5 guidance-end fix), not Leafia KR's" [ "$fin" != "$e" ]; continue ;; esac
         check "neev_kr result $c = what Leafia KR leaves on the car (final.md5 $f)" [ "$fin" = "$e" ]
     done < <(effective neev_kr)
 else
