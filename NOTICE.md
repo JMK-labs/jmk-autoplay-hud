@@ -96,6 +96,13 @@ and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
   all match exactly. Recipes check themselves and are skipped when they do not fit.
 - Every file written is recorded with its md5; a real uninstall puts every stock file back byte-identical (md5
   checked) and removes the converter it added; an update keeps the patched files.
+- 0.1.8: a stock copy goes back only over a file this package wrote. A file that is neither (after a firmware update:
+  the new firmware's own apk, odex or library) is left alone and its record dropped; ro.build.fingerprint is kept
+  with the records, which a firmware change makes true to the new firmware. An update only on a positive signal
+  (the parent is an install, the package staged). An update puts back what its targets no longer name, and one
+  whose patches do not fit keeps (and reports) the earlier version's files. Free space is checked before the swap.
+  The settings service checks the patched files at every boot (also when active). The log is capped; copies a
+  cut-off swap left are removed.
 - Only apps that are enabled are stopped for the file swap, and the same ones are started again (also by the
   settings service at boot, if a run died).
 - A status file for the JMK MAP menu (`/data/nemesis/jmk-autoplay-hud/status`) and a settings service that maps the

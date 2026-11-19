@@ -190,7 +190,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.7" grep -q '^package-version=0.1.7$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.8" grep -q '^package-version=0.1.8$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]

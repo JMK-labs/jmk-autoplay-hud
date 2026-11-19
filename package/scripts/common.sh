@@ -93,6 +93,118 @@ record() {
     echo "$2 $3" >> "$tmp" && mv "$tmp" "$1"
 }
 
+# unrecord <list> <file>: that file's line out of a "<file> <md5>" list
+unrecord() {
+    local l tmp=$1.tmp
+    [ -f "$1" ] || return 0
+    : > "$tmp" || return 1
+    while IFS= read -r l || [ -n "$l" ]; do case "$l" in "$2 "*) ;; *) echo "$l" >> "$tmp" ;; esac; done < "$1"
+    mv "$tmp" "$1"
+}
+# forget <file>: no record and no stock copy of it any more (it is not ours to put back)
+forget() { unrecord "$STOCK_LIST" "$1"; unrecord "$APPLIED" "$1"; rm -f "$BACKUP/$1" 2>/dev/null; }
+
+# ---------------------------------------------------------------- 0.1.8: housekeeping (QA 2026-11-19 #15)
+# size_kb <file>: its size in KB (toolbox ls -s prints "<KB> <name>"), 0 when absent
+size_kb() { local n; set -- $(ls -s "$1" 2>/dev/null); n=$1; case "$n" in ''|*[!0-9]*) n=0 ;; esac; echo $n; }
+# free_kb <dir>: KB free on its filesystem, empty when unknown. Toolbox df's last line is "<fs> <size> <used> <free>
+# <blksize>" with sizes like 412.0M; busybox df has KB in the same (4th) column.
+free_kb() {
+    local out last v i f IFS
+    out=$(df "$1" 2>/dev/null) || return 0
+    IFS='
+'
+    set -f; set -- $out; set +f
+    [ $# -ge 2 ] || return 0
+    eval "last=\${$#}"
+    IFS=' 	'
+    set -f; set -- $last; set +f
+    v=$4
+    case "$v" in
+        *K|*M|*G) ;;
+        ''|*[!0-9]*) return 0 ;;
+        *) echo "$v"; return 0 ;;
+    esac
+    i=${v%?}; f=0
+    case "$i" in *.*) f=${i#*.}; i=${i%%.*}; f=${f%"${f#?}"} ;; esac
+    case "$i$f" in ''|*[!0-9]*) return 0 ;; esac
+    case "$v" in
+        *K) echo $i ;;
+        *M) echo $((i * 1024 + f * 1024 / 10)) ;;
+        *G) echo $((i * 1048576 + f * 104857)) ;;
+    esac
+}
+# log_cap: a log over 256 KB becomes <log>.old (one generation kept); lpatch's output goes into it on every install
+log_cap() {
+    local f
+    for f in "$LOG" "$@"; do [ -f "$f" ] && [ "$(size_kb "$f")" -gt 256 ] && mv "$f" "$f.old" 2>/dev/null; done
+    true
+}
+# clean_tmp: put_file's "<target>.jmkhud" copies left by a swap that was cut off (power, a killed hook)
+clean_tmp() {
+    local f
+    for f in "$APP_DIR"/*.jmkhud "$LIB_DIR"/*.jmkhud; do
+        [ -e "$f" ] || continue
+        rm -f "$f" 2>/dev/null && log "removed a leftover copy $f"
+    done
+    true
+}
+
+# ---------------------------------------------------------------- 0.1.8: the firmware the records belong to (QA #1)
+# FP_FILE holds ro.build.fingerprint from when the records were last made true to this firmware. A firmware update
+# replaces the stock apps: their old stock copies must never go over the new firmware's files.
+FP_FILE=$STORE/fingerprint
+fp_now() { getprop ro.build.fingerprint; }
+fw_changed() { [ -f "$FP_FILE" ] && [ "$(cat "$FP_FILE" 2>/dev/null)" != "$(fp_now)" ]; }
+fw_same() { [ -f "$FP_FILE" ] && ! fw_changed; }
+fp_save() { local t=$FP_FILE.tmp; fp_now > "$t" 2>/dev/null && mv "$t" "$FP_FILE"; }
+
+# restorable <file> <live md5>: the live file is ours to put back: written by this package (APPLIED), or an .odex
+# next to its apk while that apk is ours, or (same firmware only) already the recorded stock one: an earlier uninstall
+# that stopped half-way. On another firmware a stock apk may have a new odex (a new framework), never ours.
+restorable() {
+    local f=$1 apk got
+    case "$f" in
+        *.odex)
+            apk=${f%.odex}.apk
+            got=$(md5of "$(live_of "$apk")")
+            [ -n "$got" ] || return 1
+            has_line "$apk $got" "$APPLIED" && return 0
+            fw_same && [ "$got" = "$(lookup "$STOCK_LIST" "$apk")" ] ;;
+        *) [ -n "$2" ] && has_line "$f $2" "$APPLIED" ;;
+    esac
+}
+
+# fw_reconcile: after a firmware update, the records of every file the new firmware replaced (neither the recorded
+# stock file nor ours) go with their stock copies; the fingerprint is then this firmware's. 1 when nothing changed.
+fw_reconcile() {
+    local f s got drop= old
+    fw_changed || return 1
+    old=$(cat "$FP_FILE" 2>/dev/null)
+    log "firmware changed: $old -> $(fp_now)"
+    if [ -f "$STOCK_LIST" ]; then
+        while read -r f s || [ -n "$f" ]; do
+            [ -n "$f" ] && [ -n "$s" ] || continue
+            got=$(md5of "$(live_of "$f")")
+            [ "$got" = "$s" ] && continue
+            restorable "$f" "$got" && continue
+            drop="$drop $f"
+        done < "$STOCK_LIST"
+        for f in $drop; do
+            log "firmware changed: $(live_of "$f") is the new firmware's: the old stock copy and its record dropped"
+            forget "$f"
+        done
+    fi
+    if [ -f "$ADDED" ]; then
+        while read -r f s || [ -n "$f" ]; do
+            [ -n "$f" ] || continue
+            [ "$(md5of "$(live_of "$f")")" = "$s" ] || { log "firmware changed: $(live_of "$f") is not the one we added: record dropped"; unrecord "$ADDED" "$f"; }
+        done < "$ADDED"
+    fi
+    fp_save
+    return 0
+}
+
 # ---------------------------------------------------------------- patch sets (Leafia's patches/ layout)
 #   patches/cars              <ro.build.product prefix> <set> <car name>
 #   patches/<set>/stock       <file> <md5 of the stock file>
@@ -378,7 +490,7 @@ bycode_build() {
             bycode_make "$dir" "$parts" && return 0
         done
     done
-    rm -rf "$AUTO"
+    # 0.1.8 (QA #7): an earlier by-code build stays: it describes the files an earlier version patched, still live
     return 1
 }
 
@@ -536,12 +648,20 @@ write_odex() {
 }
 
 # apply_target: the rebuilt file into /system (the md5 checked), recorded as ours; an app gets its odex rewritten
+# 0.1.8: whatever this write left in place is recorded as ours (a copy cut short too), so a rollback puts it back
+applied_mark() {   # applied_mark <file> <its stock md5>
+    local got
+    got=$(md5of "$(live_of "$1")")
+    [ -n "$got" ] && [ "$got" != "$2" ] && record "$APPLIED" "$1" "$got"
+    true
+}
 apply_target() {
-    local live
+    local live ok=0
     live=$(live_of "$(t_main)")
-    put_file "$WORK/$(t_main)" "$live" || { REASON="could not write $live"; return 1; }
+    put_file "$WORK/$(t_main)" "$live" || ok=1
+    applied_mark "$(t_main)" "$(stock_sum "$(t_main)")"
+    [ $ok -eq 0 ] || { REASON="could not write $live"; return 1; }
     [ "$(md5of "$live")" = "$T_WANT" ] || { REASON="$live does not have the rebuilt md5 after the write"; return 1; }
-    record "$APPLIED" "$(t_main)" "$T_WANT"
     if [ "$T_KIND" = app ]; then
         rm -f "$APP_DIR/$T_NAME.odex" 2>/dev/null
         [ -f "$APP_DIR/$T_NAME.odex" ] && { REASON="could not delete $APP_DIR/$T_NAME.odex"; return 1; }
@@ -557,14 +677,31 @@ apply_target() {
     return 0
 }
 
-# restore_files: every file in STOCK_LIST back to its stock copy (md5 checked); REASON names the first failure
+# restore_files [<files>]: every file in STOCK_LIST (or only those named) back to its stock copy (md5 checked);
+# REASON names the first failure. 0.1.8 (QA 2026-11-19 #1): only a live file that is ours (restorable) is written. One
+# that is neither stock nor ours (after a firmware update: the new firmware's own apk, odex or library) is left alone
+# and its record dropped: the old firmware's odex over it broke those apps until a reflash. Who is whose is decided
+# for every file before the first write (an odex follows its apk, which goes back first).
 restore_files() {
-    local f s live bad=0
+    local f s live got todo= drop= bad=0
     [ -f "$STOCK_LIST" ] || return 0
     while read -r f s || [ -n "$f" ]; do
         [ -n "$f" ] && [ -n "$s" ] || continue
+        [ -z "$1" ] || case " $1 " in *" $f "*) ;; *) continue ;; esac
         live=$(live_of "$f")
-        [ "$(md5of "$live")" = "$s" ] && continue
+        got=$(md5of "$live")
+        [ "$got" = "$s" ] && continue
+        if restorable "$f" "$got"; then
+            todo="$todo $f"
+        else
+            log "left alone: $live is not ours (md5 ${got:-missing}, stock $s; a firmware update or another package wrote it): its record dropped"
+            drop="$drop $f"
+        fi
+    done < "$STOCK_LIST"
+    for f in $drop; do forget "$f"; done
+    for f in $todo; do
+        s=$(lookup "$STOCK_LIST" "$f")
+        live=$(live_of "$f")
         if [ "$(md5of "$BACKUP/$f")" != "$s" ]; then
             [ -n "$REASON" ] || REASON="the stock copy of $f is missing or damaged in $BACKUP"
             bad=1; continue
@@ -575,8 +712,45 @@ restore_files() {
             [ -n "$REASON" ] || REASON="could not put back $live"
             bad=1
         fi
-    done < "$STOCK_LIST"
+    done
     return $bad
+}
+
+# 0.1.8 (QA #7): the files STOCK_LIST holds that no target of this version and no recipe names (an earlier version's
+# or profile's), as words
+untargeted() {
+    local f s t id want=" " out=
+    [ -f "$STOCK_LIST" ] || return 0
+    for t in $TARGETS; do split_target "$t"; want="$want$(t_files) "; done
+    for id in $RECIPE_IDS; do f=$(recipe_file "$id") && want="$want$f "; done
+    while read -r f s || [ -n "$f" ]; do
+        [ -n "$f" ] || continue
+        case "$want" in *" $f "*) ;; *) out="$out $f" ;; esac
+    done < "$STOCK_LIST"
+    echo $out
+}
+
+# 0.1.8 (QA #4): KB /system needs for the swap: each new file is copied beside its target before the rename (the old
+# one is freed after it), so the growth of every file plus the biggest copy, plus 1 MB for the odex and the records.
+# swap_need_kb <targets> <recipe ids> <files put back>
+swap_need_kb() {
+    local t f id new old sum=0 max=0 src
+    for t in $1; do
+        split_target "$t"
+        f=$(t_main); new=$(size_kb "$WORK/$f"); old=$(size_kb "$(live_of "$f")")
+        [ $new -gt $old ] && sum=$((sum + new - old)); [ $new -gt $max ] && max=$new
+    done
+    for id in $2; do
+        f=$(recipe_file "$id") || continue
+        new=$(size_kb "$WORK/$f"); old=$(size_kb "$LIB_DIR/$f")
+        [ $new -gt $old ] && sum=$((sum + new - old)); [ $new -gt $max ] && max=$new
+        [ "$id" = carplay-utils-converter ] && [ ! -e "$LIB_DIR/libev6aac.so" ] && sum=$((sum + $(size_kb "$PKG/files/libev6aac.so")))
+    done
+    for f in $3; do
+        src=$BACKUP/$f; new=$(size_kb "$src"); old=$(size_kb "$(live_of "$f")")
+        [ $new -gt $old ] && sum=$((sum + new - old)); [ $new -gt $max ] && max=$new
+    done
+    echo $((sum + max + 1024))
 }
 
 # ---------------------------------------------------------------- Leafia's lpatch recipes (the CarPlay libraries)
@@ -650,9 +824,9 @@ apply_recipe() {   # apply_recipe <id>: (the converter first for the utils recip
         record "$ADDED" libev6aac.so "$CONV_SUM"
         log "OK: added libev6aac.so (the converter libCarPlayUtils forwards to)"
     fi
-    put_file "$WORK/$f" "$live" || { REASON="could not write $live"; return 1; }
+    put_file "$WORK/$f" "$live" || { applied_mark "$f" "$(lookup "$STOCK_LIST" "$f")"; REASON="could not write $live"; return 1; }
+    applied_mark "$f" "$(lookup "$STOCK_LIST" "$f")"
     [ "$(lp_state "$1" "$live")" = APPLIED ] || { REASON="$live does not check as patched after the write"; return 1; }
-    record "$APPLIED" "$f" "$(md5of "$live")"
     log "OK: $live patched with recipe $1"
 }
 # remove_added: the files we added (libev6aac.so) go, when they are still ours
@@ -773,10 +947,14 @@ other_projection() {
     return 1
 }
 
-# NEMESIS runs the installed package's preuninstall before an update too, with the new package staged already; only
-# a real uninstall (its parent says "uninstall") puts the stock files back.
+# NEMESIS runs the installed package's preuninstall before an update too, with the new package staged already, from
+# its "nemesis install --update" process. 0.1.8 (QA 2026-11-19 #5), three ways: the parent says "uninstall": a real
+# uninstall, whatever is staged (a stage left by an interrupted install never turns it into nothing); it says
+# "install": an update when our package is staged; it names neither (NEMESIS Manager's own process, an unreadable
+# cmdline): the staged package decides, as before.
+parent_cmdline() { cat /proc/$PPID/cmdline 2>/dev/null; }
 is_update() {
-    case "$(cat /proc/$PPID/cmdline 2>/dev/null)" in *uninstall*) return 1 ;; esac
+    case "$(parent_cmdline)" in *uninstall*) return 1 ;; esac
     grep -q "^id=$ID\$" "$R/data/local/tmp/nemesis/stage/$ID/NEMESIS.data" 2>/dev/null
 }
 
@@ -797,16 +975,24 @@ report() {
 
 # ---------------------------------------------------------------- status (read by the JMK MAP menu's root daemon)
 # ver= state=locked|reboot|active|failed set= patched=<tags> reason= knobs=<config keys with a switch> warn=
+# 0.1.8: from the files: every file we wrote (APPLIED) or added (ADDED) that is live as we wrote it, the targets'
+# order first; an earlier version's files still in place count too (an update that changed nothing)
 patched_list() {
-    local t id f out=
+    local t f s l seen=" " out=
     for t in $TARGETS; do
         split_target "$t"
-        [ "$(md5of "$(live_of "$(t_main)")")" = "$T_WANT" ] && out="$out,$(tag_of "$T_NAME")"
+        f=$(t_main); s=$(md5of "$(live_of "$f")")
+        [ -n "$s" ] && has_line "$f $s" "$APPLIED" || continue
+        out="$out,$(tag_of "$T_NAME")"; seen="$seen$f "
     done
-    for f in libev6aac.so $(for id in $RECIPE_IDS; do recipe_file "$id"; done); do
-        [ -f "$LIB_DIR/$f" ] || continue
-        has_line "$f $(md5of "$LIB_DIR/$f")" "$APPLIED" || has_line "$f $(md5of "$LIB_DIR/$f")" "$ADDED" || continue
-        out="$out,$(tag_of "$f")"
+    for l in "$APPLIED" "$ADDED"; do
+        [ -f "$l" ] || continue
+        while read -r f s || [ -n "$f" ]; do
+            [ -n "$f" ] && [ -n "$s" ] || continue
+            case "$seen" in *" $f "*) continue ;; esac
+            [ "$(md5of "$(live_of "$f")")" = "$s" ] || continue
+            seen="$seen$f "; out="$out,$(tag_of "${f%.apk}")"
+        done < "$l"
     done
     echo "${out#,}"
 }
@@ -844,23 +1030,36 @@ boot_token() {
     echo "$b"
 }
 
-# boot_check (the service, once per start): state=reboot becomes active on a later boot that finds every file we
-# wrote (the applied record: the rebuilt apps, the receiver library, the recipe libraries) in place, or failed.
+# boot_check (the service, once per start): on a later boot than the install's, every file we wrote (the applied
+# record: the rebuilt apps, the receiver library, the recipe libraries) is checked against /system. state=reboot
+# becomes active when all are in place, or failed. 0.1.8 (QA 2026-11-19 #8): also state=active, at every boot: before,
+# "active" was never looked at again, so after a firmware update put the stock apps back it stayed "active" for good.
+# Now that says "firmware changed" (failed, in words for the menu; the records are made true to the new firmware).
 boot_check() {
-    local b f s miss= n=0
-    [ "$(status_get state)" = reboot ] || return 0
+    local b f s miss= n=0 st old=
+    st=$(status_get state)
+    case "$st" in reboot|active) ;; *) return 0 ;; esac
     b=$(boot_token)
     [ -n "$b" ] && [ "$b" = "$(cat "$BOOT_FILE" 2>/dev/null)" ] && return 0
     WARN=$(status_get warn)
-    [ -f "$APPLIED" ] || { write_status failed "after the reboot: no record of the patched files"; return 0; }
+    if [ ! -f "$APPLIED" ]; then
+        [ "$st" = reboot ] && write_status failed "after the reboot: no record of the patched files"
+        return 0
+    fi
     while read -r f s || [ -n "$f" ]; do
         [ -n "$f" ] || continue
         n=$((n + 1))
         [ "$(md5of "$(live_of "$f")")" = "$s" ] || miss="$miss $f"
     done < "$APPLIED"
+    fw_changed && old=$(cat "$FP_FILE" 2>/dev/null) && fw_reconcile
     if [ -z "$miss" ] && [ $n -gt 0 ]; then
+        [ "$st" = active ] && return 0
         write_status active ""
         log "boot: every patched file ($n) is in place after the reboot: active"
+    elif [ -n "$old" ]; then
+        write_status failed "펌웨어가 바뀌어 순정 앱이 새로 설치되었습니다 · 확장을 다시 설치해 주세요 (firmware changed; not patched:${miss:- none recorded})"
+        log "boot: firmware changed ($old -> $(fp_now)): not the patched files:$miss"
+        report boot-firmware-changed "$old -> $(fp_now):$miss"
     else
         write_status failed "after the reboot these are not the patched files:${miss:- none recorded}"
         log "boot: FAIL: not the patched files after the reboot:$miss"

@@ -4,6 +4,7 @@
 # phone-projection package, which would change the same stock apps. An update always goes ahead: the old
 # preuninstall has run already, and a refusal would leave the car without the package.
 . ./scripts/common.sh
+log_cap
 log "preinstall $ID $VER"
 if [ ! -f "$INSTALLED" ]; then
     if ! pkg_installed jmk-autoplay; then

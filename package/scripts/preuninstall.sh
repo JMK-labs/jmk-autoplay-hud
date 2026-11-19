@@ -6,8 +6,10 @@
 # cannot be put back keeps the stock copies and the state (state=failed, exit 1). NEMESIS runs this before every
 # update too: then the patched files stay (the new postinstall finds them in place).
 . ./scripts/common.sh
+log_cap
 log "preuninstall $ID $VER"
 svc_stop
+clean_tmp
 if is_update; then
     log "update: the patched files stay (the new postinstall checks them)"
     exit 0
@@ -42,7 +44,7 @@ if [ -f "$STOCK_LIST" ] || [ -f "$ADDED" ]; then
 fi
 leafia_props_clear
 rm -rf "$BACKUP" "$WORK" "$AUTO" "$AUTO.new"
-rm -f "$STOCK_LIST" "$APPLIED" "$ADDED" "$SET_FILE" "$BOOT_FILE" "$STATUS" "$STATUS.tmp" "$INSTALLED" "$STORE/svc.pid"
+rm -f "$STOCK_LIST" "$APPLIED" "$ADDED" "$SET_FILE" "$BOOT_FILE" "$STATUS" "$STATUS.tmp" "$INSTALLED" "$STORE/svc.pid" "$FP_FILE"
 [ -f "$HOLD_FILE" ] && log "WARNING: still stopped: $(cat "$HOLD_FILE") (start them with pm enable)"
 rmdir "$STORE" 2>/dev/null
 log "uninstalled: every stock file is back${WARN:+ ($WARN)} - reboot the head unit"

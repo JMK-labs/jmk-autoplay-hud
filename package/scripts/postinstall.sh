@@ -11,14 +11,38 @@
 #  4. state=reboot: the head unit must restart before the apps run the new code (the settings service then sees the
 #     files on the next boot and writes state=active).
 # An update with the same patches finds every file in place and changes nothing.
+# 0.1.8 (QA 2026-11-19): the records made true to this firmware first (a firmware update's own files are never ours);
+# an update also puts back what the new target set no longer names (#7), and one whose patches do not fit keeps the
+# files the earlier version patched and says so, not "locked (nothing changed)"; room on /system is checked before the
+# swap (#4).
 . ./scripts/common.sh
+log_cap
 log "postinstall $ID $VER"
 mkdir -p "$STORE" "$BACKUP" && chmod 0700 "$STORE" "$BACKUP"
 : > "$INSTALLED"
+clean_tmp
 prev=$(status_get state)
+old_ver=$(status_get ver)
+old_set=
+[ -f "$SET_FILE" ] && read -r old_set < "$SET_FILE"
+fw_reconcile
+fp_save
+TARGETS=
+old_patched=$(patched_list)
 SET=
 
 lock() {
+    if [ -n "$old_patched" ]; then
+        # an update whose patches do not fit this car: the earlier version's files stay, and work as before
+        SET=$old_set
+        load_targets
+        st=$prev
+        case "$st" in reboot|active) ;; *) st=failed ;; esac
+        write_status $st "patched by ${old_ver:-an earlier version}: this version changed nothing ($1)"
+        log "kept: the files patched by ${old_ver:-an earlier version} stay ($old_patched, $st); this version does not fit: $1"
+        report postinstall-kept-old "${old_ver:-?}; $1; product $(getprop ro.build.product)"
+        exit 0
+    fi
     write_status locked "$1"
     log "locked: $1 (nothing changed)"
     [ -d "$R/data/nemesis/backup/projection.tbt" ] && log "note: /data/nemesis/backup/projection.tbt (the snapshot of Leafia / projection.tbt) is still there: its uninstall may not have finished"
@@ -85,7 +109,10 @@ for t in $TARGETS; do
     if [ "$T_HOW" = build ]; then todo="$todo $t"; else log "$(t_main) ($T_PART) is patched already"; fi
 done
 check_recipes
-if [ -z "$todo" ] && [ -z "$R_TODO" ]; then
+# 0.1.8 (QA #7): files an earlier version or profile patched that this one does not name: put back (when ours) below
+stale=$(untargeted)
+[ -n "$stale" ] && log "no longer targeted: $stale (put back to stock)"
+if [ -z "$todo" ] && [ -z "$R_TODO" ] && [ -z "$stale" ]; then
     if [ "$prev" = active ]; then st=active; else st=reboot; [ -f "$BOOT_FILE" ] || boot_token > "$BOOT_FILE"; fi
     write_status $st ""
     log "every target is in place already ($st), nothing changed"
@@ -114,7 +141,18 @@ for id in $R_TODO; do
     backup_file "$f" "$(md5of "$LIB_DIR/$f")" || fail "$REASON (nothing changed)"
 done
 system_writable || fail "/system is read-only and NEMESIS could not make it writable (nothing changed)"
+need=$(swap_need_kb "$todo" "$R_TODO" "$stale")
+free=$(free_kb "$APP_DIR")
+if [ -n "$free" ] && [ "$free" -lt "$need" ]; then
+    fail "/system has $free KB free, the new files need $need KB (nothing changed)"
+fi
 apps_hold
+if [ -n "$stale" ]; then
+    REASON=
+    restore_files "$stale" || rollback "$REASON"
+    for f in $stale; do forget "$f"; done
+    wipe_dalvik "$(for f in $stale; do case "$f" in *.apk) echo "${f%.apk}" ;; esac; done)"
+fi
 for t in $todo; do
     split_target "$t"
     apply_target || rollback "$REASON"

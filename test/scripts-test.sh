@@ -23,6 +23,8 @@ shims() {
 cat <<'EOF'
 PATH=$HOST_PATH
 md5() { command md5 -r "$1" 2>/dev/null; }
+parent_cmdline() { cat "$JMK_HUD_TEST_ROOT/parent.cmdline" 2>/dev/null; }
+df() { if [ -n "$DF_FREE" ]; then echo "Filesystem Size Used Free Blksize"; echo "$1 1.5G 1.0G $DF_FREE 4096"; else command df -k "$1"; fi; }
 getprop() {
     local l
     while IFS= read -r l; do case "$l" in "$1="*) echo "${l#*=}"; return 0 ;; esac; done < "$PROPFILE"
@@ -62,6 +64,7 @@ APPS="HKMC_GPM HKMC_DiPO Iap2ServerApp HKMC_Navi_ExSL PhoneProjection"
 LIBS="libautoreceiver_infobank.so libCarPlayAudio.so libCarPlayCore.so libCarPlayUtils.so"
 PM_PKGS="com.google.android.projection.sink com.daudio.app.dipo com.tcc.iap2server com.mnsoft.navi com.daudio.app.phoneprojection"
 export PM_PKGS
+export BLOCKSIZE=1024   # the Mac's ls -s in KB, as toolbox ls -s
 
 # want_app <name> <payload>: what the stub lpatch rebuilds (the stock apk + "dex <payload>")
 want_app() { { cat "$ROOT/stock/$1.apk"; echo "dex $2"; } | md5 -q; }
@@ -71,6 +74,7 @@ lpd() { echo "FAKELPD $(q "$ROOT/stock/$2") $3" > "$HP/patches/$1"; }
 # A fresh fake car: stock files, a sandbox package with fake patches/recipes and stubs.
 setup() {
     ROOT=$(mktemp -d "$WORK/car.XXXXXX")
+    S=$ROOT/data/nemesis/jmk-autoplay-hud
     export JMK_HUD_TEST_ROOT=$ROOT HOST_PATH
     mkdir -p "$ROOT/system/app" "$ROOT/system/lib" "$ROOT/system/bin" "$ROOT/system/xbin" "$ROOT/system/etc/permissions" \
              "$ROOT/data/nemesis/apps/jmk-autoplay" "$ROOT/data/local/tmp/jmk-autoplay-hud" "$ROOT/data/dalvik-cache" \
@@ -87,7 +91,7 @@ setup() {
     : > "$ROOT/data/dalvik-cache/system@app@HKMC_DiPO.apk@classes.dex"
     : > "$ROOT/data/dalvik-cache/system@app@Other.apk@classes.dex"         # not ours: stays
     PROPFILE=$ROOT/props; export PROPFILE
-    printf '%s\n' "ro.build.product=NEEV.KOR.0000.V039.001.260902" "sys.boot_completed=1" "persist.leafia.lane.mode=6" > "$PROPFILE"
+    printf '%s\n' "ro.build.product=NEEV.KOR.0000.V039.001.260902" "sys.boot_completed=1" "persist.leafia.lane.mode=6" "ro.build.fingerprint=hyundai/neev_kr/neev:4.4.2/V039/260902:user/release-keys" > "$PROPFILE"
     : > "$ROOT/setprop.log"; : > "$ROOT/pm.log"; : > "$ROOT/nemesis.log"
     cat > "$ROOT/system/bin/dexopt" <<'EOF'
 #!/bin/bash
@@ -180,8 +184,8 @@ all_stock() {   # every system file byte-identical to the stock copy
 }
 snap() { (cd "$ROOT/system" && find . -type f -exec md5 -r {} \; | sort) > "$1"; }
 no_ro() { ! grep -q 'ro' "$ROOT/nemesis.log"; }
-stage_update() { mkdir -p "$ROOT/data/local/tmp/nemesis/stage/jmk-autoplay-hud"; echo "id=jmk-autoplay-hud" > "$ROOT/data/local/tmp/nemesis/stage/jmk-autoplay-hud/NEMESIS.data"; }
-unstage() { rm -rf "$ROOT/data/local/tmp/nemesis"; }
+stage_update() { mkdir -p "$ROOT/data/local/tmp/nemesis/stage/jmk-autoplay-hud"; echo "id=jmk-autoplay-hud" > "$ROOT/data/local/tmp/nemesis/stage/jmk-autoplay-hud/NEMESIS.data"; echo "/system/xbin/nemesis install --update /data/local/tmp/jmk-autoplay-hud-0.1.8.zip" > "$ROOT/parent.cmdline"; }
+unstage() { rm -rf "$ROOT/data/local/tmp/nemesis" "$ROOT/parent.cmdline"; }
 
 # ---------------------------------------------------------------- preinstall
 (
@@ -216,7 +220,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis"; }
     check "install: exit 0" [ $rc -eq 0 ]
     check "install: state=reboot" [ "$(st state)" = reboot ]
     check "install: set=neev_kr" [ "$(st set)" = neev_kr ]
-    check "install: ver=0.1.7" [ "$(st ver)" = 0.1.7 ]
+    check "install: ver=0.1.8" [ "$(st ver)" = 0.1.8 ]
     check "install: patched = every target + the audio recipe" [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]
     check "install: knobs=log,lane_dist,cp_lanes" [ "$(st knobs)" = "log,lane_dist,cp_lanes" ]
     check "install: reason empty" [ -z "$(st reason)" ]
@@ -628,6 +632,157 @@ bycode_setup() {
     hook postinstall
     check "audio patched by something else: left alone, not ours" eval 'grep -q "patched by something else" "$ROOT/postinstall.out" && ! grep -q libCarPlayAudio "$ROOT/data/nemesis/jmk-autoplay-hud/stock"'
     check "audio patched by something else: not in patched" eval 'case ",$(st patched)," in *,audio,*) false ;; *) true ;; esac'
+)
+
+# ---------------------------------------------------------------- 0.1.8 (QA 2026-11-19)
+setfp() { sed -i '' "s#^ro.build.fingerprint=.*#ro.build.fingerprint=$1#" "$PROPFILE"; }
+newboot() { echo "boot-$1" > "$ROOT/proc/sys/kernel/random/boot_id"; }
+# a firmware update: new stock files for GPM (apk + odex) and the receiver library, a new fingerprint
+fw_update() {
+    echo "new firmware HKMC_GPM.apk" > "$ROOT/system/app/HKMC_GPM.apk"; echo "new firmware HKMC_GPM.odex" > "$ROOT/system/app/HKMC_GPM.odex"
+    echo "new firmware lib" > "$ROOT/system/lib/libautoreceiver_infobank.so"
+    setfp "hyundai/neev_kr/neev:4.4.2/V040/270101:user/release-keys"
+}
+(
+    setup
+    hook postinstall
+    check "0.1.8 install: the fingerprint kept with the records" grep -q 'V039/260902' "$S/fingerprint"
+    newboot 2; svc
+    check "0.1.8 next boot: active" [ "$(st state)" = active ]
+    newboot 3; svc
+    check "0.1.8 another boot, all in place: stays active" [ "$(st state)" = active ]
+    fw_update
+    mkdir -p "$ROOT/data/local/tmp/jmk-map-menu/outbox"
+    newboot 4; svc
+    check "0.1.8 boot after a firmware update: failed, said in words" eval '[ "$(st state)" = failed ] && case "$(st reason)" in 펌웨어가*) true ;; *) false ;; esac'
+    check "0.1.8 ... and reported" grep -q 'V039/260902:user/release-keys -> hyundai/neev_kr/neev:4.4.2/V040' "$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-boot-firmware-changed.json"
+    check "0.1.8 ... the replaced files' records and stock copies dropped" eval '! grep -q "^HKMC_GPM\.\|^libautoreceiver" "$S/stock" && [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_GPM.odex" ]'
+    check "0.1.8 ... the fingerprint is the new firmware's" grep -q 'V040/270101' "$S/fingerprint"
+    hook preuninstall; rc=$?
+    check "0.1.8 uninstall after a firmware update: exit 0" [ $rc -eq 0 ]
+    check "0.1.8 ... the new firmware's GPM and library untouched" eval '[ "$(cat "$ROOT/system/app/HKMC_GPM.odex")" = "new firmware HKMC_GPM.odex" ] && [ "$(cat "$ROOT/system/app/HKMC_GPM.apk")" = "new firmware HKMC_GPM.apk" ] && [ "$(cat "$ROOT/system/lib/libautoreceiver_infobank.so")" = "new firmware lib" ]'
+    check "0.1.8 ... the rest back to stock" eval 'same_file "$ROOT/stock/HKMC_DiPO.apk" "$ROOT/system/app/HKMC_DiPO.apk" && same_file "$ROOT/stock/HKMC_DiPO.odex" "$ROOT/system/app/HKMC_DiPO.odex" && same_file "$ROOT/stock/libCarPlayAudio.so" "$ROOT/system/lib/libCarPlayAudio.so"'
+)
+(
+    # a firmware update the service has not seen yet (uninstalled before the next boot): still never over its files
+    setup
+    hook postinstall
+    fw_update
+    hook preuninstall; rc=$?
+    check "0.1.8 uninstall right after a firmware update: exit 0, its files untouched" eval '[ $rc -eq 0 ] && [ "$(cat "$ROOT/system/app/HKMC_GPM.odex")" = "new firmware HKMC_GPM.odex" ] && [ "$(cat "$ROOT/system/lib/libautoreceiver_infobank.so")" = "new firmware lib" ]'
+    check "0.1.8 ... logged as left alone" grep -q 'left alone: .*HKMC_GPM.odex is not ours' "$ROOT/preuninstall.out"
+    check "0.1.8 ... the others back to stock" same_file "$ROOT/stock/HKMC_Navi_ExSL.odex" "$ROOT/system/app/HKMC_Navi_ExSL.odex"
+)
+(
+    # an uninstall that stopped after the apk went back: its odex (ours) still follows, on the same firmware
+    setup
+    hook postinstall
+    cp "$ROOT/stock/HKMC_GPM.apk" "$ROOT/system/app/HKMC_GPM.apk"
+    hook preuninstall; rc=$?
+    check "0.1.8 apk back already, odex ours, same firmware: the odex put back too" eval '[ $rc -eq 0 ] && all_stock'
+)
+(
+    # ... but on another firmware a stock apk with another odex is the new framework's odex: left alone
+    setup
+    hook postinstall
+    cp "$ROOT/stock/HKMC_GPM.apk" "$ROOT/system/app/HKMC_GPM.apk"; echo "odex for the new framework" > "$ROOT/system/app/HKMC_GPM.odex"
+    setfp "hyundai/neev_kr/neev:4.4.2/V040/270101:user/release-keys"
+    hook preuninstall; rc=$?
+    check "0.1.8 another firmware, stock apk, other odex: the odex left alone" eval '[ $rc -eq 0 ] && [ "$(cat "$ROOT/system/app/HKMC_GPM.odex")" = "odex for the new framework" ]'
+)
+(
+    # the next install after a firmware update builds from the new firmware's files, never from the old copies
+    setup
+    hook postinstall
+    fw_update
+    hook postinstall; rc=$?
+    check "0.1.8 install after a firmware update: the old copies gone, locked on the new files (the fake set has no V040)" eval '[ $rc -eq 0 ] && [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_GPM.apk" ] && [ "$(cat "$ROOT/system/app/HKMC_GPM.apk")" = "new firmware HKMC_GPM.apk" ]'
+    check "0.1.8 ... the other files the earlier install patched stay, said so (not 'locked, nothing changed')" eval '[ "$(st state)" = reboot ] && case "$(st reason)" in "patched by 0.1.8"*) true ;; *) false ;; esac && case "$(st patched)" in *dipo*) true ;; *) false ;; esac'
+)
+(
+    setup
+    hook postinstall
+    stage_update; echo "/system/xbin/nemesis uninstall jmk-autoplay-hud" > "$ROOT/parent.cmdline"   # a stage left behind
+    hook preuninstall; rc=$?
+    check "0.1.8 stale stage, parent 'nemesis uninstall': a real uninstall" eval '[ $rc -eq 0 ] && all_stock && [ ! -e "$ROOT/data/nemesis/jmk-autoplay-hud" ]'
+)
+(
+    setup
+    hook postinstall
+    snap "$ROOT/before"
+    stage_update; echo "com.xwtk.nemesis.manager" > "$ROOT/parent.cmdline"   # a parent that names neither (NEMESIS Manager)
+    hook preuninstall; rc=$?
+    snap "$ROOT/after"
+    check "0.1.8 parent names neither, package staged: an update (the stage decides), files and records stay" eval '[ $rc -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after" && [ -s "$S/applied" ]'
+    rm -f "$ROOT/parent.cmdline"   # unreadable
+    hook preuninstall; rc=$?
+    check "0.1.8 parent unreadable, package staged: an update" eval '[ $rc -eq 0 ] && [ -s "$S/applied" ] && ! all_stock'
+    unstage; echo "com.xwtk.nemesis.manager" > "$ROOT/parent.cmdline"
+    hook preuninstall; rc=$?
+    check "0.1.8 parent names neither, nothing staged: a real uninstall" eval '[ $rc -eq 0 ] && all_stock'
+)
+(
+    # an update whose set no longer names PhoneProjection: put back to stock, its records go, the rest stays
+    setup
+    hook postinstall
+    newboot 2; svc
+    grep -v ' PhoneProjection ' "$HP/patches/neev_kr/manifest" > "$ROOT/m" && mv "$ROOT/m" "$HP/patches/neev_kr/manifest"
+    snap "$ROOT/before"
+    stage_update; hook preuninstall; hook postinstall; rc=$?; unstage
+    check "0.1.8 update without a target: exit 0, state=reboot" eval '[ $rc -eq 0 ] && [ "$(st state)" = reboot ]'
+    check "0.1.8 ... PhoneProjection back to stock" eval 'same_file "$ROOT/stock/PhoneProjection.apk" "$ROOT/system/app/PhoneProjection.apk" && same_file "$ROOT/stock/PhoneProjection.odex" "$ROOT/system/app/PhoneProjection.odex"'
+    check "0.1.8 ... its records and stock copies gone" eval '! grep -q PhoneProjection "$S/stock" "$S/applied" && [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud/PhoneProjection.apk" ]'
+    check "0.1.8 ... the others still patched" eval '[ "$(st patched)" = "gpm,navi,lib,iap2,dipo,audio" ]'
+    check "0.1.8 ... logged" grep -q 'no longer targeted: PhoneProjection.apk PhoneProjection.odex' "$ROOT/postinstall.out"
+    hook preuninstall
+    check "0.1.8 ... then an uninstall: all stock" all_stock
+)
+(
+    # an update whose patches do not fit (another set's stock md5 for GPM): the earlier files stay, active, said so
+    setup
+    hook postinstall
+    newboot 2; svc
+    snap "$ROOT/before"
+    while read -r f s; do [ "$f" = HKMC_GPM.apk ] && s=99999999999999999999999999999999; echo "$f $s"; done < "$HP/patches/neev_kr/stock" > "$ROOT/s" && mv "$ROOT/s" "$HP/patches/neev_kr/stock"
+    stage_update; hook preuninstall; hook postinstall; rc=$?; unstage
+    snap "$ROOT/after"
+    check "0.1.8 update that does not fit: exit 0, nothing changed" eval '[ $rc -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after"'
+    check "0.1.8 ... state stays active, 'patched by 0.1.8', not locked" eval '[ "$(st state)" = active ] && case "$(st reason)" in "patched by 0.1.8: this version changed nothing"*) true ;; *) false ;; esac'
+    check "0.1.8 ... patched lists the live files, set the old one" eval '[ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ] && [ "$(st set)" = neev_kr ]'
+)
+(
+    setup
+    snap "$ROOT/before"
+    export DF_FREE=100.0K
+    hook postinstall; rc=$?
+    unset DF_FREE
+    snap "$ROOT/after"
+    check "0.1.8 no room on /system: exit 1, failed with the numbers" eval '[ $rc -eq 1 ] && [ "$(st state)" = failed ] && case "$(st reason)" in *"has 100 KB free"*) true ;; *) false ;; esac'
+    check "0.1.8 no room: /system unchanged, no app stopped" eval 'cmp -s "$ROOT/before" "$ROOT/after" && [ ! -s "$ROOT/pm.log" ]'
+)
+(
+    setup
+    echo "half a copy" > "$ROOT/system/app/HKMC_GPM.apk.jmkhud"; echo "half" > "$ROOT/system/lib/libCarPlayAudio.so.jmkhud"
+    hook preinstall; hook postinstall
+    check "0.1.8 copies a cut-off swap left are removed" eval '! ls "$ROOT"/system/app/*.jmkhud "$ROOT"/system/lib/*.jmkhud >/dev/null 2>&1'
+    echo "half" > "$ROOT/system/app/HKMC_DiPO.apk.jmkhud"
+    svc
+    check "0.1.8 ... by the service at boot too" [ ! -e "$ROOT/system/app/HKMC_DiPO.apk.jmkhud" ]
+)
+(
+    setup
+    head -c 300000 /dev/zero | tr '\0' x > "$ROOT/data/nemesis/jmk-autoplay-hud.log"
+    hook postinstall
+    check "0.1.8 a log over 256 KB: kept as .old, a new one started" eval '[ -s "$ROOT/data/nemesis/jmk-autoplay-hud.log.old" ] && [ $(wc -c < "$ROOT/data/nemesis/jmk-autoplay-hud.log") -lt 100000 ]'
+)
+(
+    # an active add-on whose file something changed, same firmware: failed, not "active" for good
+    setup
+    hook postinstall
+    newboot 2; svc
+    echo "someone's GPM" > "$ROOT/system/app/HKMC_GPM.apk"
+    newboot 3; svc
+    check "0.1.8 active, a patched file changed (same firmware): failed naming it" eval '[ "$(st state)" = failed ] && case "$(st reason)" in *HKMC_GPM.apk*) true ;; *) false ;; esac'
 )
 
 passed=$(grep -c '^ok$' "$RESULTS"); failed=$(grep -c '^fail$' "$RESULTS")
