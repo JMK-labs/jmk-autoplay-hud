@@ -28,6 +28,11 @@ Plus the CarPlay library recipes, each checked on its own file: `carplay-utils-c
 `carplay-core-wifi` (libCarPlayCore.so). On NEEV.KOR 260902 only the audio one applies (the other two are NATIVE).
 `os="*.KOR.*"` in NEMESIS.data limits installs to KOR firmware; the other sets are kept for other models.
 
+0.1.12: the CarPlay bridge for group B (`krb`: Santa Fe TM FL, Sonata DN8 / DN8 HEV, Avante Hybrid CN7HEV22, Palisade
+LX2 V039.001.260902). Their PhoneProjection (4e8915b2) is the Tucson's stock code with other ProGuard names, checked
+against a CN7HEV car's own boot class path (16 odex files from 카플레이용 파일 보내기): the bridge is krt's / krp's
+build, DiPO and Iap2ServerApp end at kr's bridge builds. Only deltas and md5s; no stock file ships. Not car-tested.
+
 0.1.11: the Korean GPM and DiPO bridge builds (every Korean set and by-code profile) carry our near-turn filter
 (`src/tbt/`, method from Korea Projection 1.7.4): the near-turn picture no longer flips at the 457 m edge (50 m exit
 margin), and on CarPlay the next turn's picture no longer flashes when the phone sends the new maneuver with the old

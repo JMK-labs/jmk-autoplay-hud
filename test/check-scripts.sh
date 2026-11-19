@@ -106,10 +106,18 @@ for m in "$PKG"/patches/bycode/*/manifest; do
     done < "$m"
 done
 # krb (2026-11-19): the kr profile's own builds keyed to these cars' code (the same app code, dexopted against a framework
-# with one Message / WifiManager method fewer); Navi with this framework's two string IDs; no bridge part
+# with one Message / WifiManager method fewer); Navi with this framework's two string IDs. 2026-11-20: the bridge part,
+# their PhoneProjection (4e8915b2) being the Tucson's stock code with other ProGuard names: krt's bridge build, and
+# DiPO / Iap2 kr's bridge builds (private/hud-port/groupB-bridge-REPORT.md)
 KRB=$PKG/patches/bycode/krb/manifest
 want_of() { awk -v p="$2" -v n="$3" '$1==p && $3==n {print $6}' "$1"; }
-check "by code krb: no 3_bridge part (their PhoneProjection is another revision)" eval '! grep -q "^3_bridge " "$KRB"'
+check "by code krb: a 3_bridge part of three lines (Iap2ServerApp, HKMC_DiPO, PhoneProjection)" [ "$(awk '$1=="3_bridge" {print $3}' "$KRB" | tr '\n' ' ')" = "Iap2ServerApp HKMC_DiPO PhoneProjection " ]
+for a in Iap2ServerApp HKMC_DiPO; do
+    check "by code krb: $a's bridge line starts from krb's own code (its 2_tbt line's)" [ "$(awk -v n=$a '$1=="3_bridge" && $3==n {print $4}' "$KRB")" = "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4}' "$KRB")" ]
+    check "by code krb: $a ends at kr's bridge build" [ "$(want_of "$KRB" 3_bridge $a)" = "$(want_of "$PKG/patches/bycode/kr/manifest" 3_bridge $a)" ]
+done
+check "by code krb: PhoneProjection is group B's code (4e8915b2) -> the same bridge build as Tucson's" [ "$(awk '$1=="3_bridge" && $3=="PhoneProjection" {print $4" "$6}' "$KRB")" = "4e8915b28483230964250e3da9463e4e $(want_of "$PKG/patches/bycode/krt/manifest" 3_bridge PhoneProjection)" ]
+check "by code krb: the knobs are kr's" cmp -s "$PKG/patches/bycode/krb/knobs" "$PKG/patches/bycode/kr/knobs"
 for a in HKMC_GPM HKMC_DiPO Iap2ServerApp; do
     check "by code krb: $a ends at the kr profile's own turn-by-turn build" [ "$(want_of "$KRB" 2_tbt $a)" = "$(want_of "$PKG/patches/bycode/kr/manifest" 2_tbt $a)" ]
 done
@@ -174,7 +182,6 @@ NEW_GPM=b02ada70f0de90a9e09d364a64559074; NEW_DIPO=1452d2d8c9670bb8f44c39569d322
 for o in kr kra krb kre krg kri krp krt; do
     check "0.1.11 $o: GPM ends at the near-turn build $NEW_GPM" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_GPM)" = $NEW_GPM ]
     check "0.1.11 $o: DiPO turn-by-turn build unchanged (ffe9b558)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_DiPO)" = ffe9b558a288cdda39eabd92d4b5fccf ]
-    [ "$o" = krb ] && continue
     check "0.1.11 $o: DiPO bridge ends at the near-turn build $NEW_DIPO" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $NEW_DIPO ]
 done
 check "0.1.11 neev_kr: GPM and DiPO bridge deltas end at the near-turn builds" eval '[ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_GPM.tbt.lpd")" = $NEW_GPM ] && [ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_DiPO.bridge.lpd")" = $NEW_DIPO ]'
@@ -237,7 +244,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.11" grep -q '^package-version=0.1.11$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.12" grep -q '^package-version=0.1.12$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]

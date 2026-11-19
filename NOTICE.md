@@ -53,7 +53,10 @@ patch data is data; the binaries are listed below with their sources).
   code of Korean head units (Santa Fe TM facelift TMFL, Sonata DN8 / DN8 Hybrid, Avante Hybrid CN7HEV22, one Palisade LX2 firmware) whose
   apps are Ioniq 5 Korea's app code dexopted against a framework with one `Message` / `WifiManager` method fewer (so
   only quick-call vtable indices differ in the .odex); HKMC_Navi_ExSL's build also carries that framework's two string
-  IDs. No CarPlay bridge part: their PhoneProjection is another revision. Only deltas and md5s; no stock file ships.
+  IDs. 2026-11-20, the CarPlay bridge part: their PhoneProjection is the Tucson's stock code (`krt`) with other
+  ProGuard names and the Tucson's resources, so its bridge build is `krt`'s (Leafia's `neev_kr` bridge build with eight
+  drawable IDs changed), and HKMC_DiPO / Iap2ServerApp end at the `kr` profile's bridge builds. Only deltas and md5s;
+  no stock file ships.
 - **By-code profile `kra`** (`patches/bycode/kra`, 2026-11-19): the `kr` profile for Korean K8, K8 Hybrid and Seltos
   head units (GL3, GL3HEV, SP2PE V039.001.260902), whose apps run Ioniq 5 Korea's app code. Their PhoneProjection is
   Ioniq 5 Korea's stock code as well, built with their own resource table, so its CarPlay bridge build is Leafia's
