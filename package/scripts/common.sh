@@ -265,8 +265,9 @@ pick_set() {
 # it, that must have the line's md5 (so it is byte for byte the code the profile's car runs), and zipadd puts it into
 # this car's own .apk. The results and this car's stock md5s become the set "auto" ($AUTO, the usual set layout,
 # patch "prebuilt:<file>"), so the gate, the swap, the boot and the uninstall work as for any other set. A part with a
-# line this car's code does not have is left out (K8 HEV Korea: turn-by-turn yes, its PhoneProjection differs, so no
-# CarPlay bridge); no part fits = no auto set.
+# line this car's code does not have is left out (kr on a K8 HEV Korea: turn-by-turn yes, its PhoneProjection differs);
+# the profile that fits the most parts is used (0.1.6: kra has K8's PhoneProjection, so K8 gets the bridge too); no part
+# fits = no auto set.
 
 # the stock copy of a file before any set is known: our backup when the live file is ours, else the live file
 plan_src() {
@@ -363,12 +364,19 @@ bycode_build() {
     [ -n "$args" ] || return 1
     codes=" $(codesum $args) "
     echo "$(date) by code: this car's code:$codes" >> "$LOG"
-    for dir in "$BYCODE"/*; do
-        [ -s "$dir/manifest" ] || continue
-        parts=
-        for part in 2_tbt 3_bridge; do bycode_part_fits "$dir" "$part" "$codes" && parts="$parts $part"; done
-        [ -n "$parts" ] || continue
-        bycode_make "$dir" "$parts" && return 0
+    # the profile that fits the most parts wins (0.1.6): kra fits K8's turn-by-turn and bridge, kr its turn-by-turn only,
+    # so the first profile that fits anything (kr, by name) would leave K8 without the bridge; equal counts keep the
+    # name order. Both parts first, then one part.
+    local want
+    for want in 2 1; do
+        for dir in "$BYCODE"/*; do
+            [ -s "$dir/manifest" ] || continue
+            parts=
+            for part in 2_tbt 3_bridge; do bycode_part_fits "$dir" "$part" "$codes" && parts="$parts $part"; done
+            set -- $parts
+            [ $# -eq $want ] || continue
+            bycode_make "$dir" "$parts" && return 0
+        done
     done
     rm -rf "$AUTO"
     return 1

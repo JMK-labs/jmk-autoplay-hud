@@ -49,6 +49,17 @@ patch data is data; the binaries are listed below with their sources).
   above) keyed to the code inside each stock .odex instead of the .odex file, made by `src/mkbycode.py` (JMK's own,
   AGPL-3.0) from that set and the Ioniq 5 Korea stock files: the same result code, for Korean head units whose apps
   run the same code (K8 Hybrid Korea, first seen 2026-11-17). Only deltas and md5s; no stock file ships.
+- **By-code profile `krb`** (`patches/bycode/krb`, 2026-11-19): the `kr` profile's turn-by-turn builds keyed to the
+  code of Korean head units (Santa Fe TM facelift TMFL, Sonata DN8 / DN8 Hybrid, Avante Hybrid CN7HEV22, one Palisade LX2 firmware) whose
+  apps are Ioniq 5 Korea's app code dexopted against a framework with one `Message` / `WifiManager` method fewer (so
+  only quick-call vtable indices differ in the .odex); HKMC_Navi_ExSL's build also carries that framework's two string
+  IDs. No CarPlay bridge part: their PhoneProjection is another revision. Only deltas and md5s; no stock file ships.
+- **By-code profile `kra`** (`patches/bycode/kra`, 2026-11-19): the `kr` profile for Korean K8, K8 Hybrid and Seltos
+  head units (GL3, GL3HEV, SP2PE V039.001.260902), whose apps run Ioniq 5 Korea's app code. Their PhoneProjection is
+  Ioniq 5 Korea's stock code as well, built with their own resource table, so its CarPlay bridge build is Leafia's
+  `neev_kr` bridge build with the same 12 constants changed: eight drawable IDs of their apk and the
+  `android:id/topPanel` of their framework. Only deltas and md5s; no stock file ships. `scripts/common.sh` uses the
+  by-code profile that fits the most parts.
 - Thanks, as upstream: W-Floyd.
 
 No manufacturer APK, odex, jar or library is shipped: the head unit rebuilds each file from its own exact stock copy,

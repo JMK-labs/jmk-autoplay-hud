@@ -216,7 +216,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis"; }
     check "install: exit 0" [ $rc -eq 0 ]
     check "install: state=reboot" [ "$(st state)" = reboot ]
     check "install: set=neev_kr" [ "$(st set)" = neev_kr ]
-    check "install: ver=0.1.5" [ "$(st ver)" = 0.1.5 ]
+    check "install: ver=0.1.6" [ "$(st ver)" = 0.1.6 ]
     check "install: patched = every target + the audio recipe" [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]
     check "install: knobs=log,lane_dist,cp_lanes" [ "$(st knobs)" = "log,lane_dist,cp_lanes" ]
     check "install: reason empty" [ -z "$(st reason)" ]
@@ -497,6 +497,42 @@ bycode_setup() {
     snap "$ROOT/after"
     check "by code: a rebuilt code that is not the profile's: locked, nothing changed" eval '[ $rc -eq 0 ] && [ "$(st state)" = locked ] && cmp -s "$ROOT/before" "$ROOT/after"'
     check "by code: ... and no auto set left" eval '[ ! -e "$ROOT/data/nemesis/jmk-autoplay-hud/auto" ]'
+)
+(
+    # 0.1.5 krb (Sonata DN8, Avante HEV, ...): the car's code is a second profile's; the first (kr) fits no part of it
+    bycode_setup other
+    mkdir -p "$HP/patches/bycode/krb"
+    grep '^2_tbt ' "$HP/patches/bycode/kr/manifest" | sed 's# bycode/kr/# bycode/krb/#' > "$HP/patches/bycode/krb/manifest"
+    cp "$HP/patches/bycode/kr/"*.tbt.lpd "$HP/patches/bycode/kr/knobs" "$HP/patches/bycode/krb/"
+    sed -i '' 's/^\(2_tbt app HKMC_GPM\) [0-9a-f]*/\1 0123456789abcdef0123456789abcdef/' "$HP/patches/bycode/kr/manifest"
+    hook postinstall; rc=$?
+    check "by code: a later profile that fits (krb) is used when an earlier one (kr) fits nothing" eval '[ $rc -eq 0 ] && [ "$(st set)" = auto ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/profile")" = krb ]'
+    check "by code: krb: turn-by-turn only, GPM patched" eval '[ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/parts")" = 2_tbt ] && grep -q "dex HKMC_GPM-tbt" "$ROOT/system/app/HKMC_GPM.apk"'
+    check "by code: krb: the report names the profile" grep -q 'set auto (profile krb, parts 2_tbt)' "$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-other-model-set.json"
+)
+(
+    # 0.1.6 kra (K8, K8 HEV, Seltos): kr fits the turn-by-turn only (their PhoneProjection differs); kra, after it by
+    # name, has kr's lines plus this car's PhoneProjection: the profile with more parts wins
+    bycode_setup other
+    mkdir -p "$HP/patches/bycode/kra"
+    pp=$(python3 -c "import struct,hashlib;d=open('$ROOT/stock/PhoneProjection.odex','rb').read();o,l=struct.unpack_from('<II',d,8);print(hashlib.md5(d[o:o+l]).hexdigest())")
+    grep -v ' PhoneProjection ' "$HP/patches/bycode/kr/manifest" > "$HP/patches/bycode/kra/manifest"
+    echo "FAKELPD $pp PhoneProjection-k8bridge" > "$HP/patches/bycode/kra/PhoneProjection.bridge.lpd"
+    echo "3_bridge app PhoneProjection $pp bycode/kra/PhoneProjection.bridge.lpd $(want_file PhoneProjection-k8bridge)" >> "$HP/patches/bycode/kra/manifest"
+    cp "$HP/patches/bycode/kr/knobs" "$HP/patches/bycode/kra/"
+    hook postinstall; rc=$?
+    check "by code (0.1.6): the profile that fits more parts (kra) wins over an earlier one (kr, turn-by-turn only)" eval '[ $rc -eq 0 ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/profile")" = kra ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/parts")" = "2_tbt 3_bridge" ]'
+    check "by code: kra: PhoneProjection is its K8 bridge build, DiPO and Iap2 kr's bridge builds" eval 'grep -q "dex PhoneProjection-k8bridge" "$ROOT/system/app/PhoneProjection.apk" && grep -q "dex HKMC_DiPO-bridge" "$ROOT/system/app/HKMC_DiPO.apk" && grep -q "dex Iap2ServerApp-bridge" "$ROOT/system/app/Iap2ServerApp.apk"'
+    check "by code: kra: the report names it" grep -q 'set auto (profile kra, parts 2_tbt 3_bridge)' "$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-other-model-set.json"
+)
+(
+    # ... and the Ioniq 5 (its PhoneProjection is kr's): kr fits both parts, kra (another PhoneProjection) only one: kr
+    bycode_setup same
+    mkdir -p "$HP/patches/bycode/kra"
+    grep -v ' PhoneProjection ' "$HP/patches/bycode/kr/manifest" > "$HP/patches/bycode/kra/manifest"
+    echo "3_bridge app PhoneProjection 0123456789abcdef0123456789abcdef bycode/kra/PhoneProjection.bridge.lpd 0123456789abcdef0123456789abcdef" >> "$HP/patches/bycode/kra/manifest"
+    hook postinstall; rc=$?
+    check "by code (0.1.6): an Ioniq 5 keeps kr with both parts next to kra" eval '[ $rc -eq 0 ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/profile")" = kr ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/parts")" = "2_tbt 3_bridge" ] && grep -q "dex PhoneProjection-bridge" "$ROOT/system/app/PhoneProjection.apk"'
 )
 (
     bycode_setup other
