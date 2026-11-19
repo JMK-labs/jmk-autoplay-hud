@@ -1,0 +1,16 @@
+# by-code profile krp (2026-11-19): Korean Avante CN7 PE / N PE (CN7PE, CN7NPE .KOR.0000.V039.001.260902). Their
+# HKMC_GPM, HKMC_DiPO, HKMC_Navi_ExSL and PhoneProjection are the Ioniq 5 KR's stock code built with other ProGuard names
+# (instance field offsets and member names differ; every instruction, call slot and constant is the same), and the
+# same framework (android:id/topPanel at the Ioniq 5's number); Iap2ServerApp is the Ioniq 5's code (30a34f83). So each
+# result is kr's own build, PhoneProjection's bridge with the 8 drawables their apk numbers like K8's (11 const
+# instructions; their resource table is K8's). No library line: their libautoreceiver_infobank.so (dbfe7bd2) is another
+# build of that library (addresses moved) and Leafia's native "rich navigation" hook cannot be moved by a delta, so
+# Android Auto's lane / maneuver extras from the library do not come there; everything else of 2_tbt and 3_bridge does.
+# <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
+2_tbt app HKMC_GPM 2487f61fcbae1a779fd92271c7a0360e bycode/krp/HKMC_GPM.tbt.lpd 990ef4c3cf0f8e828fc8c2de4b327882
+2_tbt app HKMC_DiPO ce035a13280e222b919d664677928538 bycode/krp/HKMC_DiPO.tbt.lpd ffe9b558a288cdda39eabd92d4b5fccf
+2_tbt app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
+2_tbt app HKMC_Navi_ExSL bc5ac4a4672362651fb0e523e68f01d3 bycode/krp/HKMC_Navi_ExSL.tbt.lpd 77980719134a05eea6d784b2113e651f
+3_bridge app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.bridge.lpd 0ad54672b43f54ef7e58aad56c2a77b6
+3_bridge app HKMC_DiPO ce035a13280e222b919d664677928538 bycode/krp/HKMC_DiPO.bridge.lpd 86ce5550bedb50e9ce1d07b81b3273a9
+3_bridge app PhoneProjection 4ddd81e7e095073156c1130449fdafed bycode/krp/PhoneProjection.bridge.lpd 255e17ec5425800c19c814a7c6add6a1

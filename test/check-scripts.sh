@@ -121,6 +121,36 @@ check "by code kra: every line but PhoneProjection is kr's" [ "$(grep -v '^#' "$
 check "by code kra: PhoneProjection is K8's code (cd2d9df8) -> its bridge build" [ "$(awk '$1=="3_bridge" && $3=="PhoneProjection" {print $4" "$6}' "$KRA")" = "cd2d9df8e98bf621e928714bbe4f1723 fb039a6307e3389b71bfdac48de44612" ]
 check "by code kra: its PhoneProjection line differs from kr's (another stock code)" [ "$(want_of "$KRA" 3_bridge PhoneProjection)" != "$(want_of "$PKG/patches/bycode/kr/manifest" 3_bridge PhoneProjection)" ]
 check "by code kra: the knobs are kr's" cmp -s "$PKG/patches/bycode/kra/knobs" "$PKG/patches/bycode/kr/knobs"
+# krt (0.1.7, Tucson NX4 / NX4HEV): kr's lines, PhoneProjection keyed to Tucson's code (1debc2d1) with its bridge build
+KRT=$PKG/patches/bycode/krt/manifest
+check "by code krt: every line but PhoneProjection is kr's" [ "$(grep -v '^#' "$KRT" | grep -v ' PhoneProjection ')" = "$(grep -v '^#' "$PKG/patches/bycode/kr/manifest" | grep -v ' PhoneProjection ')" ]
+check "by code krt: PhoneProjection is Tucson's code -> its bridge build" [ "$(awk '$1=="3_bridge" && $3=="PhoneProjection" {print $4" "$6}' "$KRT")" = "1debc2d1e4ea8c27b5d3bfd0d9e365d3 255e17ec5425800c19c814a7c6add6a1" ]
+check "by code krt: the knobs are kr's" cmp -s "$PKG/patches/bycode/krt/knobs" "$PKG/patches/bycode/kr/knobs"
+# krp (0.1.7, Avante CN7PE / CN7NPE): the Ioniq 5's app code with other ProGuard names: every result is kr's build
+# (PhoneProjection the same build as Tucson's), keyed to their codes; no library line (their library is another build)
+KRP=$PKG/patches/bycode/krp/manifest
+for a in HKMC_GPM HKMC_DiPO Iap2ServerApp HKMC_Navi_ExSL; do
+    check "by code krp: $a ends at kr's turn-by-turn build" [ "$(want_of "$KRP" 2_tbt $a)" = "$(want_of "$PKG/patches/bycode/kr/manifest" 2_tbt $a)" ]
+done
+for a in Iap2ServerApp HKMC_DiPO; do
+    check "by code krp: $a ends at kr's bridge build" [ "$(want_of "$KRP" 3_bridge $a)" = "$(want_of "$PKG/patches/bycode/kr/manifest" 3_bridge $a)" ]
+done
+check "by code krp: PhoneProjection ends at the same bridge build as Tucson's" [ "$(want_of "$KRP" 3_bridge PhoneProjection)" = "$(want_of "$KRT" 3_bridge PhoneProjection)" ]
+check "by code krp: no library line" eval '! grep -q "^2_tbt file " "$KRP"'
+check "by code krp: the knobs are kr's" cmp -s "$PKG/patches/bycode/krp/knobs" "$PKG/patches/bycode/kr/knobs"
+# kre (0.1.7, EV6 Korea CVEV.KOR): the Ioniq 5's app code with other ProGuard names: kr's builds for GPM, DiPO, Navi
+# and Iap2, PhoneProjection kr's bridge with android:id/topPanel moved, and the library: kr's hook moved to EV6's own
+# library addresses (a new result)
+KRE=$PKG/patches/bycode/kre/manifest
+for a in HKMC_GPM HKMC_DiPO Iap2ServerApp HKMC_Navi_ExSL; do
+    check "by code kre: $a ends at kr's turn-by-turn build" [ "$(want_of "$KRE" 2_tbt $a)" = "$(want_of "$PKG/patches/bycode/kr/manifest" 2_tbt $a)" ]
+done
+for a in Iap2ServerApp HKMC_DiPO; do
+    check "by code kre: $a ends at kr's bridge build" [ "$(want_of "$KRE" 3_bridge $a)" = "$(want_of "$PKG/patches/bycode/kr/manifest" 3_bridge $a)" ]
+done
+check "by code kre: PhoneProjection is EV6's code -> its own bridge build" [ "$(awk '$1=="3_bridge" && $3=="PhoneProjection" {print $4" "$6}' "$KRE")" = "7e61ce5caa6bdc1ad02563fc084e240a 52816a4c37a512da5a118f101ab5f766" ]
+check "by code kre: the library line is EV6's library -> its own result" [ "$(awk '$1=="2_tbt" && $2=="file" {print $4" "$6}' "$KRE")" = "c4fbccdf63f7d823f24010afec43c937 120bab2c81ee6c238e2aab219bf2babe" ]
+check "by code kre: the knobs are kr's" cmp -s "$PKG/patches/bycode/kre/knobs" "$PKG/patches/bycode/kr/knobs"
 check "by code: the profile with the most parts wins (bycode_build tries both parts first)" grep -q 'for want in 2 1' "$PKG/scripts/common.sh"
 while read -r pre set name; do
     case "$pre" in ''|'#'*) continue ;; esac
@@ -160,7 +190,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.6" grep -q '^package-version=0.1.6$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.7" grep -q '^package-version=0.1.7$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]

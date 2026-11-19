@@ -60,6 +60,19 @@ patch data is data; the binaries are listed below with their sources).
   `neev_kr` bridge build with the same 12 constants changed: eight drawable IDs of their apk and the
   `android:id/topPanel` of their framework. Only deltas and md5s; no stock file ships. `scripts/common.sh` uses the
   by-code profile that fits the most parts.
+- **By-code profile `krt`** (`patches/bycode/krt`, 2026-11-19): the `kr` profile for Korean Tucson and Tucson Hybrid
+  (NX4, NX4HEV V039.001.260902). Their PhoneProjection is Ioniq 5 Korea's stock code built with the K8's resource
+  table (their framework keeps `android:id/topPanel` where the Ioniq 5 has it), so its CarPlay bridge build is Leafia's
+  `neev_kr` bridge build with eight drawable IDs (11 constants) changed. Only deltas and md5s; no stock file ships.
+- **By-code profile `krp`** (`patches/bycode/krp`, 2026-11-19): Korean Avante facelift and Avante N facelift (CN7PE,
+  CN7NPE V039.001.260902), whose apps are Ioniq 5 Korea's app code with other ProGuard names on the same framework
+  layout: every result is the `kr` profile's own build (PhoneProjection's the same bridge build as `krt`'s), reached
+  from their code. No receiver-library line: their libautoreceiver_infobank.so is another build. Only deltas and md5s.
+- **By-code profile `kre`** (`patches/bycode/kre`, 2026-11-19): Korean Kia EV6 (CVEV.KOR V039.001.260902), whose apps
+  are Ioniq 5 Korea's app code with other ProGuard names: GPM, DiPO, Navi and Iap2ServerApp end at the `kr` profile's
+  own builds; PhoneProjection's bridge build is `kr`'s with `android:id/topPanel` at their framework's number; and the
+  receiver library carries `kr`'s turn-by-turn hook with its links and patched instructions moved to EV6's own library
+  layout (same symbols, other addresses). Only deltas and md5s; no stock file ships.
 - Thanks, as upstream: W-Floyd.
 
 No manufacturer APK, odex, jar or library is shipped: the head unit rebuilds each file from its own exact stock copy,
