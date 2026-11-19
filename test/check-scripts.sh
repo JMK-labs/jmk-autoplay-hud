@@ -167,6 +167,36 @@ for o in kr kra krt krp kre; do
     check "by code krg: its bridge build differs from $o's" [ "$(want_of "$KRG" 3_bridge PhoneProjection)" != "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge PhoneProjection)" ]
 done
 check "by code krg: the knobs are kr's" cmp -s "$PKG/patches/bycode/krg/knobs" "$PKG/patches/bycode/kr/knobs"
+# 0.1.11: the near-turn filter (src/tbt: com.jmk.hud.Near + near-hooks.diff, built by src/tbt/build.sh from the 0.1.10
+# results 990ef4c3 / 86ce5550): every Korean profile's GPM and DiPO bridge end at the same two new results, the DiPO
+# turn-by-turn build (no near-turn layout in it) is unchanged, and so is the us profile (no Leafia KR code)
+NEW_GPM=b02ada70f0de90a9e09d364a64559074; NEW_DIPO=1452d2d8c9670bb8f44c39569d3220f5
+for o in kr kra krb kre krg kri krp krt; do
+    check "0.1.11 $o: GPM ends at the near-turn build $NEW_GPM" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_GPM)" = $NEW_GPM ]
+    check "0.1.11 $o: DiPO turn-by-turn build unchanged (ffe9b558)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_DiPO)" = ffe9b558a288cdda39eabd92d4b5fccf ]
+    [ "$o" = krb ] && continue
+    check "0.1.11 $o: DiPO bridge ends at the near-turn build $NEW_DIPO" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $NEW_DIPO ]
+done
+check "0.1.11 neev_kr: GPM and DiPO bridge deltas end at the near-turn builds" eval '[ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_GPM.tbt.lpd")" = $NEW_GPM ] && [ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_DiPO.bridge.lpd")" = $NEW_DIPO ]'
+check "0.1.11 neev_kr: result apks (lpatch zipadd of those into the stock apks)" eval 'grep -q "^2_tbt app HKMC_GPM neev_kr/HKMC_GPM.tbt.lpd 8b13805f77cd8bb35691fb8b43a8bb99$" "$PKG/patches/neev_kr/manifest" && grep -q "^3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd 1ced905ac98063210d93daa536eb9aeb$" "$PKG/patches/neev_kr/manifest"'
+check "0.1.11 us: no Leafia KR near-turn code, its results unchanged" eval '[ "$(want_of "$PKG/patches/bycode/us/manifest" 2_tbt HKMC_GPM)" = 6124a666b2ae11883e91de85c19389d2 ] && [ "$(want_of "$PKG/patches/bycode/us/manifest" 3_bridge HKMC_DiPO)" = 5f24681fec4e0ff21f913f3372465524 ]'
+for f in src/tbt/com/jmk/hud/Near.java src/tbt/near-hooks.diff src/tbt/build.sh; do
+    check "0.1.11 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
+done
+check "0.1.11 near-hooks.diff: the four hooks" [ "$(grep -c '^+.*Lcom/jmk/hud/Near;->' "$P/src/tbt/near-hooks.diff")" = 4 ]
+if command -v javac >/dev/null 2>&1; then
+    NT=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-near.XXXXXX")
+    if javac -source 7 -target 7 -Xlint:-options -d "$NT" "$P/src/tbt/com/jmk/hud/Near.java" "$here/near/com/jmk/hud/NearTest.java" 2>/dev/null; then
+        out=$(java -cp "$NT" com.jmk.hud.NearTest 2>&1)
+        check "0.1.11 Near on the JVM: $out" [ $? -eq 0 ]
+        check "0.1.11 Near on the JVM: every case passed" eval 'case "$out" in "near: all "*) true ;; *) false ;; esac'
+    else
+        bad "0.1.11 Near.java / NearTest.java compile"
+    fi
+    rm -rf "$NT"
+else
+    echo "(no javac: the Near test skipped)"
+fi
 check "by code: the profile with the most parts wins (bycode_build tries both parts first)" grep -q 'for want in 2 1' "$PKG/scripts/common.sh"
 while read -r pre set name; do
     case "$pre" in ''|'#'*) continue ;; esac
@@ -186,9 +216,10 @@ if [ -f "$LEAFIA_LC/stock.md5" ] && [ -f "$LEAFIA_LC/final.md5" ]; then
     while read -r a b c d e; do
         [ "$b" = app ] && f=app/$c.apk || f=lib/$c
         fin=$(grep " $f\$" "$LEAFIA_LC/final.md5" | cut -d' ' -f1)
-        # 0.1.5: GPM and DiPO carry our guidance-end fix (TBT_INFO DisplayType 8, not 0: the cluster spun), so their
-        # results are Leafia KR's plus that change; every other target is still Leafia KR's byte for byte
-        case "$c" in HKMC_GPM|HKMC_DiPO) check "neev_kr result $c is ours (0.1.5 guidance-end fix), not Leafia KR's" [ "$fin" != "$e" ]; continue ;; esac
+        # 0.1.5: GPM and DiPO carry our guidance-end fix (TBT_INFO DisplayType 8, not 0: the cluster spun), 0.1.11 the
+        # near-turn filter (src/tbt), so their results are Leafia KR's plus those changes; every other target is still
+        # Leafia KR's byte for byte
+        case "$c" in HKMC_GPM|HKMC_DiPO) check "neev_kr result $c is ours (0.1.5 guidance-end fix, 0.1.11 near-turn filter), not Leafia KR's" [ "$fin" != "$e" ]; continue ;; esac
         check "neev_kr result $c = what Leafia KR leaves on the car (final.md5 $f)" [ "$fin" = "$e" ]
     done < <(effective neev_kr)
 else
@@ -206,7 +237,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.10" grep -q '^package-version=0.1.10$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.11" grep -q '^package-version=0.1.11$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]

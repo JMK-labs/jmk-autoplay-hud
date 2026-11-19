@@ -17,7 +17,9 @@ from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parent
 PACKAGE = PROJECT / 'package'
-TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'src/build-codesum.sh', 'src/mkbycode.py')   # 0.1.3: tools/codesum.jar's source rides along
+TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'src/build-codesum.sh', 'src/mkbycode.py',   # 0.1.3: tools/codesum.jar's source rides along
+             # 0.1.11: the source of the GPM / DiPO near-turn change (our class and the hooks on Leafia's code)
+             'src/tbt/com/jmk/hud/Near.java', 'src/tbt/near-hooks.diff', 'src/tbt/build.sh')
 FIXED = (2026, 1, 1, 0, 0, 0)   # deterministic zip times
 EXEC = ('.sh',)
 EXEC_FILES = ('tools/lpatch',)

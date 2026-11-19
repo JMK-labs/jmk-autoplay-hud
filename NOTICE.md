@@ -82,6 +82,17 @@ patch data is data; the binaries are listed below with their sources).
   V039.001.260902), whose apps and receiver library run Ioniq 5 Korea's code. Its PhoneProjection is Ioniq 5 Korea's
   stock code built with its own resource table, so its CarPlay bridge build is Leafia's `neev_kr` bridge build with
   eight drawable IDs (11 constants) set to its numbers. Only deltas and md5s; no stock file ships.
+- **Korea Projection** by StopDragon (https://github.com/StopDragon/korea-projection, release 1.7.4; its wireless mode
+  2.4.4 in the HMG-API fork https://github.com/StopDragon/HMG-API, branch korea-build, commit b573ac6,
+  `mods/wireless-carplay-aa/src/hmgapi/mods/wireless/dipo/CpTurnsFit.java` `near()`), AGPL-3.0: the method of the
+  0.1.11 near-turn fixes (put-off, jump-hold, the exit margin at the window edge and their constants: 50 m margin,
+  100 m / 20 m jumps, 10 m rise within 500 ms), worked out from its car logs (Naver Map, KakaoNavi). Its code is not
+  copied: `src/tbt/com/jmk/hud/Near.java` is our own (AGPL-3.0, as this package), adapted to Leafia's fixed 457 m window.
+- **The 0.1.11 near-turn filter** (`src/tbt/`, JMK's own, AGPL-3.0): `com.jmk.hud.Near` and four hooks on Leafia KR's
+  `com.leafia.kr` code (`near-hooks.diff`: LeafiaTurn.standard / reset, LeafiaCpStandard.format / routeReset), built
+  into the GPM turn-by-turn and DiPO bridge results of every Korean set and profile by `src/tbt/build.sh` (javac + d8,
+  baksmali / smali 2.5.2 with one thread, so the same inputs give the same bytes: GPM 990ef4c3 -> b02ada70, DiPO
+  86ce5550 -> 1452d2d8).
 - Thanks, as upstream: W-Floyd.
 
 No manufacturer APK, odex, jar or library is shipped: the head unit rebuilds each file from its own exact stock copy,
@@ -112,6 +123,11 @@ and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
   whose patches do not fit keeps (and reports) the earlier version's files. Free space is checked before the swap.
   The settings service checks the patched files at every boot (also when active). The log is capped; copies a
   cut-off swap left are removed.
+- 0.1.11: the near-turn layout ("big picture") of the Korean GPM and DiPO bridge builds. A picture that went near
+  stays near up to 50 m past Leafia's 457 m window (Android Auto and CarPlay: distance wobble at the edge flipped it).
+  CarPlay only: a new maneuver whose first distance is the previous maneuver's last one is shown far once (Naver Map
+  order: the next turn's picture flashed for about a second), and a jump of the same maneuver's distance is held once
+  (KakaoNavi order: the passed turn's picture with the next distance's bar). Every other input keeps Leafia's value.
 - Only apps that are enabled are stopped for the file swap, and the same ones are started again (also by the
   settings service at boot, if a run died).
 - A status file for the JMK MAP menu (`/data/nemesis/jmk-autoplay-hud/status`) and a settings service that maps the

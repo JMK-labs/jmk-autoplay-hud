@@ -28,6 +28,12 @@ Plus the CarPlay library recipes, each checked on its own file: `carplay-utils-c
 `carplay-core-wifi` (libCarPlayCore.so). On NEEV.KOR 260902 only the audio one applies (the other two are NATIVE).
 `os="*.KOR.*"` in NEMESIS.data limits installs to KOR firmware; the other sets are kept for other models.
 
+0.1.11: the Korean GPM and DiPO bridge builds (every Korean set and by-code profile) carry our near-turn filter
+(`src/tbt/`, method from Korea Projection 1.7.4): the near-turn picture no longer flips at the 457 m edge (50 m exit
+margin), and on CarPlay the next turn's picture no longer flashes when the phone sends the new maneuver with the old
+distance (Naver Map) or the next distance on the old maneuver (KakaoNavi). Rebuild: `src/tbt/build.sh <0.1.10 result
+dex> <out dex>`; test: `test/near/com/jmk/hud/NearTest.java` (run by `test/check-scripts.sh`).
+
 Where Leafia installs the 2_tbt build of HKMC_DiPO / Iap2ServerApp and then its 3_bridge build, this package puts the
 3_bridge build in directly: both patches start from the same stock odex, and the end state is the same file.
 
