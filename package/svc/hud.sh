@@ -23,6 +23,45 @@ SET=
 [ -f "$SET_FILE" ] && read -r SET < "$SET_FILE"
 load_targets
 boot_check
+# 0.1.9 (the owner 2026-11-19): the tamper lock (the JMK MAP menu's daemon). While it says lock=1 every stock file goes
+# back (ownership-checked, as an uninstall) and the state says its text; once it no longer does, the add-on is applied
+# again (as a fresh install: its postinstall).
+integrity_read
+if [ -n "$ILOCK" ] && [ ! -f "$STORE/integrity-locked" ]; then
+    if [ -f "$STOCK_LIST" ] || [ -f "$ADDED" ]; then
+        if system_writable; then
+            apps_hold
+            REASON=
+            if restore_files && remove_added; then
+                names=
+                if [ -f "$STOCK_LIST" ]; then
+                    while read -r f s || [ -n "$f" ]; do case "$f" in *.apk) names="$names ${f%.apk}" ;; esac; done < "$STOCK_LIST"
+                fi
+                wipe_dalvik "$names"
+                apps_release
+                leafia_props_clear
+                rm -f "$STOCK_LIST" "$APPLIED" "$ADDED"
+                : > "$STORE/integrity-locked"
+                write_status locked "${ITEXT:-locked}"
+                log "boot: integrity lock: every stock file is back - reboot the head unit"
+                report integrity-locked "$ITEXT"
+            else
+                apps_release
+                log "boot: integrity lock: $REASON (the stock copies stay in $BACKUP)"
+                report integrity-lock-failed "$REASON"
+            fi
+        else
+            log "boot: integrity lock: /system read-only, nothing put back"
+        fi
+    else
+        : > "$STORE/integrity-locked"
+        write_status locked "${ITEXT:-locked}"
+    fi
+elif [ -z "$ILOCK" ] && [ -f "$STORE/integrity-locked" ]; then
+    rm -f "$STORE/integrity-locked"
+    log "boot: integrity lock lifted: applying the add-on again"
+    ( cd "$PKG" && sh scripts/postinstall.sh ) >> "$LOG" 2>&1
+fi
 case "$(status_get state)" in reboot|active) apply_config force ;; esac
 [ -n "$JMK_HUD_ONCE" ] && exit 0
 while [ -f "$INSTALLED" ]; do

@@ -1143,3 +1143,14 @@ svc_stop() {
     esac
     rm -f "$STORE/svc.pid"
 }
+
+# 0.3.5 / 0.1.9 (the owner 2026-11-19): the tamper lock the JMK MAP menu's daemon decides (its Integrity:
+# /data/nemesis/jmk-updates/integrity, lock=0|1, text=). Sets ILOCK (1 or "") and ITEXT. Never this package's own call.
+integrity_read() {
+    ILOCK=; ITEXT=
+    local k v
+    [ -f "$R/data/nemesis/jmk-updates/integrity" ] || return 0
+    while IFS='=' read -r k v || [ -n "$k" ]; do
+        case "$k" in lock) [ "$v" = 1 ] && ILOCK=1 ;; text) ITEXT=$v ;; esac
+    done < "$R/data/nemesis/jmk-updates/integrity"
+}

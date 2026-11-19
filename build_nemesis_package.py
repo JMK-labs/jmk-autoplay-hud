@@ -118,6 +118,11 @@ def main():
             info.compress_type = zipfile.ZIP_DEFLATED
             info.create_system = 3
             z.writestr(info, entries[name])
+    # 2026-11-19 (the owner): every zip we build, release or test, carries our file-integrity signature
+    # (tools/release/sign_integrity.py: integrity.json + integrity.sig; the cars lock on files that do not match)
+    sys.path.insert(0, str(PROJECT.parent.parent / 'tools' / 'release'))
+    import sign_integrity
+    sign_integrity.sign_zip(out)
     blob = out.read_bytes()
     print('%s  %d bytes  %d files  sets=%s' % (out, len(blob), len(entries), ','.join(chosen)))
     print('md5    ' + hashlib.md5(blob).hexdigest())
