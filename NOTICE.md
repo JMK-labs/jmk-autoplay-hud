@@ -73,6 +73,15 @@ patch data is data; the binaries are listed below with their sources).
   own builds; PhoneProjection's bridge build is `kr`'s with `android:id/topPanel` at their framework's number; and the
   receiver library carries `kr`'s turn-by-turn hook with its links and patched instructions moved to EV6's own library
   layout (same symbols, other addresses). Only deltas and md5s; no stock file ships.
+- **By-code profile `kri`** (`patches/bycode/kri`, 0.1.10, 2026-11-20): Korean Ioniq 6 (CEEV.KOR V039.001.260902).
+  Its HKMC_GPM, HKMC_DiPO and HKMC_Navi_ExSL run the Avante CN7 PE's code (`krp`), Iap2ServerApp the Ioniq 5's, and its
+  PhoneProjection is Ioniq 5 Korea's stock code with other ProGuard names, with the Ioniq 5's resources byte for byte:
+  every result is the `kr` profile's own build (PhoneProjection's Leafia's `neev_kr` bridge build itself). No
+  receiver-library line: its libautoreceiver_infobank.so is CN7 PE's build. Only deltas and md5s; no stock file ships.
+- **By-code profile `krg`** (`patches/bycode/krg`, 0.1.10, 2026-11-20): Korean Genesis G70 facelift (IKFL.KOR
+  V039.001.260902), whose apps and receiver library run Ioniq 5 Korea's code. Its PhoneProjection is Ioniq 5 Korea's
+  stock code built with its own resource table, so its CarPlay bridge build is Leafia's `neev_kr` bridge build with
+  eight drawable IDs (11 constants) set to its numbers. Only deltas and md5s; no stock file ships.
 - Thanks, as upstream: W-Floyd.
 
 No manufacturer APK, odex, jar or library is shipped: the head unit rebuilds each file from its own exact stock copy,

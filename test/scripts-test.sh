@@ -220,7 +220,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis" "$ROOT/parent.cmdline"; }
     check "install: exit 0" [ $rc -eq 0 ]
     check "install: state=reboot" [ "$(st state)" = reboot ]
     check "install: set=neev_kr" [ "$(st set)" = neev_kr ]
-    check "install: ver=0.1.9" [ "$(st ver)" = 0.1.9 ]
+    check "install: ver=0.1.10" [ "$(st ver)" = 0.1.10 ]
     check "install: patched = every target + the audio recipe" [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]
     check "install: knobs=log,lane_dist,cp_lanes" [ "$(st knobs)" = "log,lane_dist,cp_lanes" ]
     check "install: reason empty" [ -z "$(st reason)" ]
@@ -543,6 +543,45 @@ bycode_setup() {
     check "by code (0.1.7): krp, with both parts, where kr fits nothing" eval '[ $rc -eq 0 ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/profile")" = krp ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/parts")" = "2_tbt 3_bridge" ]'
 )
 (
+    # 0.1.10 kri (Ioniq 6 Korea CEEV): krp's app lines (no library line) and its own PhoneProjection: krp fits the
+    # turn-by-turn only (another PhoneProjection), kr nothing; kri wins with both parts and leaves the library stock
+    bycode_setup other
+    mkdir -p "$HP/patches/bycode/krp" "$HP/patches/bycode/kri"
+    pp=$(python3 -c "import struct,hashlib;d=open('$ROOT/stock/PhoneProjection.odex','rb').read();o,l=struct.unpack_from('<II',d,8);print(hashlib.md5(d[o:o+l]).hexdigest())")
+    sed 's# bycode/kr/# bycode/krp/#' "$HP/patches/bycode/kr/manifest" | grep -v ' PhoneProjection ' | grep -v ' file ' > "$HP/patches/bycode/krp/manifest"
+    cp "$HP/patches/bycode/kr/"*.lpd "$HP/patches/bycode/kr/knobs" "$HP/patches/bycode/krp/"
+    echo "3_bridge app PhoneProjection 0123456789abcdef0123456789abcdef bycode/krp/PhoneProjection.bridge.lpd 0123456789abcdef0123456789abcdef" >> "$HP/patches/bycode/krp/manifest"
+    grep -v ' PhoneProjection ' "$HP/patches/bycode/krp/manifest" > "$HP/patches/bycode/kri/manifest"
+    echo "FAKELPD $pp PhoneProjection-bridge" > "$HP/patches/bycode/kri/PhoneProjection.bridge.lpd"
+    echo "3_bridge app PhoneProjection $pp bycode/kri/PhoneProjection.bridge.lpd $(want_file PhoneProjection-bridge)" >> "$HP/patches/bycode/kri/manifest"
+    cp "$HP/patches/bycode/kr/knobs" "$HP/patches/bycode/kri/"
+    sed -i '' 's/^\(2_tbt app HKMC_GPM\) [0-9a-f]*/\1 0123456789abcdef0123456789abcdef/' "$HP/patches/bycode/kr/manifest"
+    hook postinstall; rc=$?
+    check "by code (0.1.10): kri (Ioniq 6) with both parts over krp (turn-by-turn only) and kr (nothing)" eval '[ $rc -eq 0 ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/profile")" = kri ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/parts")" = "2_tbt 3_bridge" ]'
+    check "by code: kri: PhoneProjection, DiPO and Iap2 their bridge builds, GPM and Navi patched" eval 'grep -q "dex PhoneProjection-bridge" "$ROOT/system/app/PhoneProjection.apk" && grep -q "dex HKMC_DiPO-bridge" "$ROOT/system/app/HKMC_DiPO.apk" && grep -q "dex Iap2ServerApp-bridge" "$ROOT/system/app/Iap2ServerApp.apk" && grep -q "dex HKMC_GPM-tbt" "$ROOT/system/app/HKMC_GPM.apk" && grep -q "dex HKMC_Navi_ExSL-tbt" "$ROOT/system/app/HKMC_Navi_ExSL.apk"'
+    check "by code: kri: no library line, the library stays stock" same_file "$ROOT/stock/libautoreceiver_infobank.so" "$ROOT/system/lib/libautoreceiver_infobank.so"
+    check "by code: kri: the report names it" grep -q 'set auto (profile kri, parts 2_tbt 3_bridge)' "$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-other-model-set.json"
+)
+(
+    # 0.1.10 krg (Genesis G70 FL Korea IKFL): kr's lines plus its own PhoneProjection; kr, kra and krt (other
+    # PhoneProjections) fit the turn-by-turn only: krg, between them by name, wins with both parts
+    bycode_setup other
+    pp=$(python3 -c "import struct,hashlib;d=open('$ROOT/stock/PhoneProjection.odex','rb').read();o,l=struct.unpack_from('<II',d,8);print(hashlib.md5(d[o:o+l]).hexdigest())")
+    for o in kra krt; do
+        mkdir -p "$HP/patches/bycode/$o"
+        grep -v ' PhoneProjection ' "$HP/patches/bycode/kr/manifest" > "$HP/patches/bycode/$o/manifest"
+        echo "3_bridge app PhoneProjection 0123456789abcdef0123456789abcdef bycode/$o/PhoneProjection.bridge.lpd 0123456789abcdef0123456789abcdef" >> "$HP/patches/bycode/$o/manifest"
+    done
+    mkdir -p "$HP/patches/bycode/krg"
+    grep -v ' PhoneProjection ' "$HP/patches/bycode/kr/manifest" > "$HP/patches/bycode/krg/manifest"
+    echo "FAKELPD $pp PhoneProjection-g70bridge" > "$HP/patches/bycode/krg/PhoneProjection.bridge.lpd"
+    echo "3_bridge app PhoneProjection $pp bycode/krg/PhoneProjection.bridge.lpd $(want_file PhoneProjection-g70bridge)" >> "$HP/patches/bycode/krg/manifest"
+    cp "$HP/patches/bycode/kr/knobs" "$HP/patches/bycode/krg/"
+    hook postinstall; rc=$?
+    check "by code (0.1.10): krg (G70 FL) with both parts over kr, kra and krt (turn-by-turn only)" eval '[ $rc -eq 0 ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/profile")" = krg ] && [ "$(cat "$ROOT/data/nemesis/jmk-autoplay-hud/auto/parts")" = "2_tbt 3_bridge" ]'
+    check "by code: krg: PhoneProjection is its own bridge build, the library kr's" eval 'grep -q "dex PhoneProjection-g70bridge" "$ROOT/system/app/PhoneProjection.apk" && grep -q "dex lib-tbt" "$ROOT/system/lib/libautoreceiver_infobank.so"'
+)
+(
     # ... and the Ioniq 5 (its PhoneProjection is kr's): kr fits both parts, kra (another PhoneProjection) only one: kr
     bycode_setup same
     mkdir -p "$HP/patches/bycode/kra"
@@ -697,7 +736,7 @@ fw_update() {
     fw_update
     hook postinstall; rc=$?
     check "0.1.8 install after a firmware update: the old copies gone, locked on the new files (the fake set has no V040)" eval '[ $rc -eq 0 ] && [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_GPM.apk" ] && [ "$(cat "$ROOT/system/app/HKMC_GPM.apk")" = "new firmware HKMC_GPM.apk" ]'
-    check "0.1.8 ... the other files the earlier install patched stay, said so (not 'locked, nothing changed')" eval '[ "$(st state)" = reboot ] && case "$(st reason)" in "patched by 0.1.9"*) true ;; *) false ;; esac && case "$(st patched)" in *dipo*) true ;; *) false ;; esac'
+    check "0.1.8 ... the other files the earlier install patched stay, said so (not 'locked, nothing changed')" eval '[ "$(st state)" = reboot ] && case "$(st reason)" in "patched by 0.1.10"*) true ;; *) false ;; esac && case "$(st patched)" in *dipo*) true ;; *) false ;; esac'
 )
 (
     setup
@@ -747,7 +786,7 @@ fw_update() {
     stage_update; hook preuninstall; hook postinstall; rc=$?; unstage
     snap "$ROOT/after"
     check "0.1.8 update that does not fit: exit 0, nothing changed" eval '[ $rc -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after"'
-    check "0.1.8 ... state stays active, 'patched by 0.1.8', not locked" eval '[ "$(st state)" = active ] && case "$(st reason)" in "patched by 0.1.9: this version changed nothing"*) true ;; *) false ;; esac'
+    check "0.1.8 ... state stays active, 'patched by 0.1.8', not locked" eval '[ "$(st state)" = active ] && case "$(st reason)" in "patched by 0.1.10: this version changed nothing"*) true ;; *) false ;; esac'
     check "0.1.8 ... patched lists the live files, set the old one" eval '[ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ] && [ "$(st set)" = neev_kr ]'
 )
 (
