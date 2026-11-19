@@ -308,6 +308,9 @@ bycode_part_fits() {
 # bycode_make <profile dir> <parts>: the auto set from this car's stock files; 1 (and $AUTO untouched) on any miss
 bycode_make() {
     local dir=$1 parts=$2 new=$AUTO.new p k n c x w src apk got bridged= seen=" "
+    # 0.1.5: an install that dropped lpatch's exec bit ran nothing here ("can't execute: Permission denied", K8 cars
+    # 2026-11-17): the by-code build failed and the add-on stayed locked; the set path did this later only
+    chmod 0755 "$LPATCH" 2>/dev/null
     rm -rf "$new"
     mkdir -p "$new/built" || return 1
     : > "$new/stock"; : > "$new/manifest"

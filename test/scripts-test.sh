@@ -216,7 +216,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis"; }
     check "install: exit 0" [ $rc -eq 0 ]
     check "install: state=reboot" [ "$(st state)" = reboot ]
     check "install: set=neev_kr" [ "$(st set)" = neev_kr ]
-    check "install: ver=0.1.4" [ "$(st ver)" = 0.1.4 ]
+    check "install: ver=0.1.5" [ "$(st ver)" = 0.1.5 ]
     check "install: patched = every target + the audio recipe" [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]
     check "install: knobs=log,lane_dist,cp_lanes" [ "$(st knobs)" = "log,lane_dist,cp_lanes" ]
     check "install: reason empty" [ -z "$(st reason)" ]
@@ -475,6 +475,13 @@ bycode_setup() {
     hook preuninstall; rc=$?
     check "by code: uninstall puts every stock file back" eval '[ $rc -eq 0 ] && all_stock'
     check "by code: uninstall leaves no auto set" eval '[ ! -e "$ROOT/data/nemesis/jmk-autoplay-hud/auto" ]'
+)
+(
+    # 0.1.5: an install that left lpatch without its exec bit (K8 cars, 2026-11-17: "can't execute: Permission denied")
+    bycode_setup other
+    chmod 0644 "$HP/tools/lpatch"
+    hook postinstall; rc=$?
+    check "by code (0.1.5): lpatch without its exec bit still builds: set auto" eval '[ $rc -eq 0 ] && [ "$(st set)" = auto ]'
 )
 (
     bycode_setup same
