@@ -28,6 +28,13 @@ Plus the CarPlay library recipes, each checked on its own file: `carplay-utils-c
 `carplay-core-wifi` (libCarPlayCore.so). On NEEV.KOR 260902 only the audio one applies (the other two are NATIVE).
 `os="*.KOR.*"` in NEMESIS.data limits installs to KOR firmware; the other sets are kept for other models.
 
+0.1.14: turn-by-turn for the Ioniq 5 Korea on the older firmware NEEV.KOR.0000.V037.001.260319
+(by-code profile `krv`). Its apps are an older source revision of the V039 ones, so no existing profile fitted (the
+add-on stayed locked). Each krv result is that car's own stock code with the kr profile's turn-by-turn changes ported
+onto it (HKMC_GPM, HKMC_DiPO, Iap2ServerApp, HKMC_Navi_ExSL; the receiver library is the Ioniq 5's, so kr's line).
+Turn-by-turn only: the CarPlay bridge waits for that firmware's framework and Broadcom library to be checked. Only
+deltas and md5s; no stock file ships. Not car-tested.
+
 0.1.13: wireless CarPlay now playing and call state. Owners saw no track in the stock split view with wireless
 CarPlay (USB showed it), and the steering-wheel call button put a wireless CarPlay call on hold instead of ending it.
 Cause: the stock HKMC_DiPO code (`setStartiAP2Service` / `setStopiAP2Service`, class `com.daudio.app.dipo.e.b`)

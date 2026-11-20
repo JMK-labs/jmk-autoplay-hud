@@ -85,6 +85,13 @@ patch data is data; the binaries are listed below with their sources).
   V039.001.260902), whose apps and receiver library run Ioniq 5 Korea's code. Its PhoneProjection is Ioniq 5 Korea's
   stock code built with its own resource table, so its CarPlay bridge build is Leafia's `neev_kr` bridge build with
   eight drawable IDs (11 constants) set to its numbers. Only deltas and md5s; no stock file ships.
+- **By-code profile `krv`** (`patches/bycode/krv`, V037, 0.1.14): Hyundai Ioniq 5 Korea on the older firmware
+  NEEV.KOR.0000.V037.001.260319, whose apps are an older source revision of Ioniq 5 Korea's (another ProGuard run,
+  some methods changed or missing, dexopted against an older framework). Turn-by-turn only: each result is that car's
+  own stock code with the `kr` profile's turn-by-turn changes (Leafia's `neev_kr` build plus ours) ported onto it, made
+  by JMK's own tools (AGPL-3.0, private/hud-port/neev-v037/tools: deodex at the Dalvik field layout, the odex quick-call
+  slots checked against the Ioniq 5's code, the V037 classes put into the `kr` build under its names, per-member merge);
+  the receiver library is Ioniq 5 Korea's, so its line is `kr`'s. Only deltas and md5s; no stock file ships.
 - **Korea Projection** by StopDragon (https://github.com/StopDragon/korea-projection, release 1.7.4; its wireless mode
   2.4.4 in the HMG-API fork https://github.com/StopDragon/HMG-API, branch korea-build, commit b573ac6,
   `mods/wireless-carplay-aa/src/hmgapi/mods/wireless/dipo/CpTurnsFit.java` `near()`), AGPL-3.0: the method of the
