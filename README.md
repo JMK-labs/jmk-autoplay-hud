@@ -28,6 +28,34 @@ Plus the CarPlay library recipes, each checked on its own file: `carplay-utils-c
 `carplay-core-wifi` (libCarPlayCore.so). On NEEV.KOR 260902 only the audio one applies (the other two are NATIVE).
 `os="*.KOR.*"` in NEMESIS.data limits installs to KOR firmware; the other sets are kept for other models.
 
+0.1.15: an update over files an earlier version patched builds from the stock copies again, and the
+EV6 Korea profile leaves the receiver library stock.
+- **Kept-old after an update (DPPB5BHV, Kia EV6 Korea, 2026-11-19).** 0.1.9 updated it fine (profile `kre`), then 0.1.10
+  reported `postinstall-kept-old` "nor its code a profile" and kept 0.1.9's build. Cause (`scripts/common.sh`): before
+  any set is known, the by-code build took its stock files from `plan_src()`. That gave "our copy in the backups when
+  the live file is ours, else the live file", and "ours" was only "the apk's md5 is in the applied record". When that
+  said no for a file an earlier version had patched, the live, patched odex was read as the stock one. Its code is
+  the patched code, so no profile fit, and every later version kept the old build. One state that does it: a put-back
+  (an uninstall, a rollback, the tamper lock's) cut off between an app's apk and its odex, an odex the put-back itself
+  counts as ours. The copy was never md5-checked either: with a stock copy lost, the update took our patched apk for
+  the stock one and kept it as the "stock copy". The reports cannot show which file DPPB5BHV hit. The 0.1.9 report's
+  patched codes are not the cause: that report read the live odex, which after any update is our own build.
+- **Now:** `stock_copy()` gives the copy in the backups whenever its md5 is the recorded stock one, the live file only
+  when it is the recorded stock one (or when nothing of it was ever recorded and it is not ours), and otherwise
+  nothing. A patched file is never a stock source. Whose the live file is decides only whether it may be replaced:
+  the gate and the put-back share one `ours()`, which also counts an odex next to the recorded stock apk on the same
+  firmware. The other-model-set report names the stock code the profile was chosen by. The locked / kept-old reports
+  add "by code: …": which stock copy was missing, which profile did not build, or that the code helper gave no answer.
+- **Profile `kre` has no receiver-library line any more** (the owner's call). 0.1.7–0.1.14 put kr's library hook,
+  moved to EV6's library, into libautoreceiver_infobank.so (result 120bab2c). That hook raises Android Auto's navigation
+  protocol 1.4 → 1.6 and parses messages 0x8006 / 0x8007. DPPB5BHV's owner has Android Auto dropping while driving with
+  Naver Map only. Turn-by-turn now goes the stock NextTurn path, as on `krp` / `kri`. An update puts a library an
+  earlier version patched back to its stock copy (ownership-checked, like any file the targets no longer name). A
+  fresh install leaves it stock.
+- A DPPB5BHV-like car that installs 0.1.15 rebuilds GPM, DiPO, Iap2ServerApp, Navi and PhoneProjection from its stock
+  copies (kre's current builds) and puts its stock library back. If something else wrote one of its files, the gate
+  keeps the earlier build and the report names the file. Not car-tested.
+
 0.1.14: turn-by-turn for the Ioniq 5 Korea on the older firmware NEEV.KOR.0000.V037.001.260319
 (by-code profile `krv`). Its apps are an older source revision of the V039 ones, so no existing profile fitted (the
 add-on stayed locked). Each krv result is that car's own stock code with the kr profile's turn-by-turn changes ported

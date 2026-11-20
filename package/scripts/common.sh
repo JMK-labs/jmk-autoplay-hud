@@ -159,21 +159,29 @@ fw_changed() { [ -f "$FP_FILE" ] && [ "$(cat "$FP_FILE" 2>/dev/null)" != "$(fp_n
 fw_same() { [ -f "$FP_FILE" ] && ! fw_changed; }
 fp_save() { local t=$FP_FILE.tmp; fp_now > "$t" 2>/dev/null && mv "$t" "$FP_FILE"; }
 
-# restorable <file> <live md5>: the live file is ours to put back: written by this package (APPLIED), or an .odex
-# next to its apk while that apk is ours, or (same firmware only) already the recorded stock one: an earlier uninstall
-# that stopped half-way. On another firmware a stock apk may have a new odex (a new framework), never ours.
-restorable() {
-    local f=$1 apk got
+# ours <file> <live md5> (the live md5 is not the recorded stock one; every caller checked that first): the live file
+# is this package's, to replace or to put back. Written by this package (APPLIED); an .odex follows its apk (our dexopt
+# writes it, so its md5 is never known before): the apk is ours, or (same firmware only) the apk is the recorded stock
+# one already: a put-back that stopped between the apk and its odex (an uninstall, a rollback or the tamper lock's
+# put-back cut off: a power cut, a write that failed). On another firmware a stock apk may have a new odex (a new
+# framework), never ours.
+# 0.1.15 (DPPB5BHV, Kia EV6 Korea, 2026-11-20): one rule for the gate, the by-code build, the put-back and the firmware
+# check. Before, the gate's ours() knew only "the apk is in APPLIED" while the put-back's restorable() (this rule) also
+# knew the half-way case: an odex the uninstall would have put back was "not ours" to the next install, which then
+# took that patched odex for the stock one (plan_src) and kept the earlier version's build on every later version.
+ours() {
+    local f=$1 apk a
     case "$f" in
         *.odex)
             apk=${f%.odex}.apk
-            got=$(md5of "$(live_of "$apk")")
-            [ -n "$got" ] || return 1
-            has_line "$apk $got" "$APPLIED" && return 0
-            fw_same && [ "$got" = "$(lookup "$STOCK_LIST" "$apk")" ] ;;
+            a=$(md5of "$(live_of "$apk")")
+            [ -n "$a" ] || return 1
+            has_line "$apk $a" "$APPLIED" && return 0
+            fw_same && [ "$a" = "$(lookup "$STOCK_LIST" "$apk")" ] ;;
         *) [ -n "$2" ] && has_line "$f $2" "$APPLIED" ;;
     esac
 }
+restorable() { ours "$1" "$2"; }   # the put-back's name for it (restore_files, fw_reconcile)
 
 # fw_reconcile: after a firmware update, the records of every file the new firmware replaced (neither the recorded
 # stock file nor ours) go with their stock copies; the fingerprint is then this firmware's. 1 when nothing changed.
@@ -381,28 +389,53 @@ pick_set() {
 # the profile that fits the most parts is used (0.1.6: kra has K8's PhoneProjection, so K8 gets the bridge too); no part
 # fits = no auto set.
 
-# the stock copy of a file before any set is known: our backup when the live file is ours, else the live file
-plan_src() {
-    local f=$1 live
+# stock_copy <file>: prints the stock file to build from (0.1.15, DPPB5BHV, Kia EV6 Korea, 2026-11-20). Status 1 and
+# nothing printed when there is none (the log says why).
+#  - recorded in STOCK_LIST (an earlier version of this package patched it; fw_reconcile has made the records true to
+#    this firmware): our copy in $BACKUP when its md5 is the recorded stock md5, else the live file when that is the
+#    recorded stock one; else none: a missing or damaged copy next to a live file that is not stock is never a source;
+#  - never recorded (a file this package never wrote): the live file, unless it is ours (then none).
+# Before, plan_src() gave "our backup when the live file is ours, else the live file", with ours() (the apk's md5 in
+# APPLIED) as the only judge and no md5 check of the copy. When that judge said no for a file an earlier version had
+# patched (DPPB5BHV's 0.1.10 update over 0.1.9: postinstall-kept-old "nor its code a profile"), the LIVE, patched
+# odex was read as the stock one: its code is the patched code, which fits no profile, so the update kept the earlier
+# build, and so would every later version. Where the stock file is no longer depends on whose the live file is: that
+# decides only whether the live file may be replaced (check_target, with ours() above).
+stock_copy() {
+    local f=$1 s live got
     live=$(live_of "$f")
-    if [ -f "$BACKUP/$f" ] && ours "$f" "$(md5of "$live")"; then echo "$BACKUP/$f"; else echo "$live"; fi
+    if s=$(lookup "$STOCK_LIST" "$f"); then
+        [ "$(md5of "$BACKUP/$f")" = "$s" ] && { echo "$BACKUP/$f"; return 0; }
+        got=$(md5of "$live")
+        [ "$got" = "$s" ] && { echo "$live"; return 0; }
+        echo "$(date) by code: no stock copy of $f: the copy in $BACKUP is not the recorded stock $s (md5 $(md5of "$BACKUP/$f")), the live one is ${got:-missing}" >> "$LOG"
+        return 1
+    fi
+    got=$(md5of "$live")
+    if ours "$f" "$got"; then
+        echo "$(date) by code: $live is ours but has no stock record: not a stock file" >> "$LOG"
+        return 1
+    fi
+    echo "$live"
 }
 
-# the apps any profile names, once
-bycode_apps() {
+# the apps any profile names, once (bycode_names app); the libraries (bycode_names file)
+bycode_names() {
     local d p k n c x w out=" "
     for d in "$BYCODE"/*/manifest; do
         [ -f "$d" ] || continue
         while read -r p k n c x w || [ -n "$p" ]; do
             case "$p" in ''|'#'*) continue ;; esac
-            [ "$k" = app ] || continue
+            [ "$k" = "$1" ] || continue
             case "$out" in *" $n "*) ;; *) out="$out$n " ;; esac
         done < "$d"
     done
     echo $out
 }
+bycode_apps() { bycode_names app; }
 
-# bycode_part_fits <profile dir> <part> <" App.code=<md5> ..." of this car>: every line of the part matches
+# bycode_part_fits <profile dir> <part> <" App.code=<md5> ..."> <" lib=<md5> ...">: every line of the part matches
+# this car's stock code (the odex lines) and stock libraries (the file lines), both from stock_copy
 bycode_part_fits() {
     local p k n c x w any=
     while read -r p k n c x w || [ -n "$p" ]; do
@@ -412,7 +445,7 @@ bycode_part_fits() {
         if [ "$k" = app ]; then
             case "$3" in *" $n.code=$c "*) ;; *) return 1 ;; esac
         else
-            [ "$(md5of "$(plan_src "$n")")" = "$c" ] || return 1
+            case "$4" in *" $n=$c "*) ;; *) return 1 ;; esac
         fi
     done < "$1/manifest"
     [ -n "$any" ]
@@ -436,14 +469,17 @@ bycode_make() {
         # the bridge build of an app is its turn-by-turn build plus the bridge: only that one when both parts fit
         [ "$p" = 2_tbt ] && case "$bridged" in *" $n "*) continue ;; esac
         if [ "$k" = app ]; then
-            src=$(plan_src "$n.odex"); apk=$(plan_src "$n.apk")
-            [ -f "$apk" ] || { echo "$(date) by code: no $n.apk" >> "$LOG"; rm -rf "$new"; return 1; }
+            # 0.1.15: only verified stock copies (stock_copy); the md5s written to the set's stock list are theirs
+            src=$(stock_copy "$n.odex") && apk=$(stock_copy "$n.apk") && [ -f "$apk" ] || {
+                BYCODE_WHY="${dir##*/}: no stock copy of $n"; echo "$(date) by code: no stock $n.apk / $n.odex" >> "$LOG"; rm -rf "$new"; return 1; }
             got=$(codesum extract "$src" "$new/code.dex")
-            [ "$got" = "code=$c" ] || { echo "$(date) by code: $n's code is ${got#code=}, not $c" >> "$LOG"; rm -rf "$new"; return 1; }
+            [ "$got" = "code=$c" ] || {
+                BYCODE_WHY="${dir##*/}: $n's code is ${got#code=}"; echo "$(date) by code: $n's code is ${got#code=}, not $c" >> "$LOG"; rm -rf "$new"; return 1; }
             rm -f "$new/classes.dex"
             "$LPATCH" delta "$PATCHES/$x" "$new/code.dex" "$new/classes.dex" >> "$LOG" 2>&1 &&
                 [ "$(md5of "$new/classes.dex")" = "$w" ] &&
                 "$LPATCH" zipadd "$apk" "$new/classes.dex" "$new/built/$p.$n.apk" >> "$LOG" 2>&1 || {
+                BYCODE_WHY="${dir##*/}: $n ($p) did not rebuild"
                 echo "$(date) by code: $n ($p) did not rebuild to the profile's code $w" >> "$LOG"; rm -rf "$new"; return 1; }
             rm -f "$new/code.dex" "$new/classes.dex"
             echo "$p app $n prebuilt:$p.$n.apk $(md5of "$new/built/$p.$n.apk")" >> "$new/manifest"
@@ -453,8 +489,10 @@ bycode_make() {
                 echo "$n.odex $(md5of "$src")" >> "$new/stock" ;;
             esac
         else
-            src=$(plan_src "$n")
+            src=$(stock_copy "$n") && [ "$(md5of "$src")" = "$c" ] || {
+                BYCODE_WHY="${dir##*/}: no stock copy of $n"; echo "$(date) by code: no stock $n" >> "$LOG"; rm -rf "$new"; return 1; }
             "$LPATCH" delta "$PATCHES/$x" "$src" "$new/built/$p.$n" >> "$LOG" 2>&1 && [ "$(md5of "$new/built/$p.$n")" = "$w" ] || {
+                BYCODE_WHY="${dir##*/}: $n ($p) did not rebuild"
                 echo "$(date) by code: $n ($p) did not rebuild to $w" >> "$LOG"; rm -rf "$new"; return 1; }
             echo "$p file $n prebuilt:$p.$n $w" >> "$new/manifest"
             echo "$n $c" >> "$new/stock"
@@ -468,14 +506,31 @@ bycode_make() {
     mv "$new" "$AUTO"
 }
 
-# bycode_build: 0 and $AUTO made when a profile has a part this car's code fits (quiet: the caller logs)
+# bycode_build: 0 and $AUTO made when a profile has a part this car's code fits (quiet: the caller logs).
+# 0.1.15: the code and the libraries come from stock_copy (on an update: our verified copies in $BACKUP, never the
+# patched live files). BYCODE_CODES: the stock code it chose by (the other-model-set report; before, that report read
+# the live odex, so an update over our own files reported the patched code: DPPB5BHV's 0.1.9 9c66644c / 7df6b900 ...,
+# the same on every car that updated, which is not what the profile was chosen from). BYCODE_WHY: why nothing was made
+# (the locked / kept-old report; before, it said only "nor its code a profile").
 bycode_build() {
-    local n args= codes dir parts part
-    [ -d "$BYCODE" ] || return 1
-    for n in $(bycode_apps); do args="$args $(plan_src "$n.odex")"; done
-    [ -n "$args" ] || return 1
+    local n s args= codes libs=" " miss= bak= dir parts part
+    BYCODE_CODES=; BYCODE_WHY=
+    [ -d "$BYCODE" ] || { BYCODE_WHY="no profiles"; return 1; }
+    for n in $(bycode_apps); do
+        if s=$(stock_copy "$n.odex"); then args="$args $s"; else miss="$miss $n.odex"; continue; fi
+        case "$s" in "$BACKUP"/*) bak=1 ;; esac
+    done
+    for n in $(bycode_names file); do
+        s=$(stock_copy "$n") && case "$s" in "$BACKUP"/*) bak=1 ;; esac && s=$(md5of "$s") && [ -n "$s" ] || { s=none; miss="$miss $n"; }
+        libs="$libs$n=$s "
+    done
+    [ -n "$args" ] || { BYCODE_WHY="no stock copy of:$miss"; return 1; }
     codes=" $(codesum $args) "
-    echo "$(date) by code: this car's code:$codes" >> "$LOG"
+    echo "$(date) by code: this car's stock code:$codes(${miss:+no stock copy of$miss; }libraries$libs)" >> "$LOG"
+    case "$codes" in
+        *.code=*) BYCODE_CODES=$(echo $codes) ;;
+        *) BYCODE_WHY="the code helper (tools/codesum.jar) gave no answer${miss:+; no stock copy of$miss}"; return 1 ;;
+    esac
     # the profile that fits the most parts wins (0.1.6): kra fits K8's turn-by-turn and bridge, kr its turn-by-turn only,
     # so the first profile that fits anything (kr, by name) would leave K8 without the bridge; equal counts keep the
     # name order. Both parts first, then one part.
@@ -484,13 +539,17 @@ bycode_build() {
         for dir in "$BYCODE"/*; do
             [ -s "$dir/manifest" ] || continue
             parts=
-            for part in 2_tbt 3_bridge; do bycode_part_fits "$dir" "$part" "$codes" && parts="$parts $part"; done
+            for part in 2_tbt 3_bridge; do bycode_part_fits "$dir" "$part" "$codes" "$libs" && parts="$parts $part"; done
             set -- $parts
             [ $# -eq $want ] || continue
-            bycode_make "$dir" "$parts" && return 0
+            bycode_make "$dir" "$parts" && { BYCODE_WHY=; return 0; }
         done
     done
     # 0.1.8 (QA #7): an earlier by-code build stays: it describes the files an earlier version patched, still live
+    # no profile fits: which stock copy was missing, and the code and libraries of our stock copies when they were read
+    # (those of the live files are in the locked report already)
+    [ -n "$BYCODE_WHY" ] || BYCODE_WHY="${miss:+no stock copy of$miss}${bak:+${miss:+; }code of the stock copies $BYCODE_CODES, libraries$libs}"
+    BYCODE_WHY=$(echo $BYCODE_WHY)
     return 1
 }
 
@@ -503,12 +562,7 @@ set_fits() {
 }
 
 # ---------------------------------------------------------------- the stock md5 gate
-# ours <file> <live md5>: this package wrote that file (an odex follows its apk: dexopt's output varies)
-ours() {
-    local f=$1 got=$2
-    case "$f" in *.odex) f=${f%.odex}.apk; got=$(md5of "$(live_of "$f")") ;; esac
-    [ -n "$got" ] && has_line "$f $got" "$APPLIED"
-}
+# (ours <file> <live md5>: above, with restorable)
 
 # check_target: T_HOW=done (this version's file is in place already) or build (the stock copies are at hand: live, or
 # our backup when the live one is ours). Returns 1 with REASON when a file is neither stock nor ours.

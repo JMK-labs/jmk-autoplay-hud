@@ -39,14 +39,14 @@ lock() {
         st=$prev
         case "$st" in reboot|active) ;; *) st=failed ;; esac
         write_status $st "patched by ${old_ver:-an earlier version}: this version changed nothing ($1)"
-        log "kept: the files patched by ${old_ver:-an earlier version} stay ($old_patched, $st); this version does not fit: $1"
-        report postinstall-kept-old "${old_ver:-?}; $1; product $(getprop ro.build.product)"
+        log "kept: the files patched by ${old_ver:-an earlier version} stay ($old_patched, $st); this version does not fit: $1${BYCODE_WHY:+ (by code: $BYCODE_WHY)}"
+        report postinstall-kept-old "${old_ver:-?}; $1; product $(getprop ro.build.product)${BYCODE_WHY:+; by code: $BYCODE_WHY}"
         exit 0
     fi
     write_status locked "$1"
-    log "locked: $1 (nothing changed)"
+    log "locked: $1 (nothing changed)${BYCODE_WHY:+ (by code: $BYCODE_WHY)}"
     [ -d "$R/data/nemesis/backup/projection.tbt" ] && log "note: /data/nemesis/backup/projection.tbt (the snapshot of Leafia / projection.tbt) is still there: its uninstall may not have finished"
-    report postinstall-locked "$1; product $(getprop ro.build.product); live $(live_sums); code $(code_sums)"
+    report postinstall-locked "$1; product $(getprop ro.build.product); live $(live_sums); code $(code_sums)${BYCODE_WHY:+; by code: $BYCODE_WHY}"
     exit 0
 }
 fail() {   # nothing of this run is left in /system
@@ -93,7 +93,8 @@ log "patch set $SET ($(car_name "$SET"))"
 # 0.1.1: another model than ours: once, which set it took (the server sees nothing else of the add-on)
 case "$(getprop ro.build.product)" in NEEV.KOR.*) ;; *)
     if [ "$SET" = auto ]; then
-        report other-model-set "set auto (profile $(cat "$AUTO/profile"), parts $(cat "$AUTO/parts")); product $(getprop ro.build.product); code $(code_sums)"
+        # 0.1.15: the stock code the profile was chosen by (code_sums reads the live odex: our own build's code on an update)
+        report other-model-set "set auto (profile $(cat "$AUTO/profile"), parts $(cat "$AUTO/parts")); product $(getprop ro.build.product); code ${BYCODE_CODES:-$(code_sums)}"
     else
         report other-model-set "set $SET; product $(getprop ro.build.product)"
     fi ;;

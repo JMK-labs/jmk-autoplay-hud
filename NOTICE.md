@@ -73,9 +73,12 @@ patch data is data; the binaries are listed below with their sources).
   from their code. No receiver-library line: their libautoreceiver_infobank.so is another build. Only deltas and md5s.
 - **By-code profile `kre`** (`patches/bycode/kre`, 2026-11-19): Korean Kia EV6 (CVEV.KOR V039.001.260902), whose apps
   are Ioniq 5 Korea's app code with other ProGuard names: GPM, DiPO, Navi and Iap2ServerApp end at the `kr` profile's
-  own builds; PhoneProjection's bridge build is `kr`'s with `android:id/topPanel` at their framework's number; and the
-  receiver library carries `kr`'s turn-by-turn hook with its links and patched instructions moved to EV6's own library
-  layout (same symbols, other addresses). Only deltas and md5s; no stock file ships.
+  own builds; PhoneProjection's bridge build is `kr`'s with `android:id/topPanel` at their framework's number. Only
+  deltas and md5s; no stock file ships. No receiver-library line since 0.1.15 (2026-11-20): 0.1.7-0.1.14 carried `kr`'s
+  turn-by-turn hook moved to EV6's own library layout. That hook raises the Android Auto navigation protocol 1.4 -> 1.6
+  and parses messages 0x8006 / 0x8007, and an EV6 Korea owner had Android Auto dropping with Naver Map. EV6's library
+  now stays stock (turn-by-turn by the stock NextTurn path, as `krp` / `kri`), and an update puts a patched one back
+  to its stock copy.
 - **By-code profile `kri`** (`patches/bycode/kri`, 0.1.10, 2026-11-20): Korean Ioniq 6 (CEEV.KOR V039.001.260902).
   Its HKMC_GPM, HKMC_DiPO and HKMC_Navi_ExSL run the Avante CN7 PE's code (`krp`), Iap2ServerApp the Ioniq 5's, and its
   PhoneProjection is Ioniq 5 Korea's stock code with other ProGuard names, with the Ioniq 5's resources byte for byte:
@@ -139,6 +142,11 @@ and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
   whose patches do not fit keeps (and reports) the earlier version's files. Free space is checked before the swap.
   The settings service checks the patched files at every boot (also when active). The log is capped; copies a
   cut-off swap left are removed.
+- 0.1.15: the by-code build reads its stock files only from verified stock copies: the copy in the backups when its
+  md5 is the recorded stock one, the live file only when that is the stock one or when nothing of it was ever
+  recorded. Before, a file an earlier version patched could be read as stock when the ownership record did not
+  recognise it. The update then kept the earlier build for good, or kept our patched apk as the stock copy. The gate
+  and the put-back now share one ownership rule.
 - 0.1.11: the near-turn layout ("big picture") of the Korean GPM and DiPO bridge builds. A picture that went near
   stays near up to 50 m past Leafia's 457 m window (Android Auto and CarPlay: distance wobble at the edge flipped it).
   CarPlay only: a new maneuver whose first distance is the previous maneuver's last one is shown far once (Naver Map

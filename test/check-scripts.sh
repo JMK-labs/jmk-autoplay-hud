@@ -147,8 +147,9 @@ check "by code krp: PhoneProjection ends at the same bridge build as Tucson's" [
 check "by code krp: no library line" eval '! grep -q "^2_tbt file " "$KRP"'
 check "by code krp: the knobs are kr's" cmp -s "$PKG/patches/bycode/krp/knobs" "$PKG/patches/bycode/kr/knobs"
 # kre (0.1.7, EV6 Korea CVEV.KOR): the Ioniq 5's app code with other ProGuard names: kr's builds for GPM, DiPO, Navi
-# and Iap2, PhoneProjection kr's bridge with android:id/topPanel moved, and the library: kr's hook moved to EV6's own
-# library addresses (a new result)
+# and Iap2, PhoneProjection kr's bridge with android:id/topPanel moved. 0.1.15 (2026-11-20): no library line any more
+# (0.1.7-0.1.14 had kr's hook moved to EV6's own library, result 120bab2c: Android Auto dropped with Naver Map on
+# DPPB5BHV); its delta left the package (a copy is held in private/hud-port/ev6kr/held)
 KRE=$PKG/patches/bycode/kre/manifest
 for a in HKMC_GPM HKMC_DiPO Iap2ServerApp HKMC_Navi_ExSL; do
     check "by code kre: $a ends at kr's turn-by-turn build" [ "$(want_of "$KRE" 2_tbt $a)" = "$(want_of "$PKG/patches/bycode/kr/manifest" 2_tbt $a)" ]
@@ -157,7 +158,9 @@ for a in Iap2ServerApp HKMC_DiPO; do
     check "by code kre: $a ends at kr's bridge build" [ "$(want_of "$KRE" 3_bridge $a)" = "$(want_of "$PKG/patches/bycode/kr/manifest" 3_bridge $a)" ]
 done
 check "by code kre: PhoneProjection is EV6's code -> its own bridge build" [ "$(awk '$1=="3_bridge" && $3=="PhoneProjection" {print $4" "$6}' "$KRE")" = "7e61ce5caa6bdc1ad02563fc084e240a 52816a4c37a512da5a118f101ab5f766" ]
-check "by code kre: the library line is EV6's library -> its own result" [ "$(awk '$1=="2_tbt" && $2=="file" {print $4" "$6}' "$KRE")" = "c4fbccdf63f7d823f24010afec43c937 120bab2c81ee6c238e2aab219bf2babe" ]
+check "by code kre (0.1.15): no library line, EV6's library stays stock" eval '! grep -q "^2_tbt file " "$KRE"'
+check "by code kre (0.1.15): its library delta is not in the package" [ ! -e "$PKG/patches/bycode/kre/libautoreceiver_infobank.tbt.lpd" ]
+check "by code kre (0.1.15): turn-by-turn is still the four apps (GPM, DiPO, Iap2, Navi)" [ "$(awk '$1=="2_tbt" {print $3}' "$KRE" | tr '\n' ' ')" = "HKMC_GPM HKMC_DiPO Iap2ServerApp HKMC_Navi_ExSL " ]
 check "by code kre: the knobs are kr's" cmp -s "$PKG/patches/bycode/kre/knobs" "$PKG/patches/bycode/kr/knobs"
 # kri (0.1.10, Ioniq 6 Korea CEEV.KOR): krp's app code (CN7 PE's) for GPM, DiPO, Navi; Iap2 the Ioniq 5's; PhoneProjection
 # the Ioniq 5's stock code with other ProGuard names and the Ioniq 5's resources: every result is kr's own build
@@ -222,6 +225,7 @@ check "by code choice: Tucson keeps krt" [ "$(sel_of $KRC 1debc2d1e4ea8c27b5d3bf
 check "by code choice: G70 FL keeps krg" [ "$(sel_of $KRC 637066b5715c157bd5061452ab6eae2a $LIB_KR)" = "krg 2_tbt 3_bridge" ]
 check "by code choice: group B (TMFL, DN8, CN7HEV, LX2) keeps krb" [ "$(sel_of 0f2a3aea66a6eb7ba3c0db5fe65fc684 11e53c789566ac82397e0bed6dda510a ac63fada887e5acc594d96b100238692 6f4fe6b2c6dfb311cdbb2e9f2e2ec5aa 4e8915b28483230964250e3da9463e4e $LIB_KR)" = "krb 2_tbt 3_bridge" ]
 check "by code choice: EV6 Korea keeps kre" [ "$(sel_of 9759e803cbff3a612f94fb2302f420a2 e8b7b69bfe0cea6862d2db6ba94ada16 30a34f8331e3c74a18c0241a28a036ea 153eb1b41dd727bf3949a5a27ec59493 7e61ce5caa6bdc1ad02563fc084e240a c4fbccdf63f7d823f24010afec43c937)" = "kre 2_tbt 3_bridge" ]
+check "by code choice (0.1.15): EV6 Korea's choice no longer depends on its library (kre has no library line)" [ "$(sel_of 9759e803cbff3a612f94fb2302f420a2 e8b7b69bfe0cea6862d2db6ba94ada16 30a34f8331e3c74a18c0241a28a036ea 153eb1b41dd727bf3949a5a27ec59493 7e61ce5caa6bdc1ad02563fc084e240a 0123456789abcdef0123456789abcdef)" = "kre 2_tbt 3_bridge" ]
 check "by code choice: CN7 PE keeps krp, the Ioniq 6 Korea kri" eval '[ "$(sel_of 2487f61fcbae1a779fd92271c7a0360e ce035a13280e222b919d664677928538 30a34f8331e3c74a18c0241a28a036ea bc5ac4a4672362651fb0e523e68f01d3 4ddd81e7e095073156c1130449fdafed dbfe7bd2000000000000000000000000)" = "krp 2_tbt 3_bridge" ] && [ "$(sel_of 2487f61fcbae1a779fd92271c7a0360e ce035a13280e222b919d664677928538 30a34f8331e3c74a18c0241a28a036ea bc5ac4a4672362651fb0e523e68f01d3 f494a13a408aaf5605f86af5a5bb2f95 dbfe7bd2000000000000000000000000)" = "kri 2_tbt 3_bridge" ]'
 check "by code choice: US code keeps us" [ "$(sel_of fcd9285700d766d4a75ef9b089dba1e3 77a5160a52ab0f93ab2b14db884b3343 30a34f8331e3c74a18c0241a28a036ea 7dc811232a9171a18c53c337672a4e9c 00000000000000000000000000000000 $LIB_KR)" = "us 2_tbt 3_bridge" ]
 # 0.1.11: the near-turn filter (src/tbt: com.jmk.hud.Near + near-hooks.diff, built by src/tbt/build.sh from the 0.1.10
@@ -304,7 +308,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.14" grep -q '^package-version=0.1.14$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.15" grep -q '^package-version=0.1.15$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]
