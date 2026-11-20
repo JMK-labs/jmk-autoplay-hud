@@ -28,6 +28,16 @@ Plus the CarPlay library recipes, each checked on its own file: `carplay-utils-c
 `carplay-core-wifi` (libCarPlayCore.so). On NEEV.KOR 260902 only the audio one applies (the other two are NATIVE).
 `os="*.KOR.*"` in NEMESIS.data limits installs to KOR firmware; the other sets are kept for other models.
 
+0.1.13: wireless CarPlay now playing and call state. Owners saw no track in the stock split view with wireless
+CarPlay (USB showed it), and the steering-wheel call button put a wireless CarPlay call on hold instead of ending it.
+Cause: the stock HKMC_DiPO code (`setStartiAP2Service` / `setStopiAP2Service`, class `com.daudio.app.dipo.e.b`)
+starts and stops the iAP2 now-playing, call-state and telephony updates only when the transport is not Wireless, and
+the bridge builds kept that. `src/tbt/wireless-iap2.diff` takes out exactly those two transport checks
+(`if-eq p1, Wireless`), so a wireless session starts them as a USB one does; nothing else changes. Every Korean DiPO
+bridge build (by-code kr, kra, krb, kre, krg, kri, krp, krt and the `neev_kr` set) ends at the new result d760fe5b
+(was 1452d2d8); rebuild: `src/tbt/build.sh <0.1.10 result dex> <out dex>`. The other sets are unchanged. Not
+car-tested.
+
 0.1.12: the CarPlay bridge for group B (`krb`: Santa Fe TM FL, Sonata DN8 / DN8 HEV, Avante Hybrid CN7HEV22, Palisade
 LX2 V039.001.260902). Their PhoneProjection (4e8915b2) is the Tucson's stock code with other ProGuard names, checked
 against a CN7HEV car's own boot class path (16 odex files from 카플레이용 파일 보내기): the bridge is krt's / krp's

@@ -96,6 +96,12 @@ patch data is data; the binaries are listed below with their sources).
   into the GPM turn-by-turn and DiPO bridge results of every Korean set and profile by `src/tbt/build.sh` (javac + d8,
   baksmali / smali 2.5.2 with one thread, so the same inputs give the same bytes: GPM 990ef4c3 -> b02ada70, DiPO
   86ce5550 -> 1452d2d8).
+- **The 0.1.13 wireless iAP2 fix** (`src/tbt/wireless-iap2.diff`, JMK's own, AGPL-3.0): the stock HKMC_DiPO code's
+  transport check (`if-eq p1, Wireless` in `com.daudio.app.dipo.e.b` `e(I)` / `f(I)`: setStartiAP2Service /
+  setStopiAP2Service) is taken out, so a wireless CarPlay session also starts / stops the iAP2 now-playing and
+  telephony updates. Applied to the DiPO tree by `src/tbt/build.sh` after `near-hooks.diff`: DiPO 86ce5550 ->
+  d760fe5b (0.1.11's 1452d2d8 with this diff alone gives the same bytes). The only change against 1452d2d8 is those
+  two instructions (and the branch offsets after them).
 - Thanks, as upstream: W-Floyd.
 
 No manufacturer APK, odex, jar or library is shipped: the head unit rebuilds each file from its own exact stock copy,
@@ -131,6 +137,9 @@ and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
   CarPlay only: a new maneuver whose first distance is the previous maneuver's last one is shown far once (Naver Map
   order: the next turn's picture flashed for about a second), and a jump of the same maneuver's distance is held once
   (KakaoNavi order: the passed turn's picture with the next distance's bar). Every other input keeps Leafia's value.
+- 0.1.13: the Korean DiPO bridge builds start the iAP2 now-playing, call-state and telephony updates for a wireless
+  CarPlay session too (the stock code started them for USB only): the stock split view's now playing and the
+  steering-wheel call button's call state on wireless CarPlay, as on USB.
 - Only apps that are enabled are stopped for the file swap, and the same ones are started again (also by the
   settings service at boot, if a run died).
 - A status file for the JMK MAP menu (`/data/nemesis/jmk-autoplay-hud/status`) and a settings service that maps the
