@@ -228,6 +228,45 @@ check "by code choice: EV6 Korea keeps kre" [ "$(sel_of 9759e803cbff3a612f94fb23
 check "by code choice (0.1.15): EV6 Korea's choice no longer depends on its library (kre has no library line)" [ "$(sel_of 9759e803cbff3a612f94fb2302f420a2 e8b7b69bfe0cea6862d2db6ba94ada16 30a34f8331e3c74a18c0241a28a036ea 153eb1b41dd727bf3949a5a27ec59493 7e61ce5caa6bdc1ad02563fc084e240a 0123456789abcdef0123456789abcdef)" = "kre 2_tbt 3_bridge" ]
 check "by code choice: CN7 PE keeps krp, the Ioniq 6 Korea kri" eval '[ "$(sel_of 2487f61fcbae1a779fd92271c7a0360e ce035a13280e222b919d664677928538 30a34f8331e3c74a18c0241a28a036ea bc5ac4a4672362651fb0e523e68f01d3 4ddd81e7e095073156c1130449fdafed dbfe7bd2000000000000000000000000)" = "krp 2_tbt 3_bridge" ] && [ "$(sel_of 2487f61fcbae1a779fd92271c7a0360e ce035a13280e222b919d664677928538 30a34f8331e3c74a18c0241a28a036ea bc5ac4a4672362651fb0e523e68f01d3 f494a13a408aaf5605f86af5a5bb2f95 dbfe7bd2000000000000000000000000)" = "kri 2_tbt 3_bridge" ]'
 check "by code choice: US code keeps us" [ "$(sel_of fcd9285700d766d4a75ef9b089dba1e3 77a5160a52ab0f93ab2b14db884b3343 30a34f8331e3c74a18c0241a28a036ea 7dc811232a9171a18c53c337672a4e9c 00000000000000000000000000000000 $LIB_KR)" = "us 2_tbt 3_bridge" ]
+# krc / krd (0.1.16): the older firmware .KOR.0000.V035.001.250507, an older source revision than V037's (krv):
+# turn-by-turn only, each app the car's own stock code with kr's turn-by-turn patch ported onto it
+# (private/hud-port/v035-REPORT.md); no library line (another build of the library); no bridge part. krc: Carnival KA4
+# and Tucson Hybrid NX4HEV (the same code), its Iap2ServerApp V037's code (krv's line); krd: K5 Hybrid DL3HEV (krc's
+# code with other names and framework, so its GPM result is krc's and its Iap2ServerApp result krv's)
+KRC=$PKG/patches/bycode/krc/manifest; KRD=$PKG/patches/bycode/krd/manifest
+for pv in krc:"$KRC" krd:"$KRD"; do
+    p=${pv%%:*}; M=${pv#*:}
+    check "by code $p: turn-by-turn only, the four apps, no library line" [ "$(grep -v '^#' "$M" | awk '{print $1":"$2":"$3}' | tr '\n' ' ')" = "2_tbt:app:HKMC_GPM 2_tbt:app:HKMC_DiPO 2_tbt:app:Iap2ServerApp 2_tbt:app:HKMC_Navi_ExSL " ]
+    check "by code $p: no 3_bridge part" eval '! grep -q "^3_bridge " "$M"'
+    check "by code $p: the knobs are kr's" cmp -s "$PKG/patches/bycode/$p/knobs" "$PKG/patches/bycode/kr/knobs"
+done
+for ac in krc:HKMC_GPM:4cf385316c37ddc4d5c28ba69d99caee:454c8dc4741bf9852e18a6a2ca27be23 krc:HKMC_DiPO:84f17a7a755b5a3022a139526ba452bd:fe5030232f629489d3249eb7c9ef1c05 \
+          krc:HKMC_Navi_ExSL:ea6e2da50080b288f908962a6c8d5794:1bcc141690b4cab381a4f2a242829f2c \
+          krd:HKMC_GPM:d244aba596a361c850311bb0603d1eab:454c8dc4741bf9852e18a6a2ca27be23 krd:HKMC_DiPO:072ba128b4daf9669dc329cfa168a3ee:f1c23b5fe21ba6898e1cf9339caf8906 \
+          krd:Iap2ServerApp:9f32383bbf425173727ce6365971fa28:cc198983ce4e3c647eda36e23b292143 krd:HKMC_Navi_ExSL:d43adb26a20f55e5bdfd5e313bb66c9d:cbf5ce775fdd6e61767ea6bff2ea5d64; do
+    p=${ac%%:*}; r=${ac#*:}; a=${r%%:*}; r=${r#*:}; c=${r%%:*}; w=${r#*:}
+    check "by code $p: $a is V035's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$PKG/patches/bycode/$p/manifest")" = "$c bycode/$p/$a.tbt.lpd $w" ]
+    for o in kr kra krb kre krg kri krp krt krv us krc krd; do
+        [ $o = $p ] && continue
+        check "by code $p: $a's code is no other profile's ($o)" eval '! grep -q " $a $c " "$PKG/patches/bycode/$o/manifest"'
+    done
+    for o in kr krv; do
+        [ $a = Iap2ServerApp ] && [ $o = krv ] && continue    # krd's Iap2ServerApp ends at krv's result (checked below)
+        check "by code $p: $a's build is not $o's (V035's own stock code under the patch)" [ "$w" != "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt $a)" ]
+    done
+done
+check "by code krc: Iap2ServerApp is V037's code (661dc714): krv's line, word for word" [ "$(grep '^2_tbt app Iap2ServerApp ' "$KRC")" = "$(grep '^2_tbt app Iap2ServerApp ' "$PKG/patches/bycode/krv/manifest")" ]
+check "by code krd: Iap2ServerApp ends at krv's result (V037's code, one other quick slot)" [ "$(want_of "$KRD" 2_tbt Iap2ServerApp)" = "$(want_of "$PKG/patches/bycode/krv/manifest" 2_tbt Iap2ServerApp)" ]
+check "by code krd: GPM ends at krc's result (the same code in kr's names)" [ "$(want_of "$KRD" 2_tbt HKMC_GPM)" = "$(want_of "$KRC" 2_tbt HKMC_GPM)" ]
+check "by code krc / krd: DiPO and Navi results differ (Navi: two framework string IDs; DiPO: names)" eval '[ "$(want_of "$KRD" 2_tbt HKMC_DiPO)" != "$(want_of "$KRC" 2_tbt HKMC_DiPO)" ] && [ "$(want_of "$KRD" 2_tbt HKMC_Navi_ExSL)" != "$(want_of "$KRC" 2_tbt HKMC_Navi_ExSL)" ]'
+LIB_KA4=147dac01e89358ee10c6113e53d7e957; LIB_DL3=ef1e6378e7430d87baed99912be88539
+check "by code choice (0.1.16): a Carnival KA4 V035 car (DWWOLTJU's codes) gets krc, turn-by-turn only" [ "$(sel_of 4cf385316c37ddc4d5c28ba69d99caee 84f17a7a755b5a3022a139526ba452bd 661dc714e30802d505c333e33bb7f089 ea6e2da50080b288f908962a6c8d5794 4ba04b34fb542b53a61f4271f3245840 $LIB_KA4)" = "krc 2_tbt" ]
+check "by code choice (0.1.16): a Tucson Hybrid NX4HEV V035 car (2DUGUSW2's codes, its own PhoneProjection) gets krc" [ "$(sel_of 4cf385316c37ddc4d5c28ba69d99caee 84f17a7a755b5a3022a139526ba452bd 661dc714e30802d505c333e33bb7f089 ea6e2da50080b288f908962a6c8d5794 edb901264801c09f16dde2c2f088dd0e $LIB_KA4)" = "krc 2_tbt" ]
+check "by code choice (0.1.16): a K5 Hybrid DL3HEV V035 car (325RLNAK's codes) gets krd, turn-by-turn only" [ "$(sel_of d244aba596a361c850311bb0603d1eab 072ba128b4daf9669dc329cfa168a3ee 9f32383bbf425173727ce6365971fa28 d43adb26a20f55e5bdfd5e313bb66c9d bf6d2892cc8fa7a12e298836c8f01c08 $LIB_DL3)" = "krd 2_tbt" ]
+check "by code choice (0.1.16): V035 code with any library (no library line)" eval '[ "$(sel_of 4cf385316c37ddc4d5c28ba69d99caee 84f17a7a755b5a3022a139526ba452bd 661dc714e30802d505c333e33bb7f089 ea6e2da50080b288f908962a6c8d5794 4ba04b34fb542b53a61f4271f3245840 $LIB_KR)" = "krc 2_tbt" ] && [ "$(sel_of d244aba596a361c850311bb0603d1eab 072ba128b4daf9669dc329cfa168a3ee 9f32383bbf425173727ce6365971fa28 d43adb26a20f55e5bdfd5e313bb66c9d bf6d2892cc8fa7a12e298836c8f01c08 0123456789abcdef0123456789abcdef)" = "krd 2_tbt" ]'
+check "by code choice (0.1.16): a Carnival KA4 V037 car (K7UI2BUU's codes) keeps krv" [ "$(sel_of 1f29a226774d61a2b4ef899182af28cf 8d0867878b78347358f136aba85a1287 661dc714e30802d505c333e33bb7f089 12a34cb11c9325f9a4050a86a9699469 f1460f1179fc5050ea2bbebbda36628f $LIB_KR)" = "krv 2_tbt" ]
+check "by code choice (0.1.16): V035 with one app of another code fits nothing (the part is all or nothing)" eval '[ "$(sel_of 4cf385316c37ddc4d5c28ba69d99caee 84f17a7a755b5a3022a139526ba452bd 661dc714e30802d505c333e33bb7f089 d43adb26a20f55e5bdfd5e313bb66c9d 4ba04b34fb542b53a61f4271f3245840 $LIB_KA4)" = none ] && [ "$(sel_of d244aba596a361c850311bb0603d1eab 072ba128b4daf9669dc329cfa168a3ee 661dc714e30802d505c333e33bb7f089 d43adb26a20f55e5bdfd5e313bb66c9d bf6d2892cc8fa7a12e298836c8f01c08 $LIB_DL3)" = none ]'
+check "by code choice (0.1.16): the LX2 V034 car (KOVZX33T: krd's Iap2ServerApp code, the rest its own) fits nothing" [ "$(sel_of 7117150f01544cfe6491dfc586b39f55 66ef6c36c1b20a894fcfe3283c40202e 9f32383bbf425173727ce6365971fa28 783b9536648a9c96fc79aea3e323e0b8 1be324a2a8113a38a7cfd91cefb01448 0ee6b06b3b9951c6e1eb341df81ed99d)" = none ]
 # 0.1.11: the near-turn filter (src/tbt: com.jmk.hud.Near + near-hooks.diff, built by src/tbt/build.sh from the 0.1.10
 # results 990ef4c3 / 86ce5550): every Korean profile's GPM and DiPO bridge end at the same two new results, the DiPO
 # turn-by-turn build (no near-turn layout in it) is unchanged, and so is the us profile (no Leafia KR code).
@@ -308,7 +347,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.15" grep -q '^package-version=0.1.15$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.16" grep -q '^package-version=0.1.16$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]

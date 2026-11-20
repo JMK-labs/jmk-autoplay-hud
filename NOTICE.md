@@ -95,6 +95,13 @@ patch data is data; the binaries are listed below with their sources).
   by JMK's own tools (AGPL-3.0, private/hud-port/neev-v037/tools: deodex at the Dalvik field layout, the odex quick-call
   slots checked against the Ioniq 5's code, the V037 classes put into the `kr` build under its names, per-member merge);
   the receiver library is Ioniq 5 Korea's, so its line is `kr`'s. Only deltas and md5s; no stock file ships.
+- **By-code profiles `krc` and `krd`** (`patches/bycode/krc`, `patches/bycode/krd`, V035, 0.1.16): Kia Carnival KA4 and
+  Hyundai Tucson Hybrid NX4HEV Korea (`krc`, the same app code) and Kia K5 Hybrid DL3HEV Korea (`krd`) on the older
+  firmware .KOR.0000.V035.001.250507, whose apps are an older source revision still than V037's. Turn-by-turn only, made
+  as `krv`'s by the same JMK tools (AGPL-3.0, private/hud-port/v035/<group>/tools): each result is that car's own stock
+  code with the `kr` profile's turn-by-turn changes (Leafia's `neev_kr` build plus ours) ported onto it. Iap2ServerApp
+  runs V037's code (`krc`: `krv`'s line; `krd`: its own delta to `krv`'s result). No receiver-library line (another build
+  of the library). Only deltas and md5s; no stock file ships.
 - **Korea Projection** by StopDragon (https://github.com/StopDragon/korea-projection, release 1.7.4; its wireless mode
   2.4.4 in the HMG-API fork https://github.com/StopDragon/HMG-API, branch korea-build, commit b573ac6,
   `mods/wireless-carplay-aa/src/hmgapi/mods/wireless/dipo/CpTurnsFit.java` `near()`), AGPL-3.0: the method of the
@@ -147,6 +154,7 @@ and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
   recorded. Before, a file an earlier version patched could be read as stock when the ownership record did not
   recognise it. The update then kept the earlier build for good, or kept our patched apk as the stock copy. The gate
   and the put-back now share one ownership rule.
+- 0.1.16: turn-by-turn on the Korean V035.001.250507 firmware (profiles `krc`, `krd`); no script change.
 - 0.1.11: the near-turn layout ("big picture") of the Korean GPM and DiPO bridge builds. A picture that went near
   stays near up to 50 m past Leafia's 457 m window (Android Auto and CarPlay: distance wobble at the edge flipped it).
   CarPlay only: a new maneuver whose first distance is the previous maneuver's last one is shown far once (Naver Map

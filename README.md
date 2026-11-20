@@ -28,6 +28,18 @@ Plus the CarPlay library recipes, each checked on its own file: `carplay-utils-c
 `carplay-core-wifi` (libCarPlayCore.so). On NEEV.KOR 260902 only the audio one applies (the other two are NATIVE).
 `os="*.KOR.*"` in NEMESIS.data limits installs to KOR firmware; the other sets are kept for other models.
 
+0.1.16: turn-by-turn for the Korean cars on the older firmware .KOR.0000.V035.001.250507 (by-code profiles `krc`, `krd`).
+- **`krc`: Kia Carnival KA4 and Hyundai Tucson Hybrid NX4HEV V035** (DWWOLTJU, 2DUGUSW2: the same GPM, DiPO, Navi,
+  Iap2ServerApp and library code). V035 is an older source revision than V037 (`krv`) and V039 (`kr`). Each result is
+  the car's own stock code with kr's turn-by-turn changes ported on (the 0.1.11 near-turn filter included), as krv's.
+  Iap2ServerApp is V037's code, so its line is krv's.
+- **`krd`: Kia K5 Hybrid DL3HEV V035** (325RLNAK): the same source as KA4 V035 with other ProGuard names and another
+  framework (group B's quick-call slots); its Iap2ServerApp differs from V037's by one quick slot.
+- Turn-by-turn only. No receiver-library line (their library is another build; kre's moved hook broke Android Auto). The
+  CarPlay bridge was built for KA4 and DL3HEV but is held back: V035's framework, framework-res and Broadcom / iap2
+  libraries are needed to check it (카플레이용 파일 보내기). Unproven on these cars: `USMManager.getDistanceSpeedUnit()`
+  and `TurnList.<init>()` (as on V037). Report: private/hud-port/v035-REPORT.md. Not car-tested.
+
 0.1.15: an update over files an earlier version patched builds from the stock copies again, and the
 EV6 Korea profile leaves the receiver library stock.
 - **Kept-old after an update (DPPB5BHV, Kia EV6 Korea, 2026-11-19).** 0.1.9 updated it fine (profile `kre`), then 0.1.10

@@ -1,0 +1,18 @@
+# by-code profile krc (2026-11-20): Kia Carnival KA4 and Hyundai Tucson Hybrid NX4HEV Korea on the older firmware
+# .KOR.0000.V035.001.250507 (car reports DWWOLTJU KA4, 2DUGUSW2 NX4HEV: the same code md5s for these four apps). Their
+# HKMC_GPM, HKMC_DiPO and HKMC_Navi_ExSL are an older source revision than V037's (krv) and V039's (kr) apps (another
+# ProGuard run, some methods changed or missing), dexopted against an older framework (MicomAudioManager,
+# SplitScreenManager, MiscManager, ... have other quick-call slots). Each result is the V035 car's own stock code with
+# the kr profile's turn-by-turn patch ported onto it, as krv's: the kr build (V039 code + patch) with every class V035's
+# stock code has differently put back as V035's, in the kr build's names; a class the patch changes was merged per
+# member (it touches no member V035 changed). Iap2ServerApp is V037's code (661dc714), so its line is krv's.
+# Turn-by-turn only (2_tbt). No library line: their libautoreceiver_infobank.so (147dac01) is another build of the
+# library, Leafia's native hook cannot be moved by a delta, and kre's moved hook broke Android Auto (0.1.15): it stays
+# stock and turn-by-turn goes the stock NextTurn path, as on krp / kri / kre. No 3_bridge part: the CarPlay bridge needs
+# V035's framework and Broadcom library to check, and KA4's and NX4HEV's PhoneProjection differ
+# (private/hud-port/v035-REPORT.md). The knobs are kr's.
+# <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
+2_tbt app HKMC_GPM 4cf385316c37ddc4d5c28ba69d99caee bycode/krc/HKMC_GPM.tbt.lpd 454c8dc4741bf9852e18a6a2ca27be23
+2_tbt app HKMC_DiPO 84f17a7a755b5a3022a139526ba452bd bycode/krc/HKMC_DiPO.tbt.lpd fe5030232f629489d3249eb7c9ef1c05
+2_tbt app Iap2ServerApp 661dc714e30802d505c333e33bb7f089 bycode/krv/Iap2ServerApp.tbt.lpd cc198983ce4e3c647eda36e23b292143
+2_tbt app HKMC_Navi_ExSL ea6e2da50080b288f908962a6c8d5794 bycode/krc/HKMC_Navi_ExSL.tbt.lpd 1bcc141690b4cab381a4f2a242829f2c
