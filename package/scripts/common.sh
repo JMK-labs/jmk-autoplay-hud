@@ -169,6 +169,13 @@ fp_save() { local t=$FP_FILE.tmp; fp_now > "$t" 2>/dev/null && mv "$t" "$FP_FILE
 # check. Before, the gate's ours() knew only "the apk is in APPLIED" while the put-back's restorable() (this rule) also
 # knew the half-way case: an odex the uninstall would have put back was "not ours" to the next install, which then
 # took that patched odex for the stock one (plan_src) and kept the earlier version's build on every later version.
+# 0.1.17 (GMI6OZC2, Ioniq 5 Korea, 2026-11-20): or a result an earlier version wrote (patches/known, src/mkknown.py: the
+# rebuilt .apk of every fixed set and every rebuilt library of any version). That car's HKMC_GPM.apk is 1c4bfdda, the
+# neev_kr GPM build of 0.1.0-0.1.4 (Leafia KR r8.2's, byte for byte), with no applied line for it: every version since
+# locked it as another tool's file. Ours, it is rebuilt from its verified stock copy (check_target, stock_copy); without
+# one it stays as it is, and the reason says so.
+KNOWN=$PATCHES/known
+known() { [ -n "$2" ] && has_line "$1 $2" "$KNOWN"; }
 ours() {
     local f=$1 apk a
     case "$f" in
@@ -177,8 +184,9 @@ ours() {
             a=$(md5of "$(live_of "$apk")")
             [ -n "$a" ] || return 1
             has_line "$apk $a" "$APPLIED" && return 0
+            known "$apk" "$a" && return 0
             fw_same && [ "$a" = "$(lookup "$STOCK_LIST" "$apk")" ] ;;
-        *) [ -n "$2" ] && has_line "$f $2" "$APPLIED" ;;
+        *) [ -n "$2" ] && { has_line "$f $2" "$APPLIED" || known "$f" "$2"; } ;;
     esac
 }
 restorable() { ours "$1" "$2"; }   # the put-back's name for it (restore_files, fw_reconcile)
@@ -222,6 +230,9 @@ fw_reconcile() {
 set_dir() { if [ "$1" = auto ]; then echo "$AUTO"; else echo "$PATCHES/$1"; fi; }
 set_ok() { local d; [ -n "$1" ] || return 1; d=$(set_dir "$1"); [ -s "$d/stock" ] && [ -s "$d/manifest" ]; }
 stock_sum() { lookup "$(set_dir "$SET")/stock" "$1"; }
+# 0.1.17: a fixed set with a "superseded" file (patches/dl3hev: Leafia's original build, none of our changes) is the
+# fallback: postinstall tries the by-code profiles first and takes the set only when none fits
+set_superseded() { [ -n "$1" ] && [ "$1" != auto ] && [ -f "$(set_dir "$1")/superseded" ]; }
 
 car_set() {
     local p pre set name
@@ -561,6 +572,24 @@ set_fits() {
     return 0
 }
 
+# 0.1.17: what the stock snapshots of Leafia / projection.tbt (/data/nemesis/backup/<part>, flat names) still hold of
+# this set's stock files, as "<part>:<file>,..." words; empty when there is no snapshot. For the locked report only
+# (GMI6OZC2: Leafia KR's builds live, no stock copy of ours): never a source.
+leafia_copies() {
+    local d f s got out=
+    [ -n "$SET" ] && [ -f "$(set_dir "$SET")/stock" ] || return 0
+    for d in "$R/data/nemesis/backup/projection.tbt" "$R/data/nemesis/backup/wireless.carplay.bt"; do
+        [ -d "$d" ] || continue
+        got=
+        while read -r f s || [ -n "$f" ]; do
+            case "$f" in ''|'#'*) continue ;; esac
+            [ "$(md5of "$d/$f")" = "$s" ] && got="$got,$f"
+        done < "$(set_dir "$SET")/stock"
+        out="$out ${d##*/}:${got#,}"
+    done
+    echo "${out# }"
+}
+
 # ---------------------------------------------------------------- the stock md5 gate
 # (ours <file> <live md5>: above, with restorable)
 
@@ -584,7 +613,12 @@ check_target() {
         s=$(stock_sum "$f")
         got=$(md5of "$(live_of "$f")")
         [ "$got" = "$s" ] && continue
-        if [ "$(md5of "$BACKUP/$f")" = "$s" ] && ours "$f" "$got"; then continue; fi
+        if ours "$f" "$got"; then
+            [ "$(md5of "$BACKUP/$f")" = "$s" ] && continue
+            # 0.1.17: ours (an earlier build of this add-on, or Leafia's identical one) but no stock copy to build from
+            REASON="$f is a build of this add-on (md5 ${got:-missing}) but its stock copy ($s) is not in $BACKUP"
+            return 1
+        fi
         REASON="$f is not the stock file (md5 ${got:-missing}, want $s)"
         return 1
     done
@@ -1207,4 +1241,42 @@ integrity_read() {
     while IFS='=' read -r k v || [ -n "$k" ]; do
         case "$k" in lock) [ "$v" = 1 ] && ILOCK=1 ;; text) ITEXT=$v ;; esac
     done < "$R/data/nemesis/jmk-updates/integrity"
+}
+
+# 0.1.17: the lock's hold, the one place that applies it: postinstall first of all (every install and update: NEMESIS,
+# NEMESIS Manager, the MAP menu) and the settings service at its start. Before, only the service held the lock, once
+# (put back, records dropped, LOCK_MARK written); an update while it said lock=1 was then a fresh install over the stock
+# files, and the service NEMESIS starts after every update found the mark and did nothing: patched while locked.
+# lock_hold: every file this package wrote or added goes back (restore_files: only what ours() says is ours, as an
+# uninstall), the records go (the md5-checked stock copies stay in $BACKUP), state=locked with the lock's text, and only
+# then the mark. 1 (records kept, no mark: the next start tries again) when a file could not be put back.
+# lock_held: the mark, and nothing of ours recorded (a mark next to records is an earlier version's update over it).
+LOCK_MARK=$STORE/integrity-locked
+lock_held() { [ -f "$LOCK_MARK" ] && [ ! -f "$STOCK_LIST" ] && [ ! -f "$ADDED" ]; }
+lock_hold() {
+    local f s names=
+    if [ -f "$STOCK_LIST" ] || [ -f "$ADDED" ]; then
+        system_writable || { REASON="/system is read-only"; log "integrity lock: /system read-only, nothing put back"; return 1; }
+        apps_hold
+        REASON=
+        if ! restore_files || ! remove_added; then
+            apps_release
+            log "integrity lock: $REASON (the stock copies stay in $BACKUP)"
+            report integrity-lock-failed "$REASON"
+            return 1
+        fi
+        if [ -f "$STOCK_LIST" ]; then
+            while read -r f s || [ -n "$f" ]; do case "$f" in *.apk) names="$names ${f%.apk}" ;; esac; done < "$STOCK_LIST"
+        fi
+        wipe_dalvik "$names"
+        apps_release
+        leafia_props_clear
+        rm -f "$STOCK_LIST" "$APPLIED" "$ADDED"
+        sync
+        log "integrity lock: every stock file is back - reboot the head unit"
+    fi
+    : > "$LOCK_MARK"
+    write_status locked "${ITEXT:-locked}"
+    report integrity-locked "$ITEXT"
+    return 0
 }

@@ -26,39 +26,13 @@ boot_check
 # 0.1.9 (the owner 2026-11-19): the tamper lock (the JMK MAP menu's daemon). While it says lock=1 every stock file goes
 # back (ownership-checked, as an uninstall) and the state says its text; once it no longer does, the add-on is applied
 # again (as a fresh install: its postinstall).
+# 0.1.17: the hold is common.sh lock_hold, the same one postinstall runs first; held is the mark with nothing of ours
+# recorded (a mark next to records: an update of an earlier version patched over it), the mark goes with a postinstall
+# that applies.
 integrity_read
-if [ -n "$ILOCK" ] && [ ! -f "$STORE/integrity-locked" ]; then
-    if [ -f "$STOCK_LIST" ] || [ -f "$ADDED" ]; then
-        if system_writable; then
-            apps_hold
-            REASON=
-            if restore_files && remove_added; then
-                names=
-                if [ -f "$STOCK_LIST" ]; then
-                    while read -r f s || [ -n "$f" ]; do case "$f" in *.apk) names="$names ${f%.apk}" ;; esac; done < "$STOCK_LIST"
-                fi
-                wipe_dalvik "$names"
-                apps_release
-                leafia_props_clear
-                rm -f "$STOCK_LIST" "$APPLIED" "$ADDED"
-                : > "$STORE/integrity-locked"
-                write_status locked "${ITEXT:-locked}"
-                log "boot: integrity lock: every stock file is back - reboot the head unit"
-                report integrity-locked "$ITEXT"
-            else
-                apps_release
-                log "boot: integrity lock: $REASON (the stock copies stay in $BACKUP)"
-                report integrity-lock-failed "$REASON"
-            fi
-        else
-            log "boot: integrity lock: /system read-only, nothing put back"
-        fi
-    else
-        : > "$STORE/integrity-locked"
-        write_status locked "${ITEXT:-locked}"
-    fi
-elif [ -z "$ILOCK" ] && [ -f "$STORE/integrity-locked" ]; then
-    rm -f "$STORE/integrity-locked"
+if [ -n "$ILOCK" ]; then
+    lock_held || lock_hold || log "boot: integrity lock not held yet: $REASON"
+elif [ -f "$LOCK_MARK" ]; then
     log "boot: integrity lock lifted: applying the add-on again"
     ( cd "$PKG" && sh scripts/postinstall.sh ) >> "$LOG" 2>&1
 fi

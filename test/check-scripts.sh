@@ -267,6 +267,39 @@ check "by code choice (0.1.16): V035 code with any library (no library line)" ev
 check "by code choice (0.1.16): a Carnival KA4 V037 car (K7UI2BUU's codes) keeps krv" [ "$(sel_of 1f29a226774d61a2b4ef899182af28cf 8d0867878b78347358f136aba85a1287 661dc714e30802d505c333e33bb7f089 12a34cb11c9325f9a4050a86a9699469 f1460f1179fc5050ea2bbebbda36628f $LIB_KR)" = "krv 2_tbt" ]
 check "by code choice (0.1.16): V035 with one app of another code fits nothing (the part is all or nothing)" eval '[ "$(sel_of 4cf385316c37ddc4d5c28ba69d99caee 84f17a7a755b5a3022a139526ba452bd 661dc714e30802d505c333e33bb7f089 d43adb26a20f55e5bdfd5e313bb66c9d 4ba04b34fb542b53a61f4271f3245840 $LIB_KA4)" = none ] && [ "$(sel_of d244aba596a361c850311bb0603d1eab 072ba128b4daf9669dc329cfa168a3ee 661dc714e30802d505c333e33bb7f089 d43adb26a20f55e5bdfd5e313bb66c9d bf6d2892cc8fa7a12e298836c8f01c08 $LIB_DL3)" = none ]'
 check "by code choice (0.1.16): the LX2 V034 car (KOVZX33T: krd's Iap2ServerApp code, the rest its own) fits nothing" [ "$(sel_of 7117150f01544cfe6491dfc586b39f55 66ef6c36c1b20a894fcfe3283c40202e 9f32383bbf425173727ce6365971fa28 783b9536648a9c96fc79aea3e323e0b8 1be324a2a8113a38a7cfd91cefb01448 0ee6b06b3b9951c6e1eb341df81ed99d)" = none ]
+# 0.1.17: the dl3hev set (Leafia's original build, unchanged since projection.tbt) is superseded: the by-code profiles
+# first. Its cars (DL3, DL322, DL3HEV22, MQ422HEV, MQ4HEV, YGPE, CKPE, DEPEHEV V039.001.260902, all with exactly its stock
+# files) run group B's GPM / DiPO / Iap2ServerApp / Navi code (every Leafia dl3hev delta rebuilds its target md5 from it:
+# private/hud-port/dl3hev-v039/tools/probe_src.py) and the Ioniq 5's library: krb's turn-by-turn part. Their
+# framework-res puts android:id/topPanel at 0x010202f0 (DL3HEV22's upload, as K8's), so their PhoneProjection is not
+# group B's 4e8915b2 and krb's bridge part does not fit: held.
+DL3_CODES="0f2a3aea66a6eb7ba3c0db5fe65fc684 11e53c789566ac82397e0bed6dda510a ac63fada887e5acc594d96b100238692 6f4fe6b2c6dfb311cdbb2e9f2e2ec5aa"
+check "0.1.17 dl3hev: marked superseded (the by-code profiles first)" [ -s "$PKG/patches/dl3hev/superseded" ]
+check "0.1.17 dl3hev: the only superseded set" [ "$(ls "$PKG"/patches/*/superseded | wc -l | tr -d ' ')" = 1 ]
+check "0.1.17 dl3hev: its stock library is krb's library line (48ee793a)" [ "$(stock_of dl3hev libautoreceiver_infobank.so)" = "$(awk '$1=="2_tbt" && $2=="file" {print $4}' "$KRB")" ]
+check "by code choice (0.1.17): the dl3hev set's cars (group B's code, another PhoneProjection) get krb, turn-by-turn only" [ "$(sel_of $DL3_CODES 0123456789abcdef0123456789abcdef $LIB_KR)" = "krb 2_tbt" ]
+check "by code choice (0.1.17): ... and with group B's PhoneProjection (4e8915b2) krb with the bridge, as group B" [ "$(sel_of $DL3_CODES 4e8915b28483230964250e3da9463e4e $LIB_KR)" = "krb 2_tbt 3_bridge" ]
+check "by code choice (0.1.17): ... with another library nothing (the dl3hev set stays the fallback)" [ "$(sel_of $DL3_CODES 0123456789abcdef0123456789abcdef 0123456789abcdef0123456789abcdef)" = none ]
+check "0.1.17 postinstall tries the profiles first for a superseded set" grep -q 'set_superseded "$SET" || ! set_fits "$SET"' "$PKG/scripts/postinstall.sh"
+# 0.1.17 (GMI6OZC2): patches/known, every result an earlier version wrote (src/mkknown.py), for ours()
+check "0.1.17 known: src/mkknown.py gives package/patches/known (git history and the zips)" python3 -I "$P/src/mkknown.py" --check
+for x in HKMC_GPM.apk:1c4bfddabb210bf4e7dc5e4eefc2c2b0 HKMC_DiPO.apk:33dc9d70b07738af5730e936e3e11c8d HKMC_Navi_ExSL.apk:5115031f79ff6f0b059fcde1a3c1b81d \
+         Iap2ServerApp.apk:30c94ea638980401423c56772e778b25 PhoneProjection.apk:677200417207a2e4ff6929550020b459 libautoreceiver_infobank.so:aba7787cb6d365c5ad583a8dc6217ae2; do
+    check "0.1.17 known: GMI6OZC2's live ${x%%:*} (${x#*:}, 0.1.0-0.1.4's neev_kr build)" grep -qx "${x%%:*} ${x#*:}" "$PKG/patches/known"
+done
+known_missing() {   # this version's fixed-set results that patches/known lacks, one per line
+    local m set a b c d e
+    for m in "$PKG"/patches/*/manifest; do
+        set=$(basename "$(dirname "$m")")
+        effective "$set" | while read -r a b c d e; do
+            [ "$b" = app ] && c=$c.apk
+            grep -qx "$c $e" "$PKG/patches/known" || echo "$set $c $e"
+        done
+    done
+}
+check "0.1.17 known: every result of this version's fixed sets is in it" [ -z "$(known_missing)" ]
+check "0.1.17 known: no stock md5 of any set in it (a stock file is never ours)" eval '! cat "$PKG"/patches/*/stock | grep -v "^#" | while read -r f s; do grep -qx "$f $s" "$PKG/patches/known" && echo "$f"; done | grep -q .'
+check "0.1.17 known: no .odex line (our dexopt writes those; ours() follows the apk)" eval '! grep -q "\.odex " "$PKG/patches/known"'
 # 0.1.11: the near-turn filter (src/tbt: com.jmk.hud.Near + near-hooks.diff, built by src/tbt/build.sh from the 0.1.10
 # results 990ef4c3 / 86ce5550): every Korean profile's GPM and DiPO bridge end at the same two new results, the DiPO
 # turn-by-turn build (no near-turn layout in it) is unchanged, and so is the us profile (no Leafia KR code).
@@ -347,7 +380,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.16" grep -q '^package-version=0.1.16$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.17" grep -q '^package-version=0.1.17$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]
@@ -375,7 +408,10 @@ for z in "$P/dist/jmk-autoplay-hud-$V.zip" "$P/dist/jmk-autoplay-hud-$V-kr.zip";
     rm -rf "$T/x"; mkdir "$T/x"; unzip -q "$z" -d "$T/x"
     for f in $scripts; do check "${z##*/}: ${f#./} as in package/" cmp -s "$PKG/$f" "$T/x/$f"; done
 done
-check "kr zip: only the neev_kr set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V-kr.zip" | grep "^patches/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "cars neev_kr " ]'
+check "kr zip: only the neev_kr set (and the cars list and our earlier results)" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V-kr.zip" | grep "^patches/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "cars known neev_kr " ]'
+for z in "$P/dist/jmk-autoplay-hud-$V.zip" "$P/dist/jmk-autoplay-hud-$V-kr.zip"; do
+    check "0.1.17 ${z##*/}: patches/known (= package/) and src/mkknown.py inside" eval 'unzip -p "$z" patches/known | cmp -s - "$PKG/patches/known" && unzip -Z1 "$z" | grep -qx src/mkknown.py'
+done
 check "full zip: every set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V.zip" | grep "^patches/.*/" | cut -d/ -f2 | sort -u | tr "\n" " ")" = "bycode common dl3hev ev6 ev6_ca neev neev23_260903 neev_ca neev_kr nq5 " ]'
 # a release (published, open: not obfuscated) is the full test zip itself, byte for byte
 for r in "$P"/dist/release/*.zip; do

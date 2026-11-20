@@ -27,6 +27,21 @@ old_set=
 [ -f "$SET_FILE" ] && read -r old_set < "$SET_FILE"
 fw_reconcile
 fp_save
+# 0.1.17: the tamper lock first (common.sh lock_hold). While the MAP menu's verdict says lock=1, this run, whatever
+# started it (a first install, an update from NEMESIS, NEMESIS Manager or the MAP menu, the service after a lift), builds
+# and writes nothing: whatever of ours is live goes back and the state says the lock's text. Its own release rule
+# (the verdict no longer says lock=1) applies the add-on: here, or at the service's next start.
+integrity_read
+if [ -n "$ILOCK" ]; then
+    if lock_hold; then
+        log "integrity lock (${ITEXT:-lock=1}): nothing applied; the add-on is applied once the lock is lifted"
+        exit 0
+    fi
+    write_status failed "${ITEXT:+$ITEXT · }integrity lock: could not put back: $REASON (the stock copies stay in $BACKUP)"
+    log "integrity lock: could not put back: $REASON (records kept; the service tries again at its next start)"
+    exit 0
+fi
+rm -f "$LOCK_MARK"
 TARGETS=
 old_patched=$(patched_list)
 SET=
@@ -46,7 +61,8 @@ lock() {
     write_status locked "$1"
     log "locked: $1 (nothing changed)${BYCODE_WHY:+ (by code: $BYCODE_WHY)}"
     [ -d "$R/data/nemesis/backup/projection.tbt" ] && log "note: /data/nemesis/backup/projection.tbt (the snapshot of Leafia / projection.tbt) is still there: its uninstall may not have finished"
-    report postinstall-locked "$1; product $(getprop ro.build.product); live $(live_sums); code $(code_sums)${BYCODE_WHY:+; by code: $BYCODE_WHY}"
+    lc=$(leafia_copies)
+    report postinstall-locked "$1; product $(getprop ro.build.product); live $(live_sums); code $(code_sums)${BYCODE_WHY:+; by code: $BYCODE_WHY}${lc:+; leafia snapshot $lc}"
     exit 0
 }
 fail() {   # nothing of this run is left in /system
@@ -77,7 +93,10 @@ rollback() {   # $1 = why: every stock file back, the added converter gone, then
 SET=$(pick_set) || SET=
 # 0.1.4: no set has this car's files (or it is the by-code set, made again from the stock files each time): the parts
 # whose code this car runs, rebuilt from its own files (bycode_build)
-if [ -z "$SET" ] || [ "$SET" = auto ] || ! set_fits "$SET"; then
+# 0.1.17: also a superseded set (dl3hev: Leafia's original build): our by-code builds first, the set when none fits. On
+# an update from that set the code comes from the verified stock copies (stock_copy), and the gate replaces its files
+# (ours: the applied record names them).
+if [ -z "$SET" ] || [ "$SET" = auto ] || set_superseded "$SET" || ! set_fits "$SET"; then
     named=$SET
     if bycode_build; then
         SET=auto
@@ -96,7 +115,8 @@ case "$(getprop ro.build.product)" in NEEV.KOR.*) ;; *)
         # 0.1.15: the stock code the profile was chosen by (code_sums reads the live odex: our own build's code on an update)
         report other-model-set "set auto (profile $(cat "$AUTO/profile"), parts $(cat "$AUTO/parts")); product $(getprop ro.build.product); code ${BYCODE_CODES:-$(code_sums)}"
     else
-        report other-model-set "set $SET; product $(getprop ro.build.product)"
+        # 0.1.17: a superseded set kept (no profile fitted): the stock code it was read as, so a profile can be made
+        report other-model-set "set $SET; product $(getprop ro.build.product)${BYCODE_CODES:+; code $BYCODE_CODES}"
     fi ;;
 esac
 [ -f "$R/system/etc/permissions/com.hkmc.software.connectivity.carplay_wireless.xml" ] ||
@@ -107,7 +127,11 @@ todo=
 for t in $TARGETS; do
     split_target "$t"
     check_target || lock "$REASON"
-    if [ "$T_HOW" = build ]; then todo="$todo $t"; else log "$(t_main) ($T_PART) is patched already"; fi
+    if [ "$T_HOW" = build ]; then todo="$todo $t"; else
+        log "$(t_main) ($T_PART) is patched already"
+        # 0.1.17: this version's own result over a verified stock copy is ours: recorded if the applied record lost it
+        has_line "$(t_main) $T_WANT" "$APPLIED" || applied_mark "$(t_main)" "$(stock_sum "$(t_main)")"
+    fi
 done
 check_recipes
 # 0.1.8 (QA #7): files an earlier version or profile patched that this one does not name: put back (when ours) below

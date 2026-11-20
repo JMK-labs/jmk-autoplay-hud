@@ -56,7 +56,8 @@ patch data is data; the binaries are listed below with their sources).
   IDs. 2026-11-20, the CarPlay bridge part: their PhoneProjection is the Tucson's stock code (`krt`) with other
   ProGuard names and the Tucson's resources, so its bridge build is `krt`'s (Leafia's `neev_kr` bridge build with eight
   drawable IDs changed), and HKMC_DiPO / Iap2ServerApp end at the `kr` profile's bridge builds. Only deltas and md5s;
-  no stock file ships.
+  no stock file ships. 0.1.17: also the turn-by-turn part of the cars of Leafia's `dl3hev` set (Kia K5, K5 Hybrid,
+  Sorento Hybrid, K7, Stinger, Niro Hybrid Korea V039): the same app code.
 - **By-code profile `kra`** (`patches/bycode/kra`, 2026-11-19): the `kr` profile for Korean K8, K8 Hybrid and Seltos
   head units (GL3, GL3HEV, SP2PE V039.001.260902), whose apps run Ioniq 5 Korea's app code. Their PhoneProjection is
   Ioniq 5 Korea's stock code as well, built with their own resource table, so its CarPlay bridge build is Leafia's
@@ -155,6 +156,12 @@ and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
   recognise it. The update then kept the earlier build for good, or kept our patched apk as the stock copy. The gate
   and the put-back now share one ownership rule.
 - 0.1.16: turn-by-turn on the Korean V035.001.250507 firmware (profiles `krc`, `krd`); no script change.
+- 0.1.17: the tamper lock is held by every postinstall and the settings service through one function (`lock_hold`):
+  an install or update while the JMK MAP menu says `lock=1` writes nothing, and puts back anything of ours that is
+  live. `patches/known` (`src/mkknown.py`, JMK's own, AGPL-3.0) lists every result an earlier version wrote: ours()
+  counts those, so such a file is rebuilt from its verified stock copy (and is never read as a stock file). A fixed set
+  with a `superseded` file (`dl3hev`, Leafia's original K5 Hybrid build) is the fallback behind the by-code profiles,
+  so its cars get `krb`'s turn-by-turn builds.
 - 0.1.11: the near-turn layout ("big picture") of the Korean GPM and DiPO bridge builds. A picture that went near
   stays near up to 50 m past Leafia's 457 m window (Android Auto and CarPlay: distance wobble at the edge flipped it).
   CarPlay only: a new maneuver whose first distance is the previous maneuver's last one is shown far once (Naver Map

@@ -1,0 +1,35 @@
+# results of this add-on (src/mkknown.py, apps/jmk-autoplay-hud): "<file> <md5>" of every rebuilt .apk of a fixed set and every
+# rebuilt library any version wrote; ours() counts a live file with one of these md5s as this package's.
+HKMC_DiPO.apk 00447fe4ec7b0f6c3cab38c0d7a944bf
+HKMC_DiPO.apk 13633ac624e850cfad2aa80ddf0be445
+HKMC_DiPO.apk 154204dd700d02a6d47b4d7b6550c8f6
+HKMC_DiPO.apk 1ced905ac98063210d93daa536eb9aeb
+HKMC_DiPO.apk 33dc9d70b07738af5730e936e3e11c8d
+HKMC_DiPO.apk 4150a328e5447ad4511a92cccd49ce10
+HKMC_DiPO.apk 485b12e96b6ff6e88cbfd5cc01de7cd5
+HKMC_DiPO.apk 83482d5aec90573af95d3bc4e310151f
+HKMC_DiPO.apk 8b1d23f89ceff4016ade508be1691d18
+HKMC_DiPO.apk d7465c4fe49f48da5a8b15dad636ac44
+HKMC_DiPO.apk e7c1f412233482e12bde8543c6c1e24f
+HKMC_GPM.apk 0308224b94c7e1b81d372a8ea1535aed
+HKMC_GPM.apk 08a29f343fbdb2abc7e11eb8a5698653
+HKMC_GPM.apk 1929356d4d7126b28ffd3a6f13392fcf
+HKMC_GPM.apk 1c4bfddabb210bf4e7dc5e4eefc2c2b0
+HKMC_GPM.apk 429a1205e0d7430a04c9b08d1c64c78b
+HKMC_GPM.apk 7c6df0f570677157326b105b6b87bfc2
+HKMC_GPM.apk 7f69ea05602f6ab9d5ce4da432e2a1d1
+HKMC_GPM.apk 8b13805f77cd8bb35691fb8b43a8bb99
+HKMC_GPM.apk e99223a2f17723660345205242054b12
+HKMC_GPM.apk ebff5084e03d0716aebbc3907bb15171
+HKMC_Navi_ExSL.apk 5115031f79ff6f0b059fcde1a3c1b81d
+HKMC_Navi_ExSL.apk 5afa7611235c0960fb82ad4b4329f516
+HKMC_Navi_ExSL.apk b1fc88d42954c41e7944e9247647e9ad
+HKMC_Navi_ExSL.apk e01f7ef64d1d824930b656129f77c6bc
+HKMC_Navi_ExSL.apk ffe7aa183e34beceab9233785857cc62
+Iap2ServerApp.apk 30c94ea638980401423c56772e778b25
+Iap2ServerApp.apk 75d7fea4d2009be6aa5c840118f58c94
+PhoneProjection.apk 677200417207a2e4ff6929550020b459
+libautoreceiver_infobank.so 120bab2c81ee6c238e2aab219bf2babe
+libautoreceiver_infobank.so 84321500e6921b9222d5b91ff3ca75b2
+libautoreceiver_infobank.so aba7787cb6d365c5ad583a8dc6217ae2
+libautoreceiver_infobank.so c08410a8d32a615b1aa805cd8a243d52

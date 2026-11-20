@@ -21,12 +21,52 @@ own stock file with lpatch, only when that file has the exact stock md5 the set 
 | `neev_ca` | Hyundai Ioniq 5 (Canada), NEEV.CAN. | as `neev` (own lib patch) |
 | `ev6` | Kia EV6 (US), CVEV.USA. | as `neev` |
 | `ev6_ca` | Kia EV6 (Canada), CVEV.CAN. | as `neev` (ev6 patches, Canadian stock apks) |
-| `dl3hev` | Kia K5 Hybrid Korea | as `neev`; patches/cars has no line for it (as Leafia's Korean port ships it): reached only when its stock files all match |
+| `dl3hev` | Kia K5 Hybrid Korea (and every Korean V039 car with exactly its stock files) | as `neev`; patches/cars has no line for it (as Leafia's Korean port ships it): reached only when its stock files all match. 0.1.17: superseded (Leafia's original build): those cars get the by-code profile `krb`, the set only when no profile fits |
 
 Plus the CarPlay library recipes, each checked on its own file: `carplay-utils-converter` (libCarPlayUtils.so, with
 `libev6aac.so`), `carplay-audio-formats` (libCarPlayAudio.so: AAC music, Opus voice over Wi-Fi) and
 `carplay-core-wifi` (libCarPlayCore.so). On NEEV.KOR 260902 only the audio one applies (the other two are NATIVE).
 `os="*.KOR.*"` in NEMESIS.data limits installs to KOR firmware; the other sets are kept for other models.
+
+0.1.17: the tamper lock holds through updates, our own earlier builds are ours again, and the cars of Leafia's K5 Hybrid
+set get our builds.
+- **The tamper lock now holds through installs and updates.** Before, only the settings service read the lock, once at
+  its start: it put every stock file back, dropped the records and wrote a mark. An install or an update while the
+  lock said `lock=1` (from NEMESIS, NEMESIS Manager or the MAP menu) then saw a stock car with no records and patched
+  it like a fresh install. The service NEMESIS starts after every update found the mark and did nothing, so the car
+  ran patched files while the menu said it was locked. Now one hold (`lock_hold` in `scripts/common.sh`) is the first
+  step of every postinstall and of the service's start. While the lock says 1, nothing is built or written, anything
+  of ours that is live goes back (the uninstall's ownership-checked put-back), and the state says the lock's text. The
+  add-on is applied again only by the lock's own rule, once the MAP menu no longer says `lock=1`: at that install or
+  at the service's next start. The mark goes only with a postinstall that applies. The service also puts back a car
+  an earlier version re-patched while it was locked (mark and records both there).
+- **Our own earlier builds are ours (GMI6OZC2, Ioniq 5 Korea, locked since 0.1.13).** Its HKMC_GPM.apk is 1c4bfdda,
+  the `neev_kr` GPM build of 0.1.0–0.1.4 (byte for byte Leafia KR r8.2's). The applied record has no line for it, so
+  every version since took it for another tool's file ("not the stock file"). `patches/known` (made by
+  `src/mkknown.py` from every version of the manifests and every built zip) lists every rebuilt apk of a fixed set
+  and every rebuilt library any version wrote. `ours()` counts those, so the gate rebuilds such a file from its
+  verified stock copy (`stock_copy()`, the 0.1.15 rule), and the by-code build never reads one as a stock file.
+  Without a stock copy, nothing changes, and the reason now says "a build of this add-on … but its stock copy … is not
+  in …". The locked report also names what Leafia's own snapshots (`/data/nemesis/backup/projection.tbt`,
+  `wireless.carplay.bt`) still hold of the stock files. GMI6OZC2 has neither a record nor a copy of ours, so it stays
+  locked (said so). A build of this version found in place without its applied line is recorded again.
+- **The `dl3hev` set is superseded (about 17 cars).** It is Leafia's original build for the K5 Hybrid Korea,
+  unchanged since projection.tbt: none of our changes (0.1.5, the 0.1.11 near-turn filter) and no settings. Every
+  Korean V039.001.260902 car with exactly its stock files took it, by file match: DL3, DL322, DL3HEV22, MQ422HEV,
+  MQ4HEV, YGPE, CKPE, DEPEHEV. Their GPM, DiPO, Iap2ServerApp and Navi code is group B's. Every one of Leafia's six
+  dl3hev deltas rebuilds its exact target md5 from group B's stock code and from no other car's. A set with a
+  `superseded` file is now the fallback: the by-code profiles come first. These cars get `krb`'s turn-by-turn builds:
+  GPM b02ada70 (0.1.5, near-turn), DiPO ffe9b558, Iap2ServerApp 02368c25, Navi 44b26803 and the library aba7787c,
+  each in the car's own apk, with the menu's settings. An update from `dl3hev` builds them from the verified stock
+  copies.
+- **The CarPlay bridge stays held for these cars.** The Leafia `dl3hev` bridge (the old DiPO / Iap2ServerApp
+  wireless.carplay.bt builds, no PhoneProjection) goes with the set. A DL3 owner's log shows it doing nothing:
+  Bluetooth iAP2 connects, then drops ("응답이 없습니다"). krb's bridge was checked against DL3HEV22's own boot class
+  path (16 odex files from 카플레이용 파일 보내기): every call binds as on group B, the supertypes are the same, and
+  baksmali's full analysis gives no error. But that car's framework-res has `android:id/topPanel` at 0x010202f0, as
+  K8's does. Its PhoneProjection therefore cannot be group B's (4e8915b2), so krb's bridge part does not fit. The car
+  checks that code itself. The other-model-set report now names that code, so a bridge can be built.
+  private/hud-port/hud-0117-REPORT.md. Not car-tested.
 
 0.1.16: turn-by-turn for the Korean cars on the older firmware .KOR.0000.V035.001.250507 (by-code profiles `krc`, `krd`).
 - **`krc`: Kia Carnival KA4 and Hyundai Tucson Hybrid NX4HEV V035** (DWWOLTJU, 2DUGUSW2: the same GPM, DiPO, Navi,

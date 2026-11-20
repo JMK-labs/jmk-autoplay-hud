@@ -220,7 +220,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis" "$ROOT/parent.cmdline"; }
     check "install: exit 0" [ $rc -eq 0 ]
     check "install: state=reboot" [ "$(st state)" = reboot ]
     check "install: set=neev_kr" [ "$(st set)" = neev_kr ]
-    check "install: ver=0.1.16" [ "$(st ver)" = 0.1.16 ]
+    check "install: ver=0.1.17" [ "$(st ver)" = 0.1.17 ]
     check "install: patched = every target + the audio recipe" [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]
     check "install: knobs=log,lane_dist,cp_lanes" [ "$(st knobs)" = "log,lane_dist,cp_lanes" ]
     check "install: reason empty" [ -z "$(st reason)" ]
@@ -736,7 +736,7 @@ fw_update() {
     fw_update
     hook postinstall; rc=$?
     check "0.1.8 install after a firmware update: the old copies gone, locked on the new files (the fake set has no V040)" eval '[ $rc -eq 0 ] && [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_GPM.apk" ] && [ "$(cat "$ROOT/system/app/HKMC_GPM.apk")" = "new firmware HKMC_GPM.apk" ]'
-    check "0.1.8 ... the other files the earlier install patched stay, said so (not 'locked, nothing changed')" eval '[ "$(st state)" = reboot ] && case "$(st reason)" in "patched by 0.1.16"*) true ;; *) false ;; esac && case "$(st patched)" in *dipo*) true ;; *) false ;; esac'
+    check "0.1.8 ... the other files the earlier install patched stay, said so (not 'locked, nothing changed')" eval '[ "$(st state)" = reboot ] && case "$(st reason)" in "patched by 0.1.17"*) true ;; *) false ;; esac && case "$(st patched)" in *dipo*) true ;; *) false ;; esac'
 )
 (
     setup
@@ -786,7 +786,7 @@ fw_update() {
     stage_update; hook preuninstall; hook postinstall; rc=$?; unstage
     snap "$ROOT/after"
     check "0.1.8 update that does not fit: exit 0, nothing changed" eval '[ $rc -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after"'
-    check "0.1.8 ... state stays active, 'patched by 0.1.8', not locked" eval '[ "$(st state)" = active ] && case "$(st reason)" in "patched by 0.1.16: this version changed nothing"*) true ;; *) false ;; esac'
+    check "0.1.8 ... state stays active, 'patched by 0.1.8', not locked" eval '[ "$(st state)" = active ] && case "$(st reason)" in "patched by 0.1.17: this version changed nothing"*) true ;; *) false ;; esac'
     check "0.1.8 ... patched lists the live files, set the old one" eval '[ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ] && [ "$(st set)" = neev_kr ]'
 )
 (
@@ -931,7 +931,7 @@ stock_only() {   # every line of the stock list and of the auto set's stock list
     snap "$ROOT/before"
     upd
     snap "$ROOT/after"
-    check "0.1.15 a stock copy lost: exit 0, nothing changed, the earlier build kept" eval '[ $UPD_RC -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after" && case "$(st reason)" in "patched by 0.1.16"*) true ;; *) false ;; esac'
+    check "0.1.15 a stock copy lost: exit 0, nothing changed, the earlier build kept" eval '[ $UPD_RC -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after" && case "$(st reason)" in "patched by 0.1.17"*) true ;; *) false ;; esac'
     check "0.1.15 ... our patched DiPO apk never recorded or kept as the stock one" \
         eval 'grep -qx "HKMC_DiPO.apk $(q "$ROOT/stock/HKMC_DiPO.apk")" "$S/stock" && stock_only && [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_DiPO.apk" ]'
     check "0.1.15 ... the kept-old report says why (by code: kr: no stock copy of HKMC_DiPO)" grep -q 'by code: kr: no stock copy of HKMC_DiPO' "$ROOT/$OUTBOX_REL/jmk-autoplay-hud-install-postinstall-kept-old.json"
@@ -1029,6 +1029,211 @@ v035_setup() {
     echo "another build of the library" > "$ROOT/system/lib/libautoreceiver_infobank.so"; cp "$ROOT/system/lib/libautoreceiver_infobank.so" "$ROOT/stock/"
     hook postinstall; rc=$?
     check "0.1.16 a V035-shaped profile does not depend on the library: krc, turn-by-turn, the library untouched" eval '[ $rc -eq 0 ] && [ "$(cat "$S/auto/profile")" = krc ] && [ "$(cat "$S/auto/parts")" = 2_tbt ] && [ "$(cat "$ROOT/system/lib/libautoreceiver_infobank.so")" = "another build of the library" ]'
+)
+
+# ---------------------------------------------------------------- 0.1.17: the tamper lock holds through installs and updates
+# Before, only the settings service read the lock (at its start: every stock file back, the records dropped, the mark
+# integrity-locked written). An install or an update (NEMESIS, the MAP menu) while it said lock=1 was a fresh install over
+# the stock files, and the service NEMESIS starts right after it saw the mark and did nothing: patched while locked.
+LOCK_TEXT="파일 손상으로 정식 버전을 다시 설치하세요"
+lockon() { mkdir -p "$ROOT/data/nemesis/jmk-updates"; printf '%s\n' lock=1 state=damaged "text=$LOCK_TEXT" > "$ROOT/data/nemesis/jmk-updates/integrity"; }
+lockoff() { printf '%s\n' lock=0 state=ok text= > "$ROOT/data/nemesis/jmk-updates/integrity"; }
+held() { all_stock && [ "$(st state)" = locked ] && [ "$(st reason)" = "$LOCK_TEXT" ] && [ -z "$(st patched)" ] && [ ! -e "$S/stock" ] && [ ! -e "$S/applied" ]; }
+(
+    setup
+    hook postinstall
+    newboot 2; svc
+    lockon
+    newboot 3; svc
+    check "0.1.17 (the lock at a boot: every stock file back, locked)" held
+    : > "$ROOT/pm.log"; : > "$ROOT/nemesis.log"
+    upd
+    check "0.1.17 an update while locked (nemesis install --update): exit 0, every stock file stays, still locked with the lock's text" eval '[ $UPD_RC -eq 0 ] && held'
+    check "0.1.17 ... nothing built, no app stopped, no remount" eval '! grep -q "built \|took " "$ROOT/postinstall.out" && [ ! -s "$ROOT/pm.log" ] && [ ! -s "$ROOT/nemesis.log" ]'
+    check "0.1.17 ... the status names this version" [ "$(st ver)" = "$(sed -n 's/^package-version=//p' "$HP/NEMESIS.data")" ]
+    svc
+    check "0.1.17 ... the service NEMESIS starts after the update: still stock, locked" held
+    newboot 4; svc
+    check "0.1.17 ... the next boot: still stock, locked" held
+    echo "/system/xbin/nemesis install --update /data/local/tmp/jmk-updates/jmk-autoplay-hud.zip" > "$ROOT/parent.cmdline.map"
+    stage_update; cp "$ROOT/parent.cmdline.map" "$ROOT/parent.cmdline"; hook preuninstall; hook postinstall; rc=$?; unstage
+    check "0.1.17 ... an update the MAP menu runs: the same" eval '[ $rc -eq 0 ] && held'
+    lockoff; newboot 5; svc
+    check "0.1.17 lock lifted (the lock's own rule): applied again at the next start, the mark gone" eval '[ "$(st state)" = reboot ] && [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ] && [ ! -e "$S/integrity-locked" ]'
+    newboot 6; svc
+    check "0.1.17 ... then active" [ "$(st state)" = active ]
+)
+(
+    setup
+    lockon
+    hook postinstall; rc=$?
+    check "0.1.17 a first install while locked: exit 0, nothing patched, locked with the lock's text" eval '[ $rc -eq 0 ] && held'
+    svc
+    check "0.1.17 ... the service: still locked" held
+    lockoff; newboot 2; svc
+    check "0.1.17 ... lifted: applied (a fresh install)" eval '[ "$(st state)" = reboot ] && [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]'
+)
+(
+    # a car an earlier version (<= 0.1.16) patched again while locked: the mark there, our files live, records again
+    setup
+    hook postinstall
+    newboot 2; svc
+    lockon; : > "$S/integrity-locked"
+    newboot 3; svc
+    check "0.1.17 locked, the mark there, our files live (patched by an earlier update): the service puts them back" held
+)
+(
+    setup
+    hook postinstall
+    newboot 2; svc
+    lockon; : > "$S/integrity-locked"
+    upd
+    check "0.1.17 ... the same state, the update: every stock file back, locked" eval '[ $UPD_RC -eq 0 ] && held'
+)
+(
+    # the lock lifted while installing (the MAP menu wrote lock=0, the service has not started since): applied, once
+    setup
+    hook postinstall
+    newboot 2; svc
+    lockon; newboot 3; svc
+    lockoff
+    upd
+    check "0.1.17 an update after the lock was lifted: applied, the mark gone" eval '[ $UPD_RC -eq 0 ] && [ "$(st state)" = reboot ] && [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ] && [ ! -e "$S/integrity-locked" ]'
+    svc
+    check "0.1.17 ... the service then applies nothing again" eval '! grep -q "lock lifted" "$ROOT/svc.out" "$ROOT/data/nemesis/jmk-autoplay-hud.log" && [ "$(st state)" = reboot ]'
+)
+(
+    # a put-back that fails (a stock copy damaged): records kept, not marked, tried again at the next start
+    setup
+    hook postinstall
+    newboot 2; svc
+    echo damaged > "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_GPM.apk"
+    lockon
+    upd
+    check "0.1.17 an update while locked, a stock copy damaged: exit 0, failed with the lock's text, records kept, no mark" eval '[ $UPD_RC -eq 0 ] && [ "$(st state)" = failed ] && case "$(st reason)" in "$LOCK_TEXT"*) true ;; *) false ;; esac && [ -s "$S/stock" ] && [ ! -e "$S/integrity-locked" ]'
+    cp "$ROOT/stock/HKMC_GPM.apk" "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_GPM.apk"
+    newboot 3; svc
+    check "0.1.17 ... the copy good again, the next boot: every stock file back, locked" held
+)
+
+# ---------------------------------------------------------------- 0.1.17: our own earlier builds the applied record does not name
+# GMI6OZC2 (Ioniq 5 Korea, locked since 0.1.13/0.1.14): HKMC_GPM.apk 1c4bfdda, the neev_kr GPM build of 0.1.0-0.1.4,
+# no applied line for it: "not the stock file", as if another tool had written it. patches/known (src/mkknown.py) lists
+# every result an earlier version wrote; ours() counts those, so a verified stock copy rebuilds it.
+known_from() { { echo "# results of earlier versions (test)"; grep -v '^libCarPlayAudio.so ' "$1"; } > "$HP/patches/known"; }
+gpm_v2() {   # the next version: another GPM build
+    lpd neev_kr/HKMC_GPM.tbt.lpd HKMC_GPM.odex gpm-tbt-v2
+    G2=$(want_app HKMC_GPM gpm-tbt-v2)
+    while read -r a b c d e; do [ "$c" = HKMC_GPM ] && e=$G2; echo "$a $b $c $d $e"; done < "$HP/patches/neev_kr/manifest" > "$ROOT/m" && mv "$ROOT/m" "$HP/patches/neev_kr/manifest"
+}
+(
+    # the applied record lost GPM's line; GPM is an earlier version's build, its stock copy in the backups
+    setup
+    hook postinstall
+    newboot 2; svc
+    known_from "$S/applied"
+    grep -v '^HKMC_GPM.apk ' "$S/applied" > "$ROOT/a" && mv "$ROOT/a" "$S/applied"
+    gpm_v2
+    upd
+    check "0.1.17 GPM an earlier build of ours without an applied line, its stock copy kept: the update rebuilds it (before: kept-old, not the stock file)" eval '[ $UPD_RC -eq 0 ] && [ "$(st state)" = reboot ] && [ -z "$(st reason)" ] && [ "$(q "$ROOT/system/app/HKMC_GPM.apk")" = "$G2" ]'
+    check "0.1.17 ... from the verified stock copy, recorded, every target patched" eval 'grep -qx "HKMC_GPM.apk $G2" "$S/applied" && same_file "$ROOT/stock/HKMC_GPM.apk" "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_GPM.apk" && [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]'
+    hook preuninstall; rc=$?
+    check "0.1.17 ... then an uninstall: every stock file back" eval '[ $rc -eq 0 ] && all_stock'
+)
+(
+    # the applied record lost every app and library line (the stock list and copies kept): this version's builds in
+    # place are recorded again, the changed one rebuilt
+    setup
+    hook postinstall
+    newboot 2; svc
+    known_from "$S/applied"
+    grep '^libCarPlayAudio.so ' "$S/applied" > "$ROOT/a" && mv "$ROOT/a" "$S/applied"
+    gpm_v2
+    upd
+    check "0.1.17 every app line lost: GPM rebuilt, the builds in place recorded again, every target patched" eval '[ $UPD_RC -eq 0 ] && [ "$(st state)" = reboot ] && [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ] && [ "$(grep -c . "$S/applied")" -eq 7 ]'
+    newboot 3; svc
+    check "0.1.17 ... the next boot: active" [ "$(st state)" = active ]
+    hook preuninstall; rc=$?
+    check "0.1.17 ... an uninstall: every stock file back" eval '[ $rc -eq 0 ] && all_stock'
+)
+(
+    # GMI6OZC2 itself: those builds live (Leafia KR's, byte for byte), no record and no stock copy of ours; Leafia's own
+    # snapshot of GPM's stock apk still there
+    setup
+    hook postinstall
+    known_from "$S/applied"
+    rm -rf "$S" "$ROOT/data/nemesis/backups/jmk-autoplay-hud"
+    mkdir -p "$ROOT/$OUTBOX_REL" "$ROOT/data/nemesis/backup/projection.tbt"
+    cp "$ROOT/stock/HKMC_GPM.apk" "$ROOT/data/nemesis/backup/projection.tbt/"
+    gpm_v2
+    snap "$ROOT/before"
+    hook postinstall; rc=$?
+    snap "$ROOT/after"
+    check "0.1.17 GMI6OZC2: no stock copy of ours: locked as before, nothing changed" eval '[ $rc -eq 0 ] && [ "$(st state)" = locked ] && cmp -s "$ROOT/before" "$ROOT/after"'
+    check "0.1.17 ... the reason: a build of this add-on without its stock copy (before: not the stock file)" eval 'case "$(st reason)" in "HKMC_GPM.apk is a build of this add-on (md5 "*") but its stock copy "*) true ;; *) false ;; esac'
+    check "0.1.17 ... the report names Leafia's snapshot and the stock files in it" grep -q 'leafia snapshot projection.tbt:HKMC_GPM.apk' "$ROOT/$OUTBOX_REL/jmk-autoplay-hud-install-postinstall-locked.json"
+)
+
+# ---------------------------------------------------------------- 0.1.17: a superseded fixed set (dl3hev): our by-code builds first
+# old_set_setup: the by-code car (GL3HEV: kr's code, PhoneProjection another code) whose stock files are also exactly a
+# fixed set's, "old" in Leafia's dl3hev shape (2_tbt GPM, Navi, the library; 3_bridge Iap2ServerApp, DiPO), marked
+# superseded. Before 0.1.17 the fixed set won (pick_set: its stock files match), so such cars kept Leafia's builds.
+old_set_setup() {
+    bycode_setup other; car_dexopt
+    mkdir -p "$HP/patches/old"
+    : > "$HP/patches/old/stock"
+    for a in HKMC_GPM HKMC_DiPO Iap2ServerApp HKMC_Navi_ExSL; do
+        echo "$a.apk $(q "$ROOT/stock/$a.apk")" >> "$HP/patches/old/stock"; echo "$a.odex $(q "$ROOT/stock/$a.odex")" >> "$HP/patches/old/stock"
+    done
+    echo "libautoreceiver_infobank.so $(q "$ROOT/stock/libautoreceiver_infobank.so")" >> "$HP/patches/old/stock"
+    lpd old/HKMC_GPM.tbt.lpd HKMC_GPM.odex gpm-old
+    lpd old/HKMC_Navi_ExSL.tbt.lpd HKMC_Navi_ExSL.odex navi-old
+    lpd old/lib.tbt.lpd libautoreceiver_infobank.so lib-old
+    lpd old/Iap2ServerApp.bridge.lpd Iap2ServerApp.odex iap2-old
+    lpd old/HKMC_DiPO.bridge.lpd HKMC_DiPO.odex dipo-old
+    {
+        echo "2_tbt app HKMC_GPM old/HKMC_GPM.tbt.lpd $(want_app HKMC_GPM gpm-old)"
+        echo "2_tbt app HKMC_Navi_ExSL old/HKMC_Navi_ExSL.tbt.lpd $(want_app HKMC_Navi_ExSL navi-old)"
+        echo "2_tbt file libautoreceiver_infobank.so old/lib.tbt.lpd $(want_file lib-old)"
+        echo "3_bridge app Iap2ServerApp old/Iap2ServerApp.bridge.lpd $(want_app Iap2ServerApp iap2-old)"
+        echo "3_bridge app HKMC_DiPO old/HKMC_DiPO.bridge.lpd $(want_app HKMC_DiPO dipo-old)"
+    } > "$HP/patches/old/manifest"
+    echo "# test: Leafia's original build" > "$HP/patches/old/superseded"
+}
+ours_built() { grep -q "dex HKMC_GPM-tbt" "$ROOT/system/app/HKMC_GPM.apk" && grep -q "dex HKMC_DiPO-tbt" "$ROOT/system/app/HKMC_DiPO.apk" && grep -q "dex Iap2ServerApp-tbt" "$ROOT/system/app/Iap2ServerApp.apk" && grep -q "dex HKMC_Navi_ExSL-tbt" "$ROOT/system/app/HKMC_Navi_ExSL.apk" && grep -q "dex lib-tbt" "$ROOT/system/lib/libautoreceiver_infobank.so"; }
+four_copies() { local a; for a in HKMC_GPM HKMC_DiPO Iap2ServerApp HKMC_Navi_ExSL; do same_file "$ROOT/stock/$a.apk" "$ROOT/data/nemesis/backups/jmk-autoplay-hud/$a.apk" && same_file "$ROOT/stock/$a.odex" "$ROOT/data/nemesis/backups/jmk-autoplay-hud/$a.odex" || return 1; done; }
+(
+    old_set_setup
+    hook postinstall; rc=$?
+    check "0.1.17 superseded set: a first install takes the by-code profile (kr, turn-by-turn; PhoneProjection another code), not the set" eval '[ $rc -eq 0 ] && [ "$(st set)" = auto ] && [ "$(cat "$S/auto/profile")" = kr ] && [ "$(cat "$S/auto/parts")" = 2_tbt ]'
+    check "0.1.17 ... our builds in the car's own apks, the profile's knobs, PhoneProjection stock" eval 'ours_built && [ "$(st knobs)" = log,lane_dist,cp_lanes ] && same_file "$ROOT/stock/PhoneProjection.apk" "$ROOT/system/app/PhoneProjection.apk"'
+)
+(
+    old_set_setup
+    mv "$HP/patches/old/superseded" "$ROOT/superseded"   # an earlier version: no marker
+    hook postinstall
+    check "0.1.17 (an earlier version: set old, Leafia's builds, no knobs)" eval '[ "$(st set)" = old ] && grep -q "dex dipo-old" "$ROOT/system/app/HKMC_DiPO.apk" && [ -z "$(st knobs)" ]'
+    newboot 2; svc
+    mv "$ROOT/superseded" "$HP/patches/old/superseded"
+    rm -f "$ROOT/data/nemesis/jmk-autoplay-hud.reported" "$ROOT/$OUTBOX_REL"/*
+    upd
+    check "0.1.17 the update from the superseded set: our by-code builds (kr, turn-by-turn), every old build replaced" eval '[ $UPD_RC -eq 0 ] && [ "$(st state)" = reboot ] && [ "$(st set)" = auto ] && [ "$(cat "$S/auto/parts")" = 2_tbt ] && ours_built && [ -z "$(st reason)" ]'
+    check "0.1.17 ... the code read from the verified stock copies (stock_copy), the stock lists only stock md5s, PhoneProjection untouched" eval 'stock_only && four_copies && same_file "$ROOT/stock/PhoneProjection.apk" "$ROOT/system/app/PhoneProjection.apk" && grep -q "by code: this car.s stock code:.*HKMC_DiPO.code=$(codeof "$ROOT/stock/HKMC_DiPO.odex")" "$ROOT/data/nemesis/jmk-autoplay-hud.log"'
+    check "0.1.17 ... the report names the profile and the stock code, PhoneProjection's too" grep -q 'set auto (profile kr, parts 2_tbt); product GL3HEV.KOR.0000.V039.001.260902; code .*PhoneProjection.code=' "$ROOT/$OUTBOX_REL/jmk-autoplay-hud-install-other-model-set.json"
+    newboot 3; svc
+    check "0.1.17 ... the next boot: active" [ "$(st state)" = active ]
+    upd
+    check "0.1.17 ... the next update: stays on the profile, in place" eval '[ $UPD_RC -eq 0 ] && [ "$(st set)" = auto ] && grep -q "every target is in place already" "$ROOT/postinstall.out"'
+    hook preuninstall; rc=$?
+    check "0.1.17 ... an uninstall: every stock file back" eval '[ $rc -eq 0 ] && all_stock'
+)
+(
+    # no profile fits the car's code: the superseded set as before (the fallback), and the report says the code
+    old_set_setup
+    sed -i '' 's/^\(2_tbt app HKMC_GPM\) [0-9a-f]*/\1 0123456789abcdef0123456789abcdef/' "$HP/patches/bycode/kr/manifest"
+    hook postinstall; rc=$?
+    check "0.1.17 superseded set, no profile fits: the set (the fallback), its builds" eval '[ $rc -eq 0 ] && [ "$(st set)" = old ] && [ "$(st state)" = reboot ] && grep -q "dex dipo-old" "$ROOT/system/app/HKMC_DiPO.apk"'
+    check "0.1.17 ... the report names the stock code it was read as" grep -q 'set old; product GL3HEV.KOR.0000.V039.001.260902; code .*HKMC_GPM.code=' "$ROOT/$OUTBOX_REL/jmk-autoplay-hud-install-other-model-set.json"
 )
 
 passed=$(grep -c '^ok$' "$RESULTS"); failed=$(grep -c '^fail$' "$RESULTS")
