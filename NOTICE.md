@@ -103,6 +103,14 @@ patch data is data; the binaries are listed below with their sources).
   code with the `kr` profile's turn-by-turn changes (Leafia's `neev_kr` build plus ours) ported onto it. Iap2ServerApp
   runs V037's code (`krc`: `krv`'s line; `krd`: its own delta to `krv`'s result). No receiver-library line (another build
   of the library). Only deltas and md5s; no stock file ships.
+- **By-code profile `krm`** (`patches/bycode/krm`, V037, 0.1.18): Kia Sorento MQ4 Korea (and the Hyundai Grandeur IGPE
+  Korea, the same code) on the firmware .KOR.0000.V037.001.260319. Their apps are `krv`'s app code (the Ioniq 5 Korea
+  V037's) dexopted against another framework, with group B's core.odex and one `Message` / `UsbDevice` / `WifiManager`
+  method fewer, so only quick-call vtable indices differ in the .odex. Deodexed by the same JMK tools (AGPL-3.0,
+  private/hud-port/mq4-v037/tools), the plain code is `krv`'s byte for byte. Turn-by-turn only: HKMC_GPM and HKMC_DiPO
+  end at `krv`'s builds, Iap2ServerApp runs `krd`'s code (`krd`'s line), and HKMC_Navi_ExSL ends at `krv`'s build with
+  that framework's two string IDs. The receiver library is Ioniq 5 Korea's, so its line is `kr`'s. Only deltas and
+  md5s; no stock file ships.
 - **Korea Projection** by StopDragon (https://github.com/StopDragon/korea-projection, release 1.7.4; its wireless mode
   2.4.4 in the HMG-API fork https://github.com/StopDragon/HMG-API, branch korea-build, commit b573ac6,
   `mods/wireless-carplay-aa/src/hmgapi/mods/wireless/dipo/CpTurnsFit.java` `near()`), AGPL-3.0: the method of the
@@ -120,6 +128,13 @@ patch data is data; the binaries are listed below with their sources).
   telephony updates. Applied to the DiPO tree by `src/tbt/build.sh` after `near-hooks.diff`: DiPO 86ce5550 ->
   d760fe5b (0.1.11's 1452d2d8 with this diff alone gives the same bytes). The only change against 1452d2d8 is those
   two instructions (and the branch offsets after them).
+- **The 0.1.18 CarPlay-channel iAP2 resume** (`src/tbt/cp-iap-resume.diff`, JMK's own, AGPL-3.0): a hook in Leafia's
+  `com.ev6.cpwl.Bridge.dipoDropNoti(I)` where the bridge drops noti 0 (identification accepted) of the CarPlay-channel
+  iAP2 session, and a new class `com.ev6.cpwl.CpIapResume` that, on wireless CarPlay, calls the stock DiPO's
+  `com.daudio.app.dipo.e.b` `e(I)` (setStartiAP2Service) once more for that session, from the bridge's handler, each
+  with its own try/catch; the noti stays dropped. Applied by `src/tbt/build.sh` after `wireless-iap2.diff` to the tree
+  with `com/ev6/cpwl/Bridge.smali`: DiPO 86ce5550 -> 56d9ff80 (0.1.13's d760fe5b with this diff alone gives the same
+  bytes). The only changes against d760fe5b are that hook (and the branch offsets after it) and the new class.
 - Thanks, as upstream: W-Floyd.
 
 No manufacturer APK, odex, jar or library is shipped: the head unit rebuilds each file from its own exact stock copy,
@@ -162,6 +177,8 @@ and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
   counts those, so such a file is rebuilt from its verified stock copy (and is never read as a stock file). A fixed set
   with a `superseded` file (`dl3hev`, Leafia's original K5 Hybrid build) is the fallback behind the by-code profiles,
   so its cars get `krb`'s turn-by-turn builds.
+- 0.1.18: turn-by-turn on the Kia Sorento MQ4 Korea V037.001.260319 (profile `krm`, also the Grandeur IGPE V037); no
+  script change.
 - 0.1.11: the near-turn layout ("big picture") of the Korean GPM and DiPO bridge builds. A picture that went near
   stays near up to 50 m past Leafia's 457 m window (Android Auto and CarPlay: distance wobble at the edge flipped it).
   CarPlay only: a new maneuver whose first distance is the previous maneuver's last one is shown far once (Naver Map
@@ -170,6 +187,9 @@ and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
 - 0.1.13: the Korean DiPO bridge builds start the iAP2 now-playing, call-state and telephony updates for a wireless
   CarPlay session too (the stock code started them for USB only): the stock split view's now playing and the
   steering-wheel call button's call state on wireless CarPlay, as on USB.
+- 0.1.18: 무선 카플레이에서 분할화면 곡 정보·재생 시간·통화 상태가 계속 바뀝니다: the Korean DiPO bridge builds start the
+  iAP2 now-playing, call-state and telephony updates once more on the CarPlay-channel iAP2 session that wireless
+  CarPlay moves to after connecting; wired CarPlay unchanged.
 - Only apps that are enabled are stopped for the file swap, and the same ones are started again (also by the
   settings service at boot, if a run died).
 - A status file for the JMK MAP menu (`/data/nemesis/jmk-autoplay-hud/status`) and a settings service that maps the

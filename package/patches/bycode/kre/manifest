@@ -18,5 +18,5 @@
 2_tbt app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
 2_tbt app HKMC_Navi_ExSL 153eb1b41dd727bf3949a5a27ec59493 bycode/kre/HKMC_Navi_ExSL.tbt.lpd 77980719134a05eea6d784b2113e651f
 3_bridge app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.bridge.lpd 0ad54672b43f54ef7e58aad56c2a77b6
-3_bridge app HKMC_DiPO e8b7b69bfe0cea6862d2db6ba94ada16 bycode/kre/HKMC_DiPO.bridge.lpd d760fe5bdb6e00e7afd18fef2155dd1c
+3_bridge app HKMC_DiPO e8b7b69bfe0cea6862d2db6ba94ada16 bycode/kre/HKMC_DiPO.bridge.lpd 56d9ff800ddc5a750fa2be6d247deb5d
 3_bridge app PhoneProjection 7e61ce5caa6bdc1ad02563fc084e240a bycode/kre/PhoneProjection.bridge.lpd 52816a4c37a512da5a118f101ab5f766

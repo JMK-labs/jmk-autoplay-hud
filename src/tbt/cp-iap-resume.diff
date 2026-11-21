@@ -1,0 +1,91 @@
+--- a/com/ev6/cpwl/Bridge.smali
++++ b/com/ev6/cpwl/Bridge.smali
+@@ -295,9 +295,33 @@
+ 
+     invoke-static {v1, v2}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+ 
++    if-nez p0, :cond_2b
++
++    sget-boolean v1, Lcom/ev6/cpwl/Bridge;->sCpWireless:Z
++
++    if-eqz v1, :cond_2b
++
++    :try_start_cpiap
++    invoke-static {}, Lcom/ev6/cpwl/Bridge;->handler()Landroid/os/Handler;
++
++    move-result-object v1
++
++    new-instance v2, Lcom/ev6/cpwl/CpIapResume;
++
++    invoke-direct {v2}, Lcom/ev6/cpwl/CpIapResume;-><init>()V
++
++    invoke-virtual {v1, v2}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
++    :try_end_cpiap
++    .catch Ljava/lang/Throwable; {:try_start_cpiap .. :try_end_cpiap} :catch_cpiap
++
+     .line 343
+     :cond_2b
+     return v0
++
++    :catch_cpiap
++    move-exception v1
++
++    goto :cond_2b
+ 
+     .line 339
+     :cond_2c
+--- /dev/null
++++ b/com/ev6/cpwl/CpIapResume.smali
+@@ -0,0 +1,52 @@
++.class final Lcom/ev6/cpwl/CpIapResume;
++.super Ljava/lang/Object;
++
++# interfaces
++.implements Ljava/lang/Runnable;
++
++
++# direct methods
++.method constructor <init>()V
++    .registers 1
++
++    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
++
++    return-void
++.end method
++
++
++# virtual methods
++.method public run()V
++    .registers 4
++
++    :try_start_0
++    sget-object v0, Lcom/daudio/app/dipo/e/u;->leafiaOwner:Lcom/daudio/app/dipo/e/b;
++
++    if-eqz v0, :cond_end
++
++    const-string v1, "EV6CPWL"
++
++    const-string v2, "DiPO: CarPlay-channel iAP2 session ready, setStartiAP2Service again"
++
++    invoke-static {v1, v2}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
++
++    const/4 v1, 0x1
++
++    invoke-virtual {v0, v1}, Lcom/daudio/app/dipo/e/b;->e(I)V
++    :try_end_0
++    .catch Ljava/lang/Throwable; {:try_start_0 .. :try_end_0} :catch_0
++
++    :cond_end
++    return-void
++
++    :catch_0
++    move-exception v0
++
++    const-string v1, "EV6CPWL"
++
++    const-string v2, "CpIapResume"
++
++    invoke-static {v1, v2, v0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
++
++    return-void
++.end method

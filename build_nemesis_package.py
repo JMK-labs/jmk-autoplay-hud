@@ -22,6 +22,8 @@ TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'sr
              'src/tbt/com/jmk/hud/Near.java', 'src/tbt/near-hooks.diff', 'src/tbt/build.sh',
              # 0.1.13: the DiPO wireless iAP2 fix (applied by src/tbt/build.sh)
              'src/tbt/wireless-iap2.diff',
+             # 0.1.18: the DiPO bridge CarPlay-channel iAP2 resume (applied by src/tbt/build.sh)
+             'src/tbt/cp-iap-resume.diff',
              # 0.1.17: the generator of patches/known (our own earlier results, for ours())
              'src/mkknown.py')
 FIXED = (2026, 1, 1, 0, 0, 0)   # deterministic zip times

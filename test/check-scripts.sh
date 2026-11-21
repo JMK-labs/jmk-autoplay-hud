@@ -189,7 +189,7 @@ for ac in HKMC_GPM:1f29a226774d61a2b4ef899182af28cf:1301c92348aab9290e5ee98f4b61
           Iap2ServerApp:661dc714e30802d505c333e33bb7f089:cc198983ce4e3c647eda36e23b292143 HKMC_Navi_ExSL:12a34cb11c9325f9a4050a86a9699469:2e215e95d84eb0906095cf4a5e4601ff; do
     a=${ac%%:*}; c=${ac#*:}; w=${c#*:}; c=${c%%:*}
     check "by code krv: $a is V037's code ($c) -> its own build ($w)" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$KRV")" = "$c bycode/krv/$a.tbt.lpd $w" ]
-    for o in kr kra krb kre krg kri krp krt us; do
+    for o in kr kra krb kre krg kri krm krp krt us; do
         check "by code krv: $a's code is no other profile's ($o)" eval '! grep -q " $a $c " "$PKG/patches/bycode/$o/manifest"'
     done
     check "by code krv: $a's build is not kr's (V037's own stock code under the patch)" [ "$w" != "$(want_of "$PKG/patches/bycode/kr/manifest" 2_tbt $a)" ]
@@ -246,8 +246,9 @@ for ac in krc:HKMC_GPM:4cf385316c37ddc4d5c28ba69d99caee:454c8dc4741bf9852e18a6a2
           krd:Iap2ServerApp:9f32383bbf425173727ce6365971fa28:cc198983ce4e3c647eda36e23b292143 krd:HKMC_Navi_ExSL:d43adb26a20f55e5bdfd5e313bb66c9d:cbf5ce775fdd6e61767ea6bff2ea5d64; do
     p=${ac%%:*}; r=${ac#*:}; a=${r%%:*}; r=${r#*:}; c=${r%%:*}; w=${r#*:}
     check "by code $p: $a is V035's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$PKG/patches/bycode/$p/manifest")" = "$c bycode/$p/$a.tbt.lpd $w" ]
-    for o in kr kra krb kre krg kri krp krt krv us krc krd; do
+    for o in kr kra krb kre krg kri krm krp krt krv us krc krd; do
         [ $o = $p ] && continue
+        [ $p = krd ] && [ $a = Iap2ServerApp ] && [ $o = krm ] && continue    # krm's Iap2ServerApp is krd's line (checked below)
         check "by code $p: $a's code is no other profile's ($o)" eval '! grep -q " $a $c " "$PKG/patches/bycode/$o/manifest"'
     done
     for o in kr krv; do
@@ -267,6 +268,36 @@ check "by code choice (0.1.16): V035 code with any library (no library line)" ev
 check "by code choice (0.1.16): a Carnival KA4 V037 car (K7UI2BUU's codes) keeps krv" [ "$(sel_of 1f29a226774d61a2b4ef899182af28cf 8d0867878b78347358f136aba85a1287 661dc714e30802d505c333e33bb7f089 12a34cb11c9325f9a4050a86a9699469 f1460f1179fc5050ea2bbebbda36628f $LIB_KR)" = "krv 2_tbt" ]
 check "by code choice (0.1.16): V035 with one app of another code fits nothing (the part is all or nothing)" eval '[ "$(sel_of 4cf385316c37ddc4d5c28ba69d99caee 84f17a7a755b5a3022a139526ba452bd 661dc714e30802d505c333e33bb7f089 d43adb26a20f55e5bdfd5e313bb66c9d 4ba04b34fb542b53a61f4271f3245840 $LIB_KA4)" = none ] && [ "$(sel_of d244aba596a361c850311bb0603d1eab 072ba128b4daf9669dc329cfa168a3ee 661dc714e30802d505c333e33bb7f089 d43adb26a20f55e5bdfd5e313bb66c9d bf6d2892cc8fa7a12e298836c8f01c08 $LIB_DL3)" = none ]'
 check "by code choice (0.1.16): the LX2 V034 car (KOVZX33T: krd's Iap2ServerApp code, the rest its own) fits nothing" [ "$(sel_of 7117150f01544cfe6491dfc586b39f55 66ef6c36c1b20a894fcfe3283c40202e 9f32383bbf425173727ce6365971fa28 783b9536648a9c96fc79aea3e323e0b8 1be324a2a8113a38a7cfd91cefb01448 0ee6b06b3b9951c6e1eb341df81ed99d)" = none ]
+# krm (0.1.18): Kia Sorento MQ4 Korea MQ4.KOR.0000.V037.001.260319 (DWW5FPAD; the Grandeur IGPE V037, OB3JWHQB, has the
+# same codes and library): krv's app code (the Ioniq 5 V037's, the same plain code byte for byte) dexopted against a
+# framework with group B's core and one Message / UsbDevice / WifiManager method fewer, so only quick slots differ in
+# the .odex. GPM and DiPO end at krv's builds, Iap2ServerApp is krd's code (krd's line), Navi is krv's build with that
+# framework's two string IDs, the library line kr's; no bridge part (private/hud-port/mq4-v037-REPORT.md)
+KRM=$PKG/patches/bycode/krm/manifest
+check "by code krm: turn-by-turn only, the four apps and the library" [ "$(grep -v '^#' "$KRM" | awk '{print $1":"$3}' | tr '\n' ' ')" = "2_tbt:HKMC_GPM 2_tbt:HKMC_DiPO 2_tbt:Iap2ServerApp 2_tbt:HKMC_Navi_ExSL 2_tbt:libautoreceiver_infobank.so " ]
+check "by code krm: no 3_bridge part" eval '! grep -q "^3_bridge " "$KRM"'
+for ac in HKMC_GPM:a79f26f3689641f9274c01cdafab52d1:1301c92348aab9290e5ee98f4b617cb4 HKMC_DiPO:803a1a0e58d0bc5fed3d0e1fa4ee13bd:29a4add9f184c91b163d9a8b864ce484 \
+          HKMC_Navi_ExSL:93bca3a2125a1b33c572b20ce6b3a5e1:584218add8cac46fd7fcf1c72d7b20e4; do
+    a=${ac%%:*}; c=${ac#*:}; w=${c#*:}; c=${c%%:*}
+    check "by code krm: $a is MQ4 V037's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$KRM")" = "$c bycode/krm/$a.tbt.lpd $w" ]
+    for o in kr kra krb krc krd kre krg kri krp krt krv us; do
+        check "by code krm: $a's code is no other profile's ($o)" eval '! grep -q " $a $c " "$PKG/patches/bycode/$o/manifest"'
+    done
+done
+for a in HKMC_GPM HKMC_DiPO; do
+    check "by code krm: $a ends at krv's build (the same plain code)" [ "$(want_of "$KRM" 2_tbt $a)" = "$(want_of "$KRV" 2_tbt $a)" ]
+done
+for o in kr kra krb krc krd kre krg kri krp krt krv us; do
+    check "by code krm: Navi's build is not $o's (krv's with this framework's two string IDs)" [ "$(want_of "$KRM" 2_tbt HKMC_Navi_ExSL)" != "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_Navi_ExSL)" ]
+done
+check "by code krm: Iap2ServerApp is krd's code (9f32383b): krd's line, word for word" [ "$(grep '^2_tbt app Iap2ServerApp ' "$KRM")" = "$(grep '^2_tbt app Iap2ServerApp ' "$KRD")" ]
+check "by code krm: the library line is kr's (the Ioniq 5's library, 48ee793a)" [ "$(grep '^2_tbt file ' "$KRM")" = "$(grep '^2_tbt file ' "$PKG/patches/bycode/kr/manifest")" ]
+check "by code krm: the knobs are kr's" cmp -s "$PKG/patches/bycode/krm/knobs" "$PKG/patches/bycode/kr/knobs"
+MQ4="a79f26f3689641f9274c01cdafab52d1 803a1a0e58d0bc5fed3d0e1fa4ee13bd 9f32383bbf425173727ce6365971fa28 93bca3a2125a1b33c572b20ce6b3a5e1"
+check "by code choice (0.1.18): a Sorento MQ4 V037 car (DWW5FPAD's codes) gets krm, turn-by-turn only" [ "$(sel_of $MQ4 8d1a93d8b23ef49abd2ccfeb8449e97f $LIB_KR)" = "krm 2_tbt" ]
+check "by code choice (0.1.18): a Grandeur IGPE V037 car (OB3JWHQB's codes, its own PhoneProjection) gets krm" [ "$(sel_of $MQ4 db3b717a98318abff7c7a0119644351d $LIB_KR)" = "krm 2_tbt" ]
+check "by code choice (0.1.18): MQ4 V037's code with another library fits nothing (the part is all or nothing)" [ "$(sel_of $MQ4 8d1a93d8b23ef49abd2ccfeb8449e97f 0123456789abcdef0123456789abcdef)" = none ]
+check "by code choice (0.1.18): MQ4 V037 with krv's GPM code fits nothing (krv's other codes are not MQ4's)" [ "$(sel_of 1f29a226774d61a2b4ef899182af28cf 803a1a0e58d0bc5fed3d0e1fa4ee13bd 9f32383bbf425173727ce6365971fa28 93bca3a2125a1b33c572b20ce6b3a5e1 8d1a93d8b23ef49abd2ccfeb8449e97f $LIB_KR)" = none ]
 # 0.1.17: the dl3hev set (Leafia's original build, unchanged since projection.tbt) is superseded: the by-code profiles
 # first. Its cars (DL3, DL322, DL3HEV22, MQ422HEV, MQ4HEV, YGPE, CKPE, DEPEHEV V039.001.260902, all with exactly its stock
 # files) run group B's GPM / DiPO / Iap2ServerApp / Navi code (every Leafia dl3hev delta rebuilds its target md5 from it:
@@ -304,28 +335,105 @@ check "0.1.17 known: no .odex line (our dexopt writes those; ours() follows the 
 # results 990ef4c3 / 86ce5550): every Korean profile's GPM and DiPO bridge end at the same two new results, the DiPO
 # turn-by-turn build (no near-turn layout in it) is unchanged, and so is the us profile (no Leafia KR code).
 # 0.1.13: the DiPO bridge build also carries the wireless iAP2 fix (src/tbt/wireless-iap2.diff, applied by build.sh
-# after near-hooks.diff: 86ce5550 -> d760fe5b; 0.1.11's near-turn-only build was 1452d2d8, the GPM build is unchanged)
-NEW_GPM=b02ada70f0de90a9e09d364a64559074; NEW_DIPO=d760fe5bdb6e00e7afd18fef2155dd1c; OLD_DIPO=1452d2d8c9670bb8f44c39569d3220f5
+# after near-hooks.diff: 86ce5550 -> d760fe5b; 0.1.11's near-turn-only build was 1452d2d8, the GPM build is unchanged).
+# 0.1.18: and the CarPlay-channel iAP2 resume (src/tbt/cp-iap-resume.diff, after wireless-iap2.diff: 86ce5550 -> 56d9ff80)
+NEW_GPM=b02ada70f0de90a9e09d364a64559074; NEW_DIPO=56d9ff800ddc5a750fa2be6d247deb5d; OLD_DIPO=1452d2d8c9670bb8f44c39569d3220f5
+DIPO_013=d760fe5bdb6e00e7afd18fef2155dd1c; NEW_DIPO_APK=ad5a3139510fe65a87a0d71f9cd82aff
 for o in kr kra krb kre krg kri krp krt; do
     check "0.1.11 $o: GPM ends at the near-turn build $NEW_GPM" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_GPM)" = $NEW_GPM ]
     check "0.1.11 $o: DiPO turn-by-turn build unchanged (ffe9b558)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_DiPO)" = ffe9b558a288cdda39eabd92d4b5fccf ]
-    check "0.1.13 $o: DiPO bridge ends at the near-turn + wireless iAP2 build $NEW_DIPO (not 0.1.11's $OLD_DIPO)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $NEW_DIPO ]
+    check "0.1.18 $o: DiPO bridge ends at the near-turn + wireless iAP2 + CarPlay-channel resume build $NEW_DIPO (not 0.1.13's $DIPO_013, 0.1.11's $OLD_DIPO)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $NEW_DIPO ]
 done
-check "0.1.11 / 0.1.13 neev_kr: GPM delta ends at the near-turn build, DiPO bridge delta at the near-turn + wireless iAP2 build" eval '[ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_GPM.tbt.lpd")" = $NEW_GPM ] && [ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_DiPO.bridge.lpd")" = $NEW_DIPO ]'
-check "0.1.11 / 0.1.13 neev_kr: result apks (lpatch zipadd of those into the stock apks: GPM 8b13805f, DiPO 13633ac6)" eval 'grep -q "^2_tbt app HKMC_GPM neev_kr/HKMC_GPM.tbt.lpd 8b13805f77cd8bb35691fb8b43a8bb99$" "$PKG/patches/neev_kr/manifest" && grep -q "^3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd 13633ac624e850cfad2aa80ddf0be445$" "$PKG/patches/neev_kr/manifest"'
+check "0.1.11 / 0.1.18 neev_kr: GPM delta ends at the near-turn build, DiPO bridge delta at the near-turn + wireless iAP2 + CarPlay-channel resume build" eval '[ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_GPM.tbt.lpd")" = $NEW_GPM ] && [ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_DiPO.bridge.lpd")" = $NEW_DIPO ]'
+check "0.1.11 / 0.1.18 neev_kr: result apks (lpatch zipadd of those into the stock apks: GPM 8b13805f, DiPO ad5a3139; 0.1.13's was 13633ac6)" eval 'grep -q "^2_tbt app HKMC_GPM neev_kr/HKMC_GPM.tbt.lpd 8b13805f77cd8bb35691fb8b43a8bb99$" "$PKG/patches/neev_kr/manifest" && grep -q "^3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd $NEW_DIPO_APK$" "$PKG/patches/neev_kr/manifest"'
 check "0.1.11 us: no Leafia KR near-turn code, its results unchanged" eval '[ "$(want_of "$PKG/patches/bycode/us/manifest" 2_tbt HKMC_GPM)" = 6124a666b2ae11883e91de85c19389d2 ] && [ "$(want_of "$PKG/patches/bycode/us/manifest" 3_bridge HKMC_DiPO)" = 5f24681fec4e0ff21f913f3372465524 ]'
-# 0.1.13: only the Korean DiPO bridge builds change; every other set keeps its DiPO bridge build
+# 0.1.13 / 0.1.18: only the Korean DiPO bridge builds change; every other set keeps its DiPO bridge build
 for sb in neev:e7c1f412233482e12bde8543c6c1e24f neev23_260903:8b1d23f89ceff4016ade508be1691d18 neev_ca:4150a328e5447ad4511a92cccd49ce10 \
           ev6:154204dd700d02a6d47b4d7b6550c8f6 ev6_ca:83482d5aec90573af95d3bc4e310151f dl3hev:485b12e96b6ff6e88cbfd5cc01de7cd5 nq5:00447fe4ec7b0f6c3cab38c0d7a944bf; do
-    check "0.1.13 ${sb%%:*}: DiPO bridge build unchanged (${sb#*:})" eval '[ "$(awk '"'"'$1=="3_bridge" && $3=="HKMC_DiPO" {print $5}'"'"' "$PKG/patches/${sb%%:*}/manifest")" = ${sb#*:} ]'
+    check "0.1.13 / 0.1.18 ${sb%%:*}: DiPO bridge build unchanged (${sb#*:})" eval '[ "$(awk '"'"'$1=="3_bridge" && $3=="HKMC_DiPO" {print $5}'"'"' "$PKG/patches/${sb%%:*}/manifest")" = ${sb#*:} ]'
 done
-for f in src/tbt/com/jmk/hud/Near.java src/tbt/near-hooks.diff src/tbt/build.sh src/tbt/wireless-iap2.diff; do
-    check "0.1.11 / 0.1.13 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
+for f in src/tbt/com/jmk/hud/Near.java src/tbt/near-hooks.diff src/tbt/build.sh src/tbt/wireless-iap2.diff src/tbt/cp-iap-resume.diff; do
+    check "0.1.11 / 0.1.13 / 0.1.18 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
 done
 WD=$P/src/tbt/wireless-iap2.diff
 check "0.1.13 wireless-iap2.diff: one file (com/daudio/app/dipo/e/b.smali), nothing added" eval '[ "$(grep -c "^+++ " "$WD")" = 1 ] && grep -q "^+++ b/com/daudio/app/dipo/e/b.smali$" "$WD" && [ -z "$(grep "^+" "$WD" | grep -v "^+++ ")" ]'
 check "0.1.13 wireless-iap2.diff: takes out exactly the two transport checks (if-eq p1, v0) and their blank lines" eval '[ "$(grep "^-" "$WD" | grep -v "^--- " | grep -c "^-    if-eq p1, v0, :cond_[0-9a-f]*$")" = 2 ] && [ "$(grep "^-" "$WD" | grep -v "^--- " | grep -vc "^-$")" = 2 ] && [ "$(grep -c "^-$" "$WD")" = 2 ]'
-check "0.1.13 build.sh: applies wireless-iap2.diff to the DiPO tree only, documents 86ce5550 -> $NEW_DIPO" eval 'grep -q "if \[ -f \"\$work/tree/com/daudio/app/dipo/e/b.smali\" \]; then" "$P/src/tbt/build.sh" && grep -q "wireless-iap2.diff\"$" "$P/src/tbt/build.sh" && grep -q "86ce5550bedb50e9ce1d07b81b3273a9 -> $NEW_DIPO" "$P/src/tbt/build.sh" && grep -q "990ef4c3cf0f8e828fc8c2de4b327882 -> $NEW_GPM" "$P/src/tbt/build.sh"'
+check "0.1.13 build.sh: applies wireless-iap2.diff to the DiPO tree only, documents 0.1.13's $DIPO_013 and GPM 990ef4c3 -> $NEW_GPM" eval 'grep -q "if \[ -f \"\$work/tree/com/daudio/app/dipo/e/b.smali\" \]; then" "$P/src/tbt/build.sh" && grep -q "wireless-iap2.diff\"$" "$P/src/tbt/build.sh" && grep -q "0.1.13.s $DIPO_013" "$P/src/tbt/build.sh" && grep -q "990ef4c3cf0f8e828fc8c2de4b327882 -> $NEW_GPM" "$P/src/tbt/build.sh"'
+# 0.1.18: the DiPO bridge build also carries the CarPlay-channel iAP2 resume (src/tbt/cp-iap-resume.diff, applied by
+# build.sh after wireless-iap2.diff to the tree with Leafia's com/ev6/cpwl/Bridge.smali: 86ce5550 -> 56d9ff80; 0.1.13's
+# build was d760fe5b). Only the bridge DiPO changes: the turn-by-turn builds (no Leafia bridge class in them), the
+# profiles without a bridge part and every other set keep their results.
+CP=$P/src/tbt/cp-iap-resume.diff
+check "0.1.18 cp-iap-resume.diff: Leafia's Bridge.smali changed, CpIapResume.smali new, nothing else" eval '[ "$(grep "^+++ " "$CP" | tr "\n" " ")" = "+++ b/com/ev6/cpwl/Bridge.smali +++ b/com/ev6/cpwl/CpIapResume.smali " ] && grep -q "^--- /dev/null$" "$CP"'
+check "0.1.18 cp-iap-resume.diff: adds only (no line of Leafia's code taken out)" eval '[ -z "$(grep "^-" "$CP" | grep -v "^--- ")" ]'
+check "0.1.18 cp-iap-resume.diff: the hook runs for noti 0 on wireless CarPlay only (if-nez p0, sCpWireless) and posts to Bridge.handler()" \
+    eval 'grep -q "^+    if-nez p0, :cond_2b$" "$CP" && grep -q "^+    sget-boolean v1, Lcom/ev6/cpwl/Bridge;->sCpWireless:Z$" "$CP" && grep -q "^+    invoke-static {}, Lcom/ev6/cpwl/Bridge;->handler()Landroid/os/Handler;$" "$CP" && grep -q "^+    invoke-virtual {v1, v2}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z$" "$CP"'
+check "0.1.18 cp-iap-resume.diff: the noti stays dropped (the hook goes back to return v0)" eval '[ "$(grep -c "^+    goto :cond_2b$" "$CP")" = 1 ] && grep -q "^     return v0$" "$CP"'
+check "0.1.18 cp-iap-resume.diff: CpIapResume.run calls the stock setStartiAP2Service e(1) and nothing else of DiPO's" \
+    eval '[ "$(grep "^+    invoke-" "$CP" | grep -c "Lcom/daudio/")" = 1 ] && grep -q "^+    invoke-virtual {v0, v1}, Lcom/daudio/app/dipo/e/b;->e(I)V$" "$CP" && grep -q "^+    const/4 v1, 0x1$" "$CP" && grep -q "^+    sget-object v0, Lcom/daudio/app/dipo/e/u;->leafiaOwner:Lcom/daudio/app/dipo/e/b;$" "$CP"'
+check "0.1.18 cp-iap-resume.diff: both new code paths catch Throwable" [ "$(grep -c '^+    \.catch Ljava/lang/Throwable;' "$CP")" = 2 ]
+check "0.1.18 build.sh: applies cp-iap-resume.diff after wireless-iap2.diff, to the tree with com/ev6/cpwl/Bridge.smali, documents 86ce5550 -> $NEW_DIPO" \
+    eval 'grep -q "if \[ -f \"\$work/tree/com/ev6/cpwl/Bridge.smali\" \]; then" "$P/src/tbt/build.sh" && [ "$(grep -n "wireless-iap2.diff\"$" "$P/src/tbt/build.sh" | cut -d: -f1)" -lt "$(grep -n "cp-iap-resume.diff\"$" "$P/src/tbt/build.sh" | cut -d: -f1)" ] && grep -q "86ce5550bedb50e9ce1d07b81b3273a9 -> $NEW_DIPO" "$P/src/tbt/build.sh"'
+lpd_extra_has() {   # $1 delta, $2 text: exit 0 when the delta's literal (bsdiff extra) bytes hold the text (a new class
+    # name lands there), 1 when they do not, 2 when the delta cannot be read
+    python3 -I - "$1" "$2" <<'PY'
+import struct, sys, zlib
+try:
+    d = open(sys.argv[1], 'rb').read()
+    assert d[:4] == b'LPD1'
+    comp, plen = struct.unpack_from('<II', d, 44)
+    assert comp == 1
+    b = zlib.decompressobj(-15).decompress(d[52:52 + plen])
+    n, = struct.unpack_from('<I', b, 0); q = 4 + 12 * n
+    dl, = struct.unpack_from('<I', b, q); q += 4 + dl
+    el, = struct.unpack_from('<I', b, q)
+    assert q + 4 + el == len(b)
+    e = b[q + 4:q + 4 + el]
+except Exception:
+    sys.exit(2)
+sys.exit(0 if sys.argv[2].encode() in e else 1)
+PY
+}
+for lp in bycode/kr bycode/krb bycode/kre bycode/krp neev_kr; do
+    check "0.1.18 $lp/HKMC_DiPO.bridge.lpd: ends at $NEW_DIPO and carries the new class (Lcom/ev6/cpwl/CpIapResume;)" eval '[ "$(lpd_dst "$PKG/patches/$lp/HKMC_DiPO.bridge.lpd")" = $NEW_DIPO ] && lpd_extra_has "$PKG/patches/$lp/HKMC_DiPO.bridge.lpd" "Lcom/ev6/cpwl/CpIapResume;"'
+done
+for lp in "$PKG"/patches/*/HKMC_DiPO.tbt.lpd "$PKG"/patches/bycode/*/HKMC_DiPO.tbt*.lpd "$PKG"/patches/bycode/us/HKMC_DiPO.bridge.*.lpd \
+          "$PKG"/patches/neev*/HKMC_DiPO.bridge.lpd "$PKG"/patches/ev6/HKMC_DiPO.bridge.lpd "$PKG"/patches/nq5/HKMC_DiPO.bridge.lpd "$PKG"/patches/dl3hev/HKMC_DiPO.bridge.lpd; do
+    [ "$lp" = "$PKG/patches/neev_kr/HKMC_DiPO.bridge.lpd" ] && continue
+    check "0.1.18 ${lp#$PKG/patches/}: no CpIapResume (not a Korean bridge build)" eval 'lpd_extra_has "$lp" "Lcom/ev6/cpwl/CpIapResume;"; [ $? -eq 1 ]'
+done
+# profiles with no bridge part (their DiPO bridge is held or there is none): no 3_bridge line, turn-by-turn DiPO unchanged
+for pd in krc:fe5030232f629489d3249eb7c9ef1c05 krd:f1c23b5fe21ba6898e1cf9339caf8906 krm:29a4add9f184c91b163d9a8b864ce484 krv:29a4add9f184c91b163d9a8b864ce484; do
+    p=${pd%%:*}; w=${pd#*:}
+    check "0.1.18 $p: no 3_bridge part, no DiPO bridge delta (held), its DiPO turn-by-turn build unchanged ($w)" eval '! grep -q "^3_bridge " "$PKG/patches/bycode/$p/manifest" && ! ls "$PKG/patches/bycode/$p/" | grep -q "bridge" && [ "$(want_of "$PKG/patches/bycode/$p/manifest" 2_tbt HKMC_DiPO)" = $w ]'
+done
+check "0.1.18 neev_kr: DiPO turn-by-turn build unchanged (5bc5707c)" grep -q "^2_tbt app HKMC_DiPO neev_kr/HKMC_DiPO.tbt.lpd 5bc5707c2ee266fe6436d272245e53f6$" "$PKG/patches/neev_kr/manifest"
+check "0.1.18 known: 0.1.13's neev_kr DiPO apk (13633ac6) and this one ($NEW_DIPO_APK) are both ours" eval 'grep -qx "HKMC_DiPO.apk 13633ac624e850cfad2aa80ddf0be445" "$PKG/patches/known" && grep -qx "HKMC_DiPO.apk $NEW_DIPO_APK" "$PKG/patches/known"'
+# with the build inputs on this Mac (private/hud-port): build.sh gives the pinned results, and each package delta
+# rebuilds the new DiPO bridge from a real stock copy of its code (skipped without them)
+B010=$REPO/private/hud-port/dipo-wireless-iap2
+if [ -f "$B010/dipo-0.1.10.dex" ] && [ -f "$B010/gpm-0.1.10.dex" ] && command -v javac >/dev/null 2>&1 && [ -x "$B010/lpatch-host" ]; then
+    BT=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-tbt.XXXXXX")
+    check "0.1.18 build.sh: 0.1.10's DiPO 86ce5550 -> $NEW_DIPO" eval '[ "$(bash "$P/src/tbt/build.sh" "$B010/dipo-0.1.10.dex" "$BT/dipo.dex" 2>/dev/null | tail -1)" = $NEW_DIPO ]'
+    check "0.1.18 build.sh: 0.1.10's GPM 990ef4c3 -> $NEW_GPM (no bridge class: unchanged)" eval '[ "$(bash "$P/src/tbt/build.sh" "$B010/gpm-0.1.10.dex" "$BT/gpm.dex" 2>/dev/null | tail -1)" = $NEW_GPM ]'
+    check "0.1.18 the new DiPO bridge has CpIapResume and its log line" eval 'LC_ALL=C grep -qa "Lcom/ev6/cpwl/CpIapResume;" "$BT/dipo.dex" && LC_ALL=C grep -qa "CarPlay-channel iAP2 session ready, setStartiAP2Service again" "$BT/dipo.dex"'
+    H=$REPO/private/hud-port; BL=$H/uploads/blobs
+    for pair in bycode/kr:$REPO/private/stock-neev-kr-260902/stock3/app/HKMC_DiPO.odex bycode/kr:$H/ceev-ikfl/stock-ikfl/HKMC_DiPO.odex \
+                bycode/krb:$H/groupB-bridge/stock-b/HKMC_DiPO.odex bycode/krb:$BL/950b5575603e50aea9894b3568e80e21b3a354a6c812c3991010ab3e0cb9fe90 \
+                bycode/kre:$H/ev6kr/stock/HKMC_DiPO.odex bycode/kre:$BL/caa5def8ab938f06d2ed212d061ff8758879da07cdd6e14a08e2930bdecb9291 \
+                bycode/krp:$H/cn7pe/HKMC_DiPO.odex bycode/krp:$H/ceev-ikfl/stock-ceev/HKMC_DiPO.odex; do
+        lp=${pair%%:*}; s=${pair#*:}
+        [ -f "$s" ] || continue
+        check "0.1.18 $lp DiPO bridge delta on a real stock copy (${s#$REPO/}) -> $NEW_DIPO (host lpatch)" eval '"$B010/lpatch-host" odexdex "$s" "$BT/code.dex" >/dev/null && "$B010/lpatch-host" delta "$PKG/patches/$lp/HKMC_DiPO.bridge.lpd" "$BT/code.dex" "$BT/out.dex" >/dev/null && [ "$(md5 -q "$BT/out.dex")" = $NEW_DIPO ]'
+    done
+    S3=$REPO/private/stock-neev-kr-260902/stock3
+    if [ -f "$S3/app/HKMC_DiPO.odex" ] && [ -f "$H/stock-HKMC_DiPO.apk" ]; then
+        check "0.1.18 neev_kr DiPO bridge delta on the stock odex -> $NEW_DIPO, zipadd into the stock apk -> $NEW_DIPO_APK (host lpatch)" eval '"$B010/lpatch-host" delta "$PKG/patches/neev_kr/HKMC_DiPO.bridge.lpd" "$S3/app/HKMC_DiPO.odex" "$BT/nk.dex" >/dev/null && [ "$(md5 -q "$BT/nk.dex")" = $NEW_DIPO ] && "$B010/lpatch-host" zipadd "$H/stock-HKMC_DiPO.apk" "$BT/nk.dex" "$BT/nk.apk" >/dev/null && [ "$(md5 -q "$BT/nk.apk")" = $NEW_DIPO_APK ]'
+    fi
+    rm -rf "$BT"
+else
+    echo "(the 0.1.10 build inputs or the host lpatch are not on this Mac: the 0.1.18 rebuild checks skipped)"
+fi
 check "0.1.11 near-hooks.diff: the four hooks" [ "$(grep -c '^+.*Lcom/jmk/hud/Near;->' "$P/src/tbt/near-hooks.diff")" = 4 ]
 if command -v javac >/dev/null 2>&1; then
     NT=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-near.XXXXXX")
@@ -362,7 +470,7 @@ if [ -f "$LEAFIA_LC/stock.md5" ] && [ -f "$LEAFIA_LC/final.md5" ]; then
         # 0.1.5: GPM and DiPO carry our guidance-end fix (TBT_INFO DisplayType 8, not 0: the cluster spun), 0.1.11 the
         # near-turn filter (src/tbt), DiPO 0.1.13 the wireless iAP2 fix, so their results are Leafia KR's plus those
         # changes; every other target is still Leafia KR's byte for byte
-        case "$c" in HKMC_GPM|HKMC_DiPO) check "neev_kr result $c is ours (0.1.5 guidance-end fix, 0.1.11 near-turn filter, DiPO 0.1.13 wireless iAP2), not Leafia KR's" [ "$fin" != "$e" ]; continue ;; esac
+        case "$c" in HKMC_GPM|HKMC_DiPO) check "neev_kr result $c is ours (0.1.5 guidance-end fix, 0.1.11 near-turn filter, DiPO 0.1.13 wireless iAP2 and 0.1.18 CarPlay-channel resume), not Leafia KR's" [ "$fin" != "$e" ]; continue ;; esac
         check "neev_kr result $c = what Leafia KR leaves on the car (final.md5 $f)" [ "$fin" = "$e" ]
     done < <(effective neev_kr)
 else
@@ -380,7 +488,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.17" grep -q '^package-version=0.1.17$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.18" grep -q '^package-version=0.1.18$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]

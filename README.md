@@ -28,6 +28,29 @@ Plus the CarPlay library recipes, each checked on its own file: `carplay-utils-c
 `carplay-core-wifi` (libCarPlayCore.so). On NEEV.KOR 260902 only the audio one applies (the other two are NATIVE).
 `os="*.KOR.*"` in NEMESIS.data limits installs to KOR firmware; the other sets are kept for other models.
 
+0.1.18: wireless CarPlay now playing on the Korean bridge builds, and turn-by-turn for the Kia Sorento MQ4 Korea on the
+firmware MQ4.KOR.0000.V037.001.260319 (by-code profile `krm`).
+- **무선 카플레이에서 분할화면 곡 정보·재생 시간·통화 상태가 계속 바뀝니다.** On wireless CarPlay the iPhone moves iAP2
+  from the Bluetooth session to the CarPlay channel right after connecting. When Leafia's bridge takes that session's
+  identification notice (noti 0, which it keeps from DiPO), the new class `com.ev6.cpwl.CpIapResume`
+  (`src/tbt/cp-iap-resume.diff`, posted to the bridge's handler) calls DiPO's `setStartiAP2Service` once more, so that
+  session starts the now-playing, call-state and telephony updates too. Wired CarPlay is unchanged (the hook runs only
+  for a wireless CarPlay-channel session). Every Korean DiPO bridge build (by-code kr, kra, krb, kre, krg, kri, krp,
+  krt and the `neev_kr` set) ends at 56d9ff80 (was d760fe5b); rebuild: `src/tbt/build.sh <0.1.10 result dex> <out
+  dex>`. The turn-by-turn-only profiles (krc, krd, krm, krv) and the other sets are unchanged. Report:
+  private/hud-port/nowplaying-updates/REPORT.md. Not car-tested.
+- **`krm`: Kia Sorento MQ4 V037** (DWW5FPAD, locked on 0.1.17 with "nor its code a profile"). Its GPM, DiPO, Navi and
+  Iap2ServerApp are the Ioniq 5 V037's apps (`krv`) dexopted against another framework: group B's core.odex and one
+  `Message` / `UsbDevice` / `WifiManager` method fewer, so only quick-call slots differ in the .odex. Deodexed on its
+  own class path, the plain code is krv's byte for byte; Navi also carries that framework's two string IDs. So GPM and
+  DiPO end at krv's own builds, Iap2ServerApp takes krd's line (the same code, 9f32383b), and Navi is krv's build with
+  the car's two string IDs. The library is the Ioniq 5's (48ee793a), so its line is kr's. The Hyundai Grandeur IGPE
+  V037 (OB3JWHQB) reports the same codes and library, so it gets `krm` too.
+- Turn-by-turn only. The CarPlay bridge builds and passes the offline checks but is held back. No MQ4 stock code calls
+  the Broadcom SPP or IPPManager methods the bridge uses, and that firmware's framework and Broadcom / iap2 libraries
+  are not on hand yet (카플레이용 파일 보내기). No script change. Report: private/hud-port/mq4-v037-REPORT.md. Not
+  car-tested.
+
 0.1.17: the tamper lock holds through updates, our own earlier builds are ours again, and the cars of Leafia's K5 Hybrid
 set get our builds.
 - **The tamper lock now holds through installs and updates.** Before, only the settings service read the lock, once at
