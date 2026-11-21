@@ -1,0 +1,7 @@
+# jmk-autoplay-hud: the menu config keys whose switch this set's builds really read (scripts/common.sh knob_props).
+# Found in this set's patch data (the persist.* names inside each .lpd's inflated delta):
+#   HKMC_GPM, HKMC_Navi_ExSL (2_tbt), HKMC_DiPO (3_bridge): persist.leafia.log, persist.leafia.lane.log, persist.leafia.lane.dist
+#   Iap2ServerApp (3_bridge): persist.leafia.cp.lanes, persist.leafia.log
+#   PhoneProjection (3_bridge), libautoreceiver_infobank.so: none
+# A set without this file reads none (the menu hides every option that has no switch).
+log lane_dist cp_lanes

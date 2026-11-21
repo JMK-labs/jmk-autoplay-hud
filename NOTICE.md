@@ -58,6 +58,10 @@ patch data is data; the binaries are listed below with their sources).
   drawable IDs changed), and HKMC_DiPO / Iap2ServerApp end at the `kr` profile's bridge builds. Only deltas and md5s;
   no stock file ships. 0.1.17: also the turn-by-turn part of the cars of Leafia's `dl3hev` set (Kia K5, K5 Hybrid,
   Sorento Hybrid, K7, Stinger, Niro Hybrid Korea V039): the same app code.
+- **By-code profile `krk`** (`patches/bycode/krk`, 0.1.20): `krb`'s lines word for word for the Kia Niro Hybrid Korea
+  (DEPEHEV V039), whose PhoneProjection is group B's code with K8's `android:id/topPanel` number; its PhoneProjection
+  bridge is `kra`'s build (Leafia's `neev_kr` bridge build with eight drawable IDs and topPanel changed). Compared with
+  JMK's own tools (AGPL-3.0, private/hud-port/depehev-v039). Only one delta and md5s; no stock file ships.
 - **By-code profile `kra`** (`patches/bycode/kra`, 2026-11-19): the `kr` profile for Korean K8, K8 Hybrid and Seltos
   head units (GL3, GL3HEV, SP2PE V039.001.260902), whose apps run Ioniq 5 Korea's app code. Their PhoneProjection is
   Ioniq 5 Korea's stock code as well, built with their own resource table, so its CarPlay bridge build is Leafia's
@@ -203,6 +207,8 @@ and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
 - 0.1.19: 안드로이드 오토·카플레이가 끊기거나 종료되면 계기판·HUD 길안내가 바로 사라집니다: the GPM and DiPO builds with
   our turn-by-turn code release the cluster / HUD guidance at the stock end of the projection session, and take
   `am broadcast -a com.jmk.hud.TBT_CLEAR` (root, system or shell) to release it by hand.
+- 0.1.20: 기아 니로 하이브리드에서 무선 카플레이 + 계기판 · HUD 길안내가 됩니다 (profile `krk`: `krb`'s builds and
+  `kra`'s PhoneProjection bridge build); no script change.
 - Only apps that are enabled are stopped for the file swap, and the same ones are started again (also by the
   settings service at boot, if a run died).
 - A status file for the JMK MAP menu (`/data/nemesis/jmk-autoplay-hud/status`) and a settings service that maps the

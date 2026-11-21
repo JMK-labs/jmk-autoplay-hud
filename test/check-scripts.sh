@@ -97,7 +97,7 @@ for m in "$PKG"/patches/bycode/*/manifest; do
     prof=${m%/manifest}; prof=${prof##*/}
     check "by code $prof: has 2_tbt lines" grep -q '^2_tbt ' "$m"
     while read -r part kind name code patch want; do
-        case "$part" in ''|'#'*) continue ;; esac
+        case "$part" in ''|'#'*|bridge_products) continue ;; esac   # 0.1.20: the bridge's firmware list is not a part line
         lpd="$PKG/patches/$patch"
         check "by code $prof: $part $name: $patch is an lpatch delta" eval '[ -s "$lpd" ] && lpd_magic "$lpd"'
         check "by code $prof: $part $name: starts from $code" [ "$(lpd_src "$lpd")" = "$code" ]
@@ -189,7 +189,7 @@ for ac in HKMC_GPM:1f29a226774d61a2b4ef899182af28cf:7b0fb9800dc6479d466e06760942
           Iap2ServerApp:661dc714e30802d505c333e33bb7f089:cc198983ce4e3c647eda36e23b292143 HKMC_Navi_ExSL:12a34cb11c9325f9a4050a86a9699469:2e215e95d84eb0906095cf4a5e4601ff; do
     a=${ac%%:*}; c=${ac#*:}; w=${c#*:}; c=${c%%:*}
     check "by code krv: $a is V037's code ($c) -> its own build ($w)" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$KRV")" = "$c bycode/krv/$a.tbt.lpd $w" ]
-    for o in kr kra krb kre krg kri krm krp krt us; do
+    for o in kr kra krb kre krg kri krk krm krp krt us; do
         check "by code krv: $a's code is no other profile's ($o)" eval '! grep -q " $a $c " "$PKG/patches/bycode/$o/manifest"'
     done
     check "by code krv: $a's build is not kr's (V037's own stock code under the patch)" [ "$w" != "$(want_of "$PKG/patches/bycode/kr/manifest" 2_tbt $a)" ]
@@ -246,7 +246,7 @@ for ac in krc:HKMC_GPM:4cf385316c37ddc4d5c28ba69d99caee:965c4bfa035f24caeba188d9
           krd:Iap2ServerApp:9f32383bbf425173727ce6365971fa28:cc198983ce4e3c647eda36e23b292143 krd:HKMC_Navi_ExSL:d43adb26a20f55e5bdfd5e313bb66c9d:cbf5ce775fdd6e61767ea6bff2ea5d64; do
     p=${ac%%:*}; r=${ac#*:}; a=${r%%:*}; r=${r#*:}; c=${r%%:*}; w=${r#*:}
     check "by code $p: $a is V035's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$PKG/patches/bycode/$p/manifest")" = "$c bycode/$p/$a.tbt.lpd $w" ]
-    for o in kr kra krb kre krg kri krm krp krt krv us krc krd; do
+    for o in kr kra krb kre krg kri krk krm krp krt krv us krc krd; do
         [ $o = $p ] && continue
         [ $p = krd ] && [ $a = Iap2ServerApp ] && [ $o = krm ] && continue    # krm's Iap2ServerApp is krd's line (checked below)
         check "by code $p: $a's code is no other profile's ($o)" eval '! grep -q " $a $c " "$PKG/patches/bycode/$o/manifest"'
@@ -280,14 +280,14 @@ for ac in HKMC_GPM:a79f26f3689641f9274c01cdafab52d1:7b0fb9800dc6479d466e06760942
           HKMC_Navi_ExSL:93bca3a2125a1b33c572b20ce6b3a5e1:584218add8cac46fd7fcf1c72d7b20e4; do
     a=${ac%%:*}; c=${ac#*:}; w=${c#*:}; c=${c%%:*}
     check "by code krm: $a is MQ4 V037's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$KRM")" = "$c bycode/krm/$a.tbt.lpd $w" ]
-    for o in kr kra krb krc krd kre krg kri krp krt krv us; do
+    for o in kr kra krb krc krd kre krg kri krk krp krt krv us; do
         check "by code krm: $a's code is no other profile's ($o)" eval '! grep -q " $a $c " "$PKG/patches/bycode/$o/manifest"'
     done
 done
 for a in HKMC_GPM HKMC_DiPO; do
     check "by code krm: $a ends at krv's build (the same plain code)" [ "$(want_of "$KRM" 2_tbt $a)" = "$(want_of "$KRV" 2_tbt $a)" ]
 done
-for o in kr kra krb krc krd kre krg kri krp krt krv us; do
+for o in kr kra krb krc krd kre krg kri krk krp krt krv us; do
     check "by code krm: Navi's build is not $o's (krv's with this framework's two string IDs)" [ "$(want_of "$KRM" 2_tbt HKMC_Navi_ExSL)" != "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_Navi_ExSL)" ]
 done
 check "by code krm: Iap2ServerApp is krd's code (9f32383b): krd's line, word for word" [ "$(grep '^2_tbt app Iap2ServerApp ' "$KRM")" = "$(grep '^2_tbt app Iap2ServerApp ' "$KRD")" ]
@@ -312,6 +312,35 @@ check "by code choice (0.1.17): the dl3hev set's cars (group B's code, another P
 check "by code choice (0.1.17): ... and with group B's PhoneProjection (4e8915b2) krb with the bridge, as group B" [ "$(sel_of $DL3_CODES 4e8915b28483230964250e3da9463e4e $LIB_KR)" = "krb 2_tbt 3_bridge" ]
 check "by code choice (0.1.17): ... with another library nothing (the dl3hev set stays the fallback)" [ "$(sel_of $DL3_CODES 0123456789abcdef0123456789abcdef 0123456789abcdef0123456789abcdef)" = none ]
 check "0.1.17 postinstall tries the profiles first for a superseded set" grep -q 'set_superseded "$SET" || ! set_fits "$SET"' "$PKG/scripts/postinstall.sh"
+# krk (0.1.20): the bridge for those Kia cars. NLSXQRH5 (Niro Hybrid DEPEHEV V039) sent its PhoneProjection and boot class
+# path (DL3HEV22's byte for byte): its PhoneProjection a13280bf is group B's 4e8915b2 raw dump for raw dump but the
+# topPanel constant (0x010202ec -> 0x010202f0), and kra's bridge build fb039a63 is krb's 255e17ec with exactly that
+# constant changed (private/hud-port/depehev-v039/). Everything else is krb's, word for word.
+KRK=$PKG/patches/bycode/krk/manifest
+check "by code krk: the bridge only on DEPEHEV / DL3HEV22 V039 (bridge_products)" grep -q '^bridge_products DEPEHEV.KOR.0000.V039.001.260902 DL3HEV22.KOR.0000.V039.001.260902$' "$KRK"
+check "by code krk: turn-by-turn and bridge, the lines in krb's order" [ "$(grep -v -e '^#' -e '^bridge_products' "$KRK" | awk '{print $1":"$3}' | tr '\n' ' ')" = "$(grep -v '^#' "$KRB" | awk '{print $1":"$3}' | tr '\n' ' ')" ]
+check "by code krk: every 2_tbt line is krb's, word for word" [ "$(grep '^2_tbt ' "$KRK")" = "$(grep '^2_tbt ' "$KRB")" ]
+for a in Iap2ServerApp HKMC_DiPO; do
+    check "by code krk: the $a bridge line is krb's, word for word" [ "$(grep "^3_bridge app $a " "$KRK")" = "$(grep "^3_bridge app $a " "$KRB")" ]
+done
+check "by code krk: PhoneProjection is DEPEHEV's code (a13280bf) -> its own delta, kra's bridge build" [ "$(awk '$1=="3_bridge" && $3=="PhoneProjection" {print $4" "$5" "$6}' "$KRK")" = "a13280bf1adef39877ff6addb5b8ae76 bycode/krk/PhoneProjection.bridge.lpd $(want_of "$PKG/patches/bycode/kra/manifest" 3_bridge PhoneProjection)" ]
+for o in kr kra krb krc krd kre krg kri krm krp krt krv us; do
+    check "by code krk: its PhoneProjection code is no other profile's ($o)" eval '! grep -q " PhoneProjection a13280bf1adef39877ff6addb5b8ae76 " "$PKG/patches/bycode/$o/manifest"'
+done
+check "by code krk: only its manifest, the knobs and the PhoneProjection delta (the rest is krb's)" [ "$(ls "$PKG/patches/bycode/krk" | LC_ALL=C sort | tr '\n' ' ')" = "PhoneProjection.bridge.lpd knobs manifest " ]
+check "by code krk: the knobs are kr's" cmp -s "$PKG/patches/bycode/krk/knobs" "$PKG/patches/bycode/kr/knobs"
+check "by code choice (0.1.20): a Niro Hybrid DEPEHEV V039 car (NLSXQRH5's codes) gets krk with the bridge" [ "$(sel_of $DL3_CODES a13280bf1adef39877ff6addb5b8ae76 $LIB_KR)" = "krk 2_tbt 3_bridge" ]
+check "by code choice (0.1.20): ... with another library the bridge part only, as krb with group B's PhoneProjection (no library line in the bridge part)" eval '[ "$(sel_of $DL3_CODES a13280bf1adef39877ff6addb5b8ae76 0123456789abcdef0123456789abcdef)" = "krk 3_bridge" ] && [ "$(sel_of $DL3_CODES 4e8915b28483230964250e3da9463e4e 0123456789abcdef0123456789abcdef)" = "krb 3_bridge" ]'
+check "by code choice (0.1.20): group B (4e8915b2) still krb, another PhoneProjection still krb turn-by-turn only" eval '[ "$(sel_of $DL3_CODES 4e8915b28483230964250e3da9463e4e $LIB_KR)" = "krb 2_tbt 3_bridge" ] && [ "$(sel_of $DL3_CODES 0123456789abcdef0123456789abcdef $LIB_KR)" = "krb 2_tbt" ]'
+check "by code choice (0.1.20): K8's PhoneProjection (cd2d9df8) with group B's code fits only krb's turn-by-turn (kra's bridge line is keyed to K8's code)" [ "$(sel_of $DL3_CODES cd2d9df8e98bf621e928714bbe4f1723 $LIB_KR)" = "krb 2_tbt" ]
+DEPPP=$REPO/private/hud-port/depehev-v039/stock; LH=$REPO/private/hud-port/dipo-wireless-iap2/lpatch-host
+if [ -f "$DEPPP/PhoneProjection.odex" ] && [ -f "$DEPPP/PhoneProjection.apk" ] && [ -x "$LH" ]; then
+    KT=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-krk.XXXXXX")
+    check "0.1.20 krk PhoneProjection delta on NLSXQRH5's own odex -> fb039a63, zipadd into its own apk passes unzip -t (host lpatch)" eval '"$LH" odexdex "$DEPPP/PhoneProjection.odex" "$KT/code.dex" >/dev/null && [ "$(md5 -q "$KT/code.dex")" = a13280bf1adef39877ff6addb5b8ae76 ] && "$LH" delta "$PKG/patches/bycode/krk/PhoneProjection.bridge.lpd" "$KT/code.dex" "$KT/out.dex" >/dev/null && [ "$(md5 -q "$KT/out.dex")" = fb039a6307e3389b71bfdac48de44612 ] && "$LH" zipadd "$DEPPP/PhoneProjection.apk" "$KT/out.dex" "$KT/out.apk" >/dev/null && unzip -tq "$KT/out.apk" >/dev/null && [ "$(unzip -p "$KT/out.apk" classes.dex | md5 -q)" = fb039a6307e3389b71bfdac48de44612 ]'
+    rm -rf "$KT"
+else
+    echo "(NLSXQRH5's PhoneProjection or the host lpatch is not on this Mac: the 0.1.20 krk rebuild check skipped)"
+fi
 # 0.1.17 (GMI6OZC2): patches/known, every result an earlier version wrote (src/mkknown.py), for ours()
 check "0.1.17 known: src/mkknown.py gives package/patches/known (git history and the zips)" python3 -I "$P/src/mkknown.py" --check
 for x in HKMC_GPM.apk:1c4bfddabb210bf4e7dc5e4eefc2c2b0 HKMC_DiPO.apk:33dc9d70b07738af5730e936e3e11c8d HKMC_Navi_ExSL.apk:5115031f79ff6f0b059fcde1a3c1b81d \
@@ -344,7 +373,7 @@ NEW_GPM=d2538947dcd6a8af532e0fb2baf7be81; NEW_DIPO=913848d61d675beb066e03f119a4c
 DIPO_013=d760fe5bdb6e00e7afd18fef2155dd1c; NEW_DIPO_APK=e4cc7bb2e6e5d532aeb19620f2860486
 GPM_018=b02ada70f0de90a9e09d364a64559074; DIPO_018=56d9ff800ddc5a750fa2be6d247deb5d; DIPO_APK_018=ad5a3139510fe65a87a0d71f9cd82aff
 NEW_DIPOT=6dfde547549483ca65e822f5e992e275; NEW_GPM_APK=00613075311c59881d379f384ed77327; NEW_DIPOT_APK=956eefb7194ab7c3f3294c14a6150d38
-for o in kr kra krb kre krg kri krp krt; do
+for o in kr kra krb kre krg kri krk krp krt; do
     check "0.1.19 $o: GPM ends at the near-turn + TBT clear build $NEW_GPM (0.1.18: $GPM_018)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_GPM)" = $NEW_GPM ]
     check "0.1.19 $o: DiPO turn-by-turn build = 0.1.18's ffe9b558 + TBT clear ($NEW_DIPOT)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_DiPO)" = $NEW_DIPOT ]
     check "0.1.19 $o: DiPO bridge ends at the near-turn + wireless iAP2 + CarPlay-channel resume + TBT clear build $NEW_DIPO (not 0.1.18's $DIPO_018, 0.1.13's $DIPO_013, 0.1.11's $OLD_DIPO)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $NEW_DIPO ]
@@ -565,7 +594,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.19" grep -q '^package-version=0.1.19$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.20" grep -q '^package-version=0.1.20$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]

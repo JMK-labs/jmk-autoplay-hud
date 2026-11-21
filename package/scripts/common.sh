@@ -459,7 +459,15 @@ bycode_part_fits() {
             case "$4" in *" $n=$c "*) ;; *) return 1 ;; esac
         fi
     done < "$1/manifest"
-    [ -n "$any" ]
+    [ -n "$any" ] || return 1
+    # 0.1.20: "bridge_products <ro.build.product> ...": the bridge only on the firmwares whose framework was seen (its
+    # android:id numbers are what the bridge's PhoneProjection uses); other cars of the same app code keep turn-by-turn
+    if [ "$2" = 3_bridge ]; then
+        local a b bp=
+        while read -r a b || [ -n "$a" ]; do [ "$a" = bridge_products ] && bp="$bp $b"; done < "$1/manifest"
+        if [ -n "$bp" ]; then case " $bp " in *" $(getprop ro.build.product) "*) ;; *) return 1 ;; esac; fi
+    fi
+    return 0
 }
 
 # bycode_make <profile dir> <parts>: the auto set from this car's stock files; 1 (and $AUTO untouched) on any miss

@@ -28,6 +28,27 @@ Plus the CarPlay library recipes, each checked on its own file: `carplay-utils-c
 `carplay-core-wifi` (libCarPlayCore.so). On NEEV.KOR 260902 only the audio one applies (the other two are NATIVE).
 `os="*.KOR.*"` in NEMESIS.data limits installs to KOR firmware; the other sets are kept for other models.
 
+0.1.20: 기아 니로 하이브리드에서 무선 카플레이 + 계기판 · HUD 길안내가 됩니다.
+- **By-code profile `krk`** (Niro Hybrid DEPEHEV.KOR.0000.V039.001.260902, car NLSXQRH5: 카플레이용 파일 보내기 with
+  its PhoneProjection apk / odex, its 16 boot odex files and framework-res). Until now the car got `krb`'s
+  turn-by-turn part only (0.1.17): its GPM, DiPO, Iap2ServerApp, Navi code and library are group B's, but its
+  PhoneProjection (a13280bf) is not group B's 4e8915b2.
+- **Its PhoneProjection is group B's code with K8's topPanel.** Raw quickened dumps: 794 of 795 classes are byte for
+  byte group B's, and the one left (popup/ac) differs in a single constant, `android:id/topPanel` 0x010202ec ->
+  0x010202f0 (its framework-res, = DL3HEV22's, puts topPanel there, as K8's does). The app resource table is group
+  B's (the same 576 names and numbers). `kra`'s bridge build fb039a63 is `krb`'s 255e17ec with exactly that constant
+  changed, so the bridge is `kra`'s build: delta a13280bf -> fb039a63 (`patches/bycode/krk/PhoneProjection.bridge.lpd`).
+- Every other line is `krb`'s word for word: the turn-by-turn part (0.1.19's GPM d2538947, DiPO 6dfde547), the DiPO
+  bridge 913848d6 (near-turn, wireless iAP2, 0.1.18's CpIapResume, 0.1.19's TBT clear) and Iap2ServerApp 0ad54672.
+- Checked against the car's own boot class path (byte for byte DL3HEV22's): every outside method / field ref of the
+  three bridge results binds as on group B's framework (fwres, 984 / 1749 / 647 refs), the same supertypes (only the
+  Broadcom / tcc.iap2 shared libraries absent, as on group B), `baksmali -r ALL` 0 errors and the same output on both;
+  the bridge's 29 framework literals and 353 app literals are the stock code's own. lpatch (host build) on the car's
+  own PhoneProjection files: a13280bf -> fb039a63, zipadd passes `unzip -t` and aapt badging; the krb lines on group
+  B's stock files (42 ok). Selection: a car with these codes gets `krk 2_tbt 3_bridge`; group B keeps `krb`, any
+  other PhoneProjection on this code keeps `krb` turn-by-turn only. No script change. Tools and logs:
+  private/hud-port/depehev-v039/. Not car-tested.
+
 0.1.19: 안드로이드 오토·카플레이가 끊기거나 종료되면 계기판·HUD 길안내가 바로 사라집니다.
 - **Android Auto** (every GPM build with our turn-by-turn code): at the stock end of a projection session
   (`GalConnectionSession.finalizeGal` -> `clearSession` -> `GpmNaviTBTManager.destroy()`, wired and wireless), a
