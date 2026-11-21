@@ -185,7 +185,7 @@ check "by code krg: the knobs are kr's" cmp -s "$PKG/patches/bycode/krg/knobs" "
 KRV=$PKG/patches/bycode/krv/manifest
 check "by code krv: turn-by-turn only, the four apps and the library" [ "$(grep -v '^#' "$KRV" | awk '{print $1":"$3}' | tr '\n' ' ')" = "2_tbt:HKMC_GPM 2_tbt:HKMC_DiPO 2_tbt:Iap2ServerApp 2_tbt:HKMC_Navi_ExSL 2_tbt:libautoreceiver_infobank.so " ]
 check "by code krv: no 3_bridge part" eval '! grep -q "^3_bridge " "$KRV"'
-for ac in HKMC_GPM:1f29a226774d61a2b4ef899182af28cf:1301c92348aab9290e5ee98f4b617cb4 HKMC_DiPO:8d0867878b78347358f136aba85a1287:29a4add9f184c91b163d9a8b864ce484 \
+for ac in HKMC_GPM:1f29a226774d61a2b4ef899182af28cf:7b0fb9800dc6479d466e06760942ea13 HKMC_DiPO:8d0867878b78347358f136aba85a1287:9794821165c1037e0d15f13bb017289d \
           Iap2ServerApp:661dc714e30802d505c333e33bb7f089:cc198983ce4e3c647eda36e23b292143 HKMC_Navi_ExSL:12a34cb11c9325f9a4050a86a9699469:2e215e95d84eb0906095cf4a5e4601ff; do
     a=${ac%%:*}; c=${ac#*:}; w=${c#*:}; c=${c%%:*}
     check "by code krv: $a is V037's code ($c) -> its own build ($w)" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$KRV")" = "$c bycode/krv/$a.tbt.lpd $w" ]
@@ -240,9 +240,9 @@ for pv in krc:"$KRC" krd:"$KRD"; do
     check "by code $p: no 3_bridge part" eval '! grep -q "^3_bridge " "$M"'
     check "by code $p: the knobs are kr's" cmp -s "$PKG/patches/bycode/$p/knobs" "$PKG/patches/bycode/kr/knobs"
 done
-for ac in krc:HKMC_GPM:4cf385316c37ddc4d5c28ba69d99caee:454c8dc4741bf9852e18a6a2ca27be23 krc:HKMC_DiPO:84f17a7a755b5a3022a139526ba452bd:fe5030232f629489d3249eb7c9ef1c05 \
+for ac in krc:HKMC_GPM:4cf385316c37ddc4d5c28ba69d99caee:965c4bfa035f24caeba188d9450a7e35 krc:HKMC_DiPO:84f17a7a755b5a3022a139526ba452bd:e9b17e59a3231ffdc6b683f312957b10 \
           krc:HKMC_Navi_ExSL:ea6e2da50080b288f908962a6c8d5794:1bcc141690b4cab381a4f2a242829f2c \
-          krd:HKMC_GPM:d244aba596a361c850311bb0603d1eab:454c8dc4741bf9852e18a6a2ca27be23 krd:HKMC_DiPO:072ba128b4daf9669dc329cfa168a3ee:f1c23b5fe21ba6898e1cf9339caf8906 \
+          krd:HKMC_GPM:d244aba596a361c850311bb0603d1eab:965c4bfa035f24caeba188d9450a7e35 krd:HKMC_DiPO:072ba128b4daf9669dc329cfa168a3ee:be272d864b76d0dd0147c1fa64861164 \
           krd:Iap2ServerApp:9f32383bbf425173727ce6365971fa28:cc198983ce4e3c647eda36e23b292143 krd:HKMC_Navi_ExSL:d43adb26a20f55e5bdfd5e313bb66c9d:cbf5ce775fdd6e61767ea6bff2ea5d64; do
     p=${ac%%:*}; r=${ac#*:}; a=${r%%:*}; r=${r#*:}; c=${r%%:*}; w=${r#*:}
     check "by code $p: $a is V035's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$PKG/patches/bycode/$p/manifest")" = "$c bycode/$p/$a.tbt.lpd $w" ]
@@ -276,7 +276,7 @@ check "by code choice (0.1.16): the LX2 V034 car (KOVZX33T: krd's Iap2ServerApp 
 KRM=$PKG/patches/bycode/krm/manifest
 check "by code krm: turn-by-turn only, the four apps and the library" [ "$(grep -v '^#' "$KRM" | awk '{print $1":"$3}' | tr '\n' ' ')" = "2_tbt:HKMC_GPM 2_tbt:HKMC_DiPO 2_tbt:Iap2ServerApp 2_tbt:HKMC_Navi_ExSL 2_tbt:libautoreceiver_infobank.so " ]
 check "by code krm: no 3_bridge part" eval '! grep -q "^3_bridge " "$KRM"'
-for ac in HKMC_GPM:a79f26f3689641f9274c01cdafab52d1:1301c92348aab9290e5ee98f4b617cb4 HKMC_DiPO:803a1a0e58d0bc5fed3d0e1fa4ee13bd:29a4add9f184c91b163d9a8b864ce484 \
+for ac in HKMC_GPM:a79f26f3689641f9274c01cdafab52d1:7b0fb9800dc6479d466e06760942ea13 HKMC_DiPO:803a1a0e58d0bc5fed3d0e1fa4ee13bd:9794821165c1037e0d15f13bb017289d \
           HKMC_Navi_ExSL:93bca3a2125a1b33c572b20ce6b3a5e1:584218add8cac46fd7fcf1c72d7b20e4; do
     a=${ac%%:*}; c=${ac#*:}; w=${c#*:}; c=${c%%:*}
     check "by code krm: $a is MQ4 V037's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$KRM")" = "$c bycode/krm/$a.tbt.lpd $w" ]
@@ -337,15 +337,20 @@ check "0.1.17 known: no .odex line (our dexopt writes those; ours() follows the 
 # 0.1.13: the DiPO bridge build also carries the wireless iAP2 fix (src/tbt/wireless-iap2.diff, applied by build.sh
 # after near-hooks.diff: 86ce5550 -> d760fe5b; 0.1.11's near-turn-only build was 1452d2d8, the GPM build is unchanged).
 # 0.1.18: and the CarPlay-channel iAP2 resume (src/tbt/cp-iap-resume.diff, after wireless-iap2.diff: 86ce5550 -> 56d9ff80)
-NEW_GPM=b02ada70f0de90a9e09d364a64559074; NEW_DIPO=56d9ff800ddc5a750fa2be6d247deb5d; OLD_DIPO=1452d2d8c9670bb8f44c39569d3220f5
-DIPO_013=d760fe5bdb6e00e7afd18fef2155dd1c; NEW_DIPO_APK=ad5a3139510fe65a87a0d71f9cd82aff
+# 0.1.19: GPM and both DiPO builds also carry the turn-by-turn release at the end of the projection session and the
+# com.jmk.hud.TBT_CLEAR receiver (src/tbt/tbt-clear.py + TbtClear.java, last in build.sh: GPM 990ef4c3 -> d2538947,
+# DiPO 86ce5550 -> 913848d6; src/tbt/clear.sh from each 0.1.18 result gives the same bytes)
+NEW_GPM=d2538947dcd6a8af532e0fb2baf7be81; NEW_DIPO=913848d61d675beb066e03f119a4cf6e; OLD_DIPO=1452d2d8c9670bb8f44c39569d3220f5
+DIPO_013=d760fe5bdb6e00e7afd18fef2155dd1c; NEW_DIPO_APK=e4cc7bb2e6e5d532aeb19620f2860486
+GPM_018=b02ada70f0de90a9e09d364a64559074; DIPO_018=56d9ff800ddc5a750fa2be6d247deb5d; DIPO_APK_018=ad5a3139510fe65a87a0d71f9cd82aff
+NEW_DIPOT=6dfde547549483ca65e822f5e992e275; NEW_GPM_APK=00613075311c59881d379f384ed77327; NEW_DIPOT_APK=956eefb7194ab7c3f3294c14a6150d38
 for o in kr kra krb kre krg kri krp krt; do
-    check "0.1.11 $o: GPM ends at the near-turn build $NEW_GPM" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_GPM)" = $NEW_GPM ]
-    check "0.1.11 $o: DiPO turn-by-turn build unchanged (ffe9b558)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_DiPO)" = ffe9b558a288cdda39eabd92d4b5fccf ]
-    check "0.1.18 $o: DiPO bridge ends at the near-turn + wireless iAP2 + CarPlay-channel resume build $NEW_DIPO (not 0.1.13's $DIPO_013, 0.1.11's $OLD_DIPO)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $NEW_DIPO ]
+    check "0.1.19 $o: GPM ends at the near-turn + TBT clear build $NEW_GPM (0.1.18: $GPM_018)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_GPM)" = $NEW_GPM ]
+    check "0.1.19 $o: DiPO turn-by-turn build = 0.1.18's ffe9b558 + TBT clear ($NEW_DIPOT)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_DiPO)" = $NEW_DIPOT ]
+    check "0.1.19 $o: DiPO bridge ends at the near-turn + wireless iAP2 + CarPlay-channel resume + TBT clear build $NEW_DIPO (not 0.1.18's $DIPO_018, 0.1.13's $DIPO_013, 0.1.11's $OLD_DIPO)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $NEW_DIPO ]
 done
-check "0.1.11 / 0.1.18 neev_kr: GPM delta ends at the near-turn build, DiPO bridge delta at the near-turn + wireless iAP2 + CarPlay-channel resume build" eval '[ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_GPM.tbt.lpd")" = $NEW_GPM ] && [ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_DiPO.bridge.lpd")" = $NEW_DIPO ]'
-check "0.1.11 / 0.1.18 neev_kr: result apks (lpatch zipadd of those into the stock apks: GPM 8b13805f, DiPO ad5a3139; 0.1.13's was 13633ac6)" eval 'grep -q "^2_tbt app HKMC_GPM neev_kr/HKMC_GPM.tbt.lpd 8b13805f77cd8bb35691fb8b43a8bb99$" "$PKG/patches/neev_kr/manifest" && grep -q "^3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd $NEW_DIPO_APK$" "$PKG/patches/neev_kr/manifest"'
+check "0.1.19 neev_kr: GPM delta ends at the near-turn + TBT clear build, DiPO bridge delta at the near-turn + wireless iAP2 + CarPlay-channel resume + TBT clear build" eval '[ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_GPM.tbt.lpd")" = $NEW_GPM ] && [ "$(lpd_dst "$PKG/patches/neev_kr/HKMC_DiPO.bridge.lpd")" = $NEW_DIPO ]'
+check "0.1.19 neev_kr: result apks (lpatch zipadd of those into the stock apks: GPM $NEW_GPM_APK, DiPO $NEW_DIPO_APK; 0.1.18's 8b13805f / ad5a3139, 0.1.13's DiPO 13633ac6)" eval 'grep -q "^2_tbt app HKMC_GPM neev_kr/HKMC_GPM.tbt.lpd $NEW_GPM_APK$" "$PKG/patches/neev_kr/manifest" && grep -q "^3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd $NEW_DIPO_APK$" "$PKG/patches/neev_kr/manifest"'
 check "0.1.11 us: no Leafia KR near-turn code, its results unchanged" eval '[ "$(want_of "$PKG/patches/bycode/us/manifest" 2_tbt HKMC_GPM)" = 6124a666b2ae11883e91de85c19389d2 ] && [ "$(want_of "$PKG/patches/bycode/us/manifest" 3_bridge HKMC_DiPO)" = 5f24681fec4e0ff21f913f3372465524 ]'
 # 0.1.13 / 0.1.18: only the Korean DiPO bridge builds change; every other set keeps its DiPO bridge build
 for sb in neev:e7c1f412233482e12bde8543c6c1e24f neev23_260903:8b1d23f89ceff4016ade508be1691d18 neev_ca:4150a328e5447ad4511a92cccd49ce10 \
@@ -403,19 +408,20 @@ for lp in "$PKG"/patches/*/HKMC_DiPO.tbt.lpd "$PKG"/patches/bycode/*/HKMC_DiPO.t
     check "0.1.18 ${lp#$PKG/patches/}: no CpIapResume (not a Korean bridge build)" eval 'lpd_extra_has "$lp" "Lcom/ev6/cpwl/CpIapResume;"; [ $? -eq 1 ]'
 done
 # profiles with no bridge part (their DiPO bridge is held or there is none): no 3_bridge line, turn-by-turn DiPO unchanged
-for pd in krc:fe5030232f629489d3249eb7c9ef1c05 krd:f1c23b5fe21ba6898e1cf9339caf8906 krm:29a4add9f184c91b163d9a8b864ce484 krv:29a4add9f184c91b163d9a8b864ce484; do
+for pd in krc:e9b17e59a3231ffdc6b683f312957b10 krd:be272d864b76d0dd0147c1fa64861164 krm:9794821165c1037e0d15f13bb017289d krv:9794821165c1037e0d15f13bb017289d; do
     p=${pd%%:*}; w=${pd#*:}
-    check "0.1.18 $p: no 3_bridge part, no DiPO bridge delta (held), its DiPO turn-by-turn build unchanged ($w)" eval '! grep -q "^3_bridge " "$PKG/patches/bycode/$p/manifest" && ! ls "$PKG/patches/bycode/$p/" | grep -q "bridge" && [ "$(want_of "$PKG/patches/bycode/$p/manifest" 2_tbt HKMC_DiPO)" = $w ]'
+    check "0.1.18 $p: no 3_bridge part, no DiPO bridge delta (held), its DiPO turn-by-turn build the 0.1.19 one ($w)" eval '! grep -q "^3_bridge " "$PKG/patches/bycode/$p/manifest" && ! ls "$PKG/patches/bycode/$p/" | grep -q "bridge" && [ "$(want_of "$PKG/patches/bycode/$p/manifest" 2_tbt HKMC_DiPO)" = $w ]'
 done
-check "0.1.18 neev_kr: DiPO turn-by-turn build unchanged (5bc5707c)" grep -q "^2_tbt app HKMC_DiPO neev_kr/HKMC_DiPO.tbt.lpd 5bc5707c2ee266fe6436d272245e53f6$" "$PKG/patches/neev_kr/manifest"
-check "0.1.18 known: 0.1.13's neev_kr DiPO apk (13633ac6) and this one ($NEW_DIPO_APK) are both ours" eval 'grep -qx "HKMC_DiPO.apk 13633ac624e850cfad2aa80ddf0be445" "$PKG/patches/known" && grep -qx "HKMC_DiPO.apk $NEW_DIPO_APK" "$PKG/patches/known"'
+check "0.1.19 neev_kr: DiPO turn-by-turn build = 0.1.18's 5bc5707c + TBT clear ($NEW_DIPOT_APK)" grep -q "^2_tbt app HKMC_DiPO neev_kr/HKMC_DiPO.tbt.lpd $NEW_DIPOT_APK$" "$PKG/patches/neev_kr/manifest"
+check "0.1.18 / 0.1.19 known: 0.1.13's and 0.1.18's neev_kr DiPO apks (13633ac6, ad5a3139) and this one ($NEW_DIPO_APK) are all ours" eval 'grep -qx "HKMC_DiPO.apk 13633ac624e850cfad2aa80ddf0be445" "$PKG/patches/known" && grep -qx "HKMC_DiPO.apk $DIPO_APK_018" "$PKG/patches/known" && grep -qx "HKMC_DiPO.apk $NEW_DIPO_APK" "$PKG/patches/known"'
+check "0.1.19 known: 0.1.18's neev_kr GPM apk (8b13805f) and this one ($NEW_GPM_APK) are both ours" eval 'grep -qx "HKMC_GPM.apk 8b13805f77cd8bb35691fb8b43a8bb99" "$PKG/patches/known" && grep -qx "HKMC_GPM.apk $NEW_GPM_APK" "$PKG/patches/known"'
 # with the build inputs on this Mac (private/hud-port): build.sh gives the pinned results, and each package delta
 # rebuilds the new DiPO bridge from a real stock copy of its code (skipped without them)
 B010=$REPO/private/hud-port/dipo-wireless-iap2
 if [ -f "$B010/dipo-0.1.10.dex" ] && [ -f "$B010/gpm-0.1.10.dex" ] && command -v javac >/dev/null 2>&1 && [ -x "$B010/lpatch-host" ]; then
     BT=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-tbt.XXXXXX")
-    check "0.1.18 build.sh: 0.1.10's DiPO 86ce5550 -> $NEW_DIPO" eval '[ "$(bash "$P/src/tbt/build.sh" "$B010/dipo-0.1.10.dex" "$BT/dipo.dex" 2>/dev/null | tail -1)" = $NEW_DIPO ]'
-    check "0.1.18 build.sh: 0.1.10's GPM 990ef4c3 -> $NEW_GPM (no bridge class: unchanged)" eval '[ "$(bash "$P/src/tbt/build.sh" "$B010/gpm-0.1.10.dex" "$BT/gpm.dex" 2>/dev/null | tail -1)" = $NEW_GPM ]'
+    check "0.1.19 build.sh: 0.1.10's DiPO 86ce5550 -> $NEW_DIPO" eval '[ "$(bash "$P/src/tbt/build.sh" "$B010/dipo-0.1.10.dex" "$BT/dipo.dex" 2>/dev/null | tail -1)" = $NEW_DIPO ]'
+    check "0.1.19 build.sh: 0.1.10's GPM 990ef4c3 -> $NEW_GPM (no bridge class: no cp-iap-resume.diff)" eval '[ "$(bash "$P/src/tbt/build.sh" "$B010/gpm-0.1.10.dex" "$BT/gpm.dex" 2>/dev/null | tail -1)" = $NEW_GPM ]'
     check "0.1.18 the new DiPO bridge has CpIapResume and its log line" eval 'LC_ALL=C grep -qa "Lcom/ev6/cpwl/CpIapResume;" "$BT/dipo.dex" && LC_ALL=C grep -qa "CarPlay-channel iAP2 session ready, setStartiAP2Service again" "$BT/dipo.dex"'
     H=$REPO/private/hud-port; BL=$H/uploads/blobs
     for pair in bycode/kr:$REPO/private/stock-neev-kr-260902/stock3/app/HKMC_DiPO.odex bycode/kr:$H/ceev-ikfl/stock-ikfl/HKMC_DiPO.odex \
@@ -448,6 +454,77 @@ if command -v javac >/dev/null 2>&1; then
 else
     echo "(no javac: the Near test skipped)"
 fi
+# 0.1.19: the turn-by-turn release at the end of the projection session and the com.jmk.hud.TBT_CLEAR receiver
+# (src/tbt/tbt-clear.py on the smali tree + com/jmk/hud/TbtClear.java; src/tbt/clear.sh makes each 0.1.19 GPM / DiPO
+# result from its 0.1.18 result): every GPM / DiPO result that carries our turn-by-turn patches changes, nothing else
+TC=$P/src/tbt/tbt-clear.py; TJ=$P/src/tbt/com/jmk/hud/TbtClear.java
+R019="d2538947dcd6a8af532e0fb2baf7be81 965c4bfa035f24caeba188d9450a7e35 7b0fb9800dc6479d466e06760942ea13 913848d61d675beb066e03f119a4cf6e 6dfde547549483ca65e822f5e992e275 e9b17e59a3231ffdc6b683f312957b10 be272d864b76d0dd0147c1fa64861164 9794821165c1037e0d15f13bb017289d"
+R018="b02ada70f0de90a9e09d364a64559074 454c8dc4741bf9852e18a6a2ca27be23 1301c92348aab9290e5ee98f4b617cb4 56d9ff800ddc5a750fa2be6d247deb5d ffe9b558a288cdda39eabd92d4b5fccf fe5030232f629489d3249eb7c9ef1c05 f1c23b5fe21ba6898e1cf9339caf8906 29a4add9f184c91b163d9a8b864ce484"
+for f in src/tbt/com/jmk/hud/TbtClear.java src/tbt/stubs/com/hkmc/cluster/NavigationCluster.java src/tbt/tbt-clear.py src/tbt/clear.sh; do
+    check "0.1.19 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
+done
+check "0.1.19 TbtClear: the broadcast is com.jmk.hud.TBT_CLEAR (the 런처 메뉴's 계기판 길안내 지우기 sends it)" grep -q 'ACTION = "com.jmk.hud.TBT_CLEAR";' "$TJ"
+check "0.1.19 TbtClear: registered at runtime once per process on the application context (no manifest change), senders need WRITE_SECURE_SETTINGS (root / system / shell)" \
+    eval 'grep -q "app.registerReceiver(r, new IntentFilter(ACTION), \"android.permission.WRITE_SECURE_SETTINGS\", null);" "$TJ" && grep -q "context.getApplicationContext()" "$TJ" && grep -q "sOne != null" "$TJ"'
+check "0.1.19 TbtClear: the owner's jmkClear first, the cluster directly only without a live owner; every path catches Throwable" \
+    eval 'grep -q "getMethod(\"jmkClear\", Context.class).invoke(null, context)" "$TJ" && grep -q "if (!live) {" "$TJ" && [ "$(grep -c "catch (Throwable t)" "$TJ")" = 3 ]'
+check "0.1.19 TbtClear.release: GPM's releaseGuidance cluster calls (destination \"\", TBT_INFO DisplayType 8, sub info cleared)" \
+    eval 'grep -q "n.updateTBTInfo(8, 0, 0f, 0f, -1, 0, 0, 0, -1);" "$TJ" && grep -q "n.updateTBTSubInfo(0f, -1, 0, 0, 0, 0, 0, 0f, -1, 0);" "$TJ" && grep -q "d.name = \"\";" "$TJ"'
+check "0.1.19 the NavigationCluster stub is compile-only (build.sh / clear.sh put only com/jmk into the dex)" \
+    eval 'for s in build.sh clear.sh; do grep -q "\-cp \"\$work/stub\"" "$P/src/tbt/$s" && grep -q "\-\-classpath \"\$work/stub.jar\"" "$P/src/tbt/$s" || exit 1; done'
+check "0.1.19 tbt-clear.py: GPM: destroy() (GalConnectionSession.clearSession, finalizeGal) runs jmkEnd -> onStatus(0) when this manager drew (mClaimed)" \
+    eval 'grep -q "invoke-direct {p0}, %s->jmkEnd()V" "$TC" && grep -q "invoke-virtual {p0, v0}, {G}->onStatus(I)V" "$TC" && grep -q "iget v0, p0, {G}->mClaimed:I" "$TC"'
+check "0.1.19 tbt-clear.py: GPM: stop() (also the navigation focus going to the native navigation) not hooked" eval '! grep -q "\.method public stop()V" "$TC"'
+check "0.1.19 tbt-clear.py: DiPO: the end hook is in e/m.onSessionFinalized after u.disconnected(), not in the iAP2 listener e/a (comp 4 -> 5 handover)" \
+    eval 'grep -q "com/daudio/app/dipo/e/m.smali" "$TC" && grep -q "e/u;->jmkEnd()V" "$TC" && ! grep -q "com/daudio/app/dipo/e/a.smali" "$TC"'
+check "0.1.19 tbt-clear.py: DiPO: releases only when the last TBT_INFO it sent was not DisplayType 8 (jmkMark before the one send)" \
+    eval 'grep -q "invoke-direct {p0, v1}, %s->jmkMark(I)V" "$TC" && grep -q "if-eq p1, v0, :cond_jmk_off" "$TC"'
+check "0.1.19 tbt-clear.py: both services register the receiver at onCreate" [ "$(grep -c 'Lcom/jmk/hud/TbtClear;->register(Landroid/content/Context;Ljava/lang/Class;)V' "$TC")" = 2 ]
+check "0.1.19 tbt-clear.py: stops with status 1 when an anchor is not found exactly once (the profile keeps its build)" grep -q "anchor found %d times (want %d)" "$TC"
+check "0.1.19 build.sh: tbt-clear.py last, before smali" [ "$(grep -n 'tbt-clear.py' "$P/src/tbt/build.sh" | tail -1 | cut -d: -f1)" -lt "$(grep -n 'smali-2.5.2.jar" a ' "$P/src/tbt/build.sh" | cut -d: -f1)" ]
+# every GPM / DiPO line of a by-code profile with our turn-by-turn code ends at a 0.1.19 result; no manifest names a
+# 0.1.18 one; every such delta (and neev_kr's) carries TbtClear, no other set's does
+for m in "$PKG"/patches/bycode/*/manifest; do
+    prof=${m%/manifest}; prof=${prof##*/}; [ $prof = us ] && continue
+    awk '$2=="app" && ($3=="HKMC_GPM" || $3=="HKMC_DiPO") {print $1" "$3" "$6}' "$m" | while read -r part app w; do
+        echo "$R019" | tr ' ' '\n' | grep -qx "$w" || echo "FAILX $prof $part $app $w"
+    done > "${TMPDIR:-/tmp}/jmk-hud-019.$$"
+    check "0.1.19 $prof: every GPM / DiPO line ends at a 0.1.19 result" [ ! -s "${TMPDIR:-/tmp}/jmk-hud-019.$$" ]
+    rm -f "${TMPDIR:-/tmp}/jmk-hud-019.$$"
+done
+check "0.1.19 no manifest names a 0.1.18 GPM / DiPO result" eval '! cat "$PKG"/patches/*/manifest "$PKG"/patches/bycode/*/manifest | grep -v "^#" | grep -qE "$(echo $R018 | tr " " "|")"'
+for f in "$PKG"/patches/bycode/kr*/HKMC_GPM.tbt.lpd "$PKG"/patches/bycode/kr*/HKMC_DiPO.*.lpd "$PKG"/patches/neev_kr/HKMC_GPM.tbt.lpd "$PKG"/patches/neev_kr/HKMC_DiPO.*.lpd; do
+    check "0.1.19 ${f#$PKG/patches/}: ends at a 0.1.19 result and carries TbtClear (TBT_CLEAR, jmkClear in its new bytes)" eval 'echo "$R019" | tr " " "\n" | grep -qx "$(lpd_dst "$f")" && lpd_extra_has "$f" "TBT_CLEAR" && lpd_extra_has "$f" "jmkClear"'
+done
+for f in "$PKG"/patches/bycode/us/HKMC_*.lpd "$PKG"/patches/{neev,neev_ca,neev23_260903,ev6,nq5,dl3hev}/HKMC_*.lpd; do
+    check "0.1.19 ${f#$PKG/patches/}: no TbtClear (no turn-by-turn code of ours)" eval 'lpd_extra_has "$f" "TBT_CLEAR"; [ $? -eq 1 ]'
+done
+check "0.1.19 us: GPM / DiPO results unchanged" eval '[ "$(want_of "$PKG/patches/bycode/us/manifest" 2_tbt HKMC_GPM)" = 6124a666b2ae11883e91de85c19389d2 ] && [ "$(want_of "$PKG/patches/bycode/us/manifest" 2_tbt HKMC_DiPO)" = 3ed14600c11c6bf661515000ceec3544 ]'
+for sg in neev:0308224b94c7e1b81d372a8ea1535aed neev23_260903:7f69ea05602f6ab9d5ce4da432e2a1d1 neev_ca:e99223a2f17723660345205242054b12 \
+          ev6:7c6df0f570677157326b105b6b87bfc2 ev6_ca:1929356d4d7126b28ffd3a6f13392fcf dl3hev:08a29f343fbdb2abc7e11eb8a5698653 nq5:429a1205e0d7430a04c9b08d1c64c78b; do
+    check "0.1.19 ${sg%%:*}: GPM build unchanged (${sg#*:})" eval '[ "$(awk '"'"'$1=="2_tbt" && $3=="HKMC_GPM" {print $5}'"'"' "$PKG/patches/${sg%%:*}/manifest")" = ${sg#*:} ]'
+done
+# with the 0.1.18 results on this Mac: clear.sh gives each pinned 0.1.19 result; the host lpatch rebuilds it from every
+# real stock copy (private/hud-port/tbt-clear: mk_019.py made the deltas, verify_c.sh checks them)
+H19=$REPO/private/hud-port
+if command -v javac >/dev/null 2>&1 && [ -f "$H19/nowplaying-updates/build/dipo-0.1.18-56d9ff80.dex" ] && [ -x "$H19/dipo-wireless-iap2/lpatch-host" ]; then
+    CT=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-clear.XXXXXX")
+    for pr in dipo-wireless-iap2/gpm-0.1.13-b02ada70.dex:d2538947dcd6a8af532e0fb2baf7be81 v035/dl3/build/HKMC_GPM.2_tbt/result.dex:965c4bfa035f24caeba188d9450a7e35 \
+              mq4-v037/build/HKMC_GPM.2_tbt/result.dex:7b0fb9800dc6479d466e06760942ea13 nowplaying-updates/build/dipo-0.1.18-56d9ff80.dex:913848d61d675beb066e03f119a4cf6e \
+              cn7pe/build/kr-dipo-tbt.dex:6dfde547549483ca65e822f5e992e275 v035/ka4/build/HKMC_DiPO.2_tbt/result.dex:e9b17e59a3231ffdc6b683f312957b10 \
+              v035/dl3/build/HKMC_DiPO.2_tbt/result.dex:be272d864b76d0dd0147c1fa64861164 mq4-v037/build/HKMC_DiPO.2_tbt/result.dex:9794821165c1037e0d15f13bb017289d; do
+        src=$H19/${pr%%:*}; w=${pr#*:}
+        [ -f "$src" ] || continue
+        check "0.1.19 clear.sh: 0.1.18's $(md5 -q "$src" | cut -c1-8) (${pr%%:*}) -> $w" eval '[ "$(bash "$P/src/tbt/clear.sh" "$src" "$CT/x.dex" 2>/dev/null | tail -1)" = $w ] && LC_ALL=C grep -qa "com.jmk.hud.TBT_CLEAR" "$CT/x.dex" && LC_ALL=C grep -qa "Lcom/jmk/hud/TbtClear;" "$CT/x.dex"'
+    done
+    rm -rf "$CT"
+    if [ -f "$H19/tbt-clear/mk_019.log" ]; then
+        vc=$(bash "$H19/tbt-clear/tools/verify_c.sh" 2>&1 | tail -1)
+        check "0.1.19 every GPM / DiPO delta on every real stock copy on this Mac (host lpatch, verify_c.sh: $vc)" eval 'case "$vc" in *" ok, 0 failed") true ;; *) false ;; esac'
+    fi
+else
+    echo "(the 0.1.18 results or the host lpatch are not on this Mac: the 0.1.19 rebuild checks skipped)"
+fi
 check "by code: the profile with the most parts wins (bycode_build tries both parts first)" grep -q 'for want in 2 1' "$PKG/scripts/common.sh"
 while read -r pre set name; do
     case "$pre" in ''|'#'*) continue ;; esac
@@ -470,7 +547,7 @@ if [ -f "$LEAFIA_LC/stock.md5" ] && [ -f "$LEAFIA_LC/final.md5" ]; then
         # 0.1.5: GPM and DiPO carry our guidance-end fix (TBT_INFO DisplayType 8, not 0: the cluster spun), 0.1.11 the
         # near-turn filter (src/tbt), DiPO 0.1.13 the wireless iAP2 fix, so their results are Leafia KR's plus those
         # changes; every other target is still Leafia KR's byte for byte
-        case "$c" in HKMC_GPM|HKMC_DiPO) check "neev_kr result $c is ours (0.1.5 guidance-end fix, 0.1.11 near-turn filter, DiPO 0.1.13 wireless iAP2 and 0.1.18 CarPlay-channel resume), not Leafia KR's" [ "$fin" != "$e" ]; continue ;; esac
+        case "$c" in HKMC_GPM|HKMC_DiPO) check "neev_kr result $c is ours (0.1.5 guidance-end fix, 0.1.11 near-turn filter, DiPO 0.1.13 wireless iAP2 and 0.1.18 CarPlay-channel resume, 0.1.19 TBT clear), not Leafia KR's" [ "$fin" != "$e" ]; continue ;; esac
         check "neev_kr result $c = what Leafia KR leaves on the car (final.md5 $f)" [ "$fin" = "$e" ]
     done < <(effective neev_kr)
 else
@@ -488,7 +565,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.1.18" grep -q '^package-version=0.1.18$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.1.19" grep -q '^package-version=0.1.19$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]

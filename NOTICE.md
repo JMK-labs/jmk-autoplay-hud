@@ -135,6 +135,16 @@ patch data is data; the binaries are listed below with their sources).
   with its own try/catch; the noti stays dropped. Applied by `src/tbt/build.sh` after `wireless-iap2.diff` to the tree
   with `com/ev6/cpwl/Bridge.smali`: DiPO 86ce5550 -> 56d9ff80 (0.1.13's d760fe5b with this diff alone gives the same
   bytes). The only changes against d760fe5b are that hook (and the branch offsets after it) and the new class.
+- **The 0.1.19 turn-by-turn release and TBT_CLEAR receiver** (`src/tbt/tbt-clear.py`, `src/tbt/clear.sh`,
+  `src/tbt/com/jmk/hud/TbtClear.java` and its compile-only `src/tbt/stubs/com/hkmc/cluster/NavigationCluster.java`,
+  JMK's own, AGPL-3.0): in the patched HKMC_GPM, `GpmNaviTBTManager.destroy()` (the stock session end) first runs
+  `onStatus(0)` (the stock release path) when that manager drew on the cluster, `claimCluster` keeps it for
+  `jmkClear`; in the patched HKMC_DiPO, `e/m.onSessionFinalized` calls `e/u.jmkEnd()` after the stock
+  `disconnected()`, which sends `TbtClear.release` (the GPM release's cluster calls) and the stock `sendHudBlank`
+  when the last TBT_INFO was not DisplayType 8 (`jmkMark` before the one send); both services' onCreate register
+  `com.jmk.hud.TbtClear` for `com.jmk.hud.TBT_CLEAR` at runtime. Applied last by `src/tbt/build.sh`, or by
+  `src/tbt/clear.sh` to a 0.1.18 result: GPM b02ada70 -> d2538947, DiPO bridge 56d9ff80 -> 913848d6 (0.1.10's
+  990ef4c3 / 86ce5550 through build.sh give the same bytes), and the other Korean GPM / DiPO results (README, 0.1.19).
 - Thanks, as upstream: W-Floyd.
 
 No manufacturer APK, odex, jar or library is shipped: the head unit rebuilds each file from its own exact stock copy,
@@ -190,6 +200,9 @@ and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
 - 0.1.18: 무선 카플레이에서 분할화면 곡 정보·재생 시간·통화 상태가 계속 바뀝니다: the Korean DiPO bridge builds start the
   iAP2 now-playing, call-state and telephony updates once more on the CarPlay-channel iAP2 session that wireless
   CarPlay moves to after connecting; wired CarPlay unchanged.
+- 0.1.19: 안드로이드 오토·카플레이가 끊기거나 종료되면 계기판·HUD 길안내가 바로 사라집니다: the GPM and DiPO builds with
+  our turn-by-turn code release the cluster / HUD guidance at the stock end of the projection session, and take
+  `am broadcast -a com.jmk.hud.TBT_CLEAR` (root, system or shell) to release it by hand.
 - Only apps that are enabled are stopped for the file swap, and the same ones are started again (also by the
   settings service at boot, if a run died).
 - A status file for the JMK MAP menu (`/data/nemesis/jmk-autoplay-hud/status`) and a settings service that maps the

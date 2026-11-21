@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 0.1.11 / 0.1.13 / 0.1.18: the HKMC_GPM (2_tbt) and HKMC_DiPO (3_bridge) result code of the Korean profiles, from
+# 0.1.11 / 0.1.13 / 0.1.18 / 0.1.19: the HKMC_GPM (2_tbt) and HKMC_DiPO (3_bridge) result code of the Korean profiles, from
 # the 0.1.10 result code (Leafia KR's build plus the 0.1.5 guidance-end fix), the hooks in near-hooks.diff,
 # com/jmk/hud/Near.java and (DiPO only) wireless-iap2.diff and cp-iap-resume.diff:
 #   src/tbt/build.sh <0.1.10 result dex> <out dex>
@@ -21,6 +21,12 @@
 # input gives the same bytes) puts it back together.
 # Needs a JDK, ANDROID_HOME (or ~/Library/Android/sdk) with platforms/android-19 and build-tools/35.0.0, and the
 # smali / baksmali 2.5.2 jars (SMALI_JARS, default: the repository's tools/bin).
+# 0.1.19: TbtClear (com/jmk/hud/TbtClear.java, the NavigationCluster stub on the class path only) is built with Near,
+# and tbt-clear.py goes on last (the turn-by-turn release at the end of the projection session and the
+# com.jmk.hud.TBT_CLEAR receiver):
+#     GPM:  990ef4c3cf0f8e828fc8c2de4b327882 -> d2538947dcd6a8af532e0fb2baf7be81   (0.1.19)
+#     DiPO: 86ce5550bedb50e9ce1d07b81b3273a9 -> 913848d61d675beb066e03f119a4cf6e   (0.1.19)
+# the same bytes as src/tbt/clear.sh from 0.1.18's b02ada70 / 56d9ff80 (clear.sh makes the other 0.1.19 results).
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 [ $# -eq 2 ] || { sed -n '2,10p' "$0"; exit 2; }
@@ -31,9 +37,11 @@ d8=$sdk/build-tools/35.0.0/d8
 jars=${SMALI_JARS:-$here/../../../../tools/bin}
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-javac -source 7 -target 7 -Xlint:-options -bootclasspath "$platform" -d "$work/classes" "$here/com/jmk/hud/Near.java"
+javac -source 7 -target 7 -Xlint:-options -bootclasspath "$platform" -d "$work/stub" "$here/stubs/com/hkmc/cluster/NavigationCluster.java"
+(cd "$work/stub" && jar cf "$work/stub.jar" com)
+javac -source 7 -target 7 -Xlint:-options -bootclasspath "$platform" -cp "$work/stub" -d "$work/classes" "$here/com/jmk/hud/Near.java" "$here/com/jmk/hud/TbtClear.java"
 (cd "$work/classes" && jar cf "$work/near.jar" com)
-"$d8" --min-api 19 --release --lib "$platform" --output "$work" "$work/near.jar"
+"$d8" --min-api 19 --release --lib "$platform" --classpath "$work/stub.jar" --output "$work" "$work/near.jar"
 java -jar "$jars/baksmali-2.5.2.jar" d -a 19 "$base" -o "$work/tree"
 java -jar "$jars/baksmali-2.5.2.jar" d -a 19 "$work/classes.dex" -o "$work/tree"
 patch -s -p1 -d "$work/tree" < "$here/near-hooks.diff"
@@ -43,5 +51,6 @@ fi
 if [ -f "$work/tree/com/ev6/cpwl/Bridge.smali" ]; then
     patch -s -p1 -d "$work/tree" < "$here/cp-iap-resume.diff"
 fi
+python3 "$here/tbt-clear.py" "$work/tree"
 java -jar "$jars/smali-2.5.2.jar" a -a 19 -j 1 "$work/tree" -o "$out"
 md5 -q "$out" 2>/dev/null || md5sum "$out"

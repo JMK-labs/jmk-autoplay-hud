@@ -28,6 +28,35 @@ Plus the CarPlay library recipes, each checked on its own file: `carplay-utils-c
 `carplay-core-wifi` (libCarPlayCore.so). On NEEV.KOR 260902 only the audio one applies (the other two are NATIVE).
 `os="*.KOR.*"` in NEMESIS.data limits installs to KOR firmware; the other sets are kept for other models.
 
+0.1.19: 안드로이드 오토·카플레이가 끊기거나 종료되면 계기판·HUD 길안내가 바로 사라집니다.
+- **Android Auto** (every GPM build with our turn-by-turn code): at the stock end of a projection session
+  (`GalConnectionSession.finalizeGal` -> `clearSession` -> `GpmNaviTBTManager.destroy()`, wired and wireless), a
+  manager that drew on the cluster (`mClaimed`) now runs `onStatus(0)` first, the path an inactive navigation status
+  takes: `releaseGuidance` (destination name cleared, TBT_INFO DisplayType 8 as since 0.1.5, sub info cleared, HUD
+  extras and turn list blank). `stop()` alone is not hooked: it also runs when the navigation focus goes to the
+  car's own navigation, which then draws.
+- **CarPlay** (every DiPO build with our turn-by-turn code, bridge and turn-by-turn builds): at the stock end of the
+  CarPlay session (`ICarPlayServiceListener` `e/m.onSessionFinalized`, after the stock `e/u.disconnected()`, which
+  cleared the route state and the HUD turn list but sent no TBT_INFO), when the last TBT_INFO sent was not DisplayType
+  8 the same release goes out (`e/u.jmkEnd`, under the analyzer's lock). The iAP2 disconnect (`e/a.disconnected`) is
+  not hooked: in a wireless session it also comes when iAP2 moves from Bluetooth to the CarPlay channel, and the
+  session goes on.
+- **`am broadcast -a com.jmk.hud.TBT_CLEAR`** (for the JMK MAP menu's "계기판 길안내 지우기", from its root daemon):
+  both apps register a receiver at their service's onCreate (no manifest change; the sender needs
+  WRITE_SECURE_SETTINGS, i.e. root, system or shell). It releases the guidance of the live turn-by-turn owner (GPM:
+  the manager that last drew, DiPO: the route guidance analyzer); with none, the same cluster calls go out directly.
+  Guidance still running on the phone draws again with its next update. Log tag `JMKHUD`.
+- Source: `src/tbt/com/jmk/hud/TbtClear.java` (+ a compile-only `NavigationCluster` stub), `src/tbt/tbt-clear.py`
+  (the smali edits; it stops when an anchor is not found exactly once), `src/tbt/clear.sh <0.1.18 result dex> <out>`;
+  `src/tbt/build.sh` applies it last (0.1.10's GPM 990ef4c3 -> d2538947, DiPO 86ce5550 -> 913848d6, the same bytes).
+- New results: GPM b02ada70 -> d2538947 (kr, kra, krb, kre, krg, kri, krp, krt, `neev_kr`), 454c8dc4 -> 965c4bfa (krc,
+  krd), 1301c923 -> 7b0fb980 (krm, krv); DiPO bridge 56d9ff80 -> 913848d6, DiPO turn-by-turn ffe9b558 -> 6dfde547 (the
+  kr group, `neev_kr`), fe503023 -> e9b17e59 (krc), f1c23b5f -> be272d86 (krd), 29a4add9 -> 97948211 (krm, krv);
+  `neev_kr` apks GPM 00613075, DiPO e4cc7bb2 (turn-by-turn 956eefb7). Every profile applied cleanly. Every delta was
+  checked on every real stock copy on hand (Python and Evergreen's lpatch.c: 97 ok). The us profile and the other
+  fixed sets are unchanged. No script change. Tools and logs: private/hud-port/tbt-clear/ (mk_019.py,
+  verify_c.sh). Not car-tested.
+
 0.1.18: wireless CarPlay now playing on the Korean bridge builds, and turn-by-turn for the Kia Sorento MQ4 Korea on the
 firmware MQ4.KOR.0000.V037.001.260319 (by-code profile `krm`).
 - **무선 카플레이에서 분할화면 곡 정보·재생 시간·통화 상태가 계속 바뀝니다.** On wireless CarPlay the iPhone moves iAP2
@@ -194,6 +223,9 @@ Log: `/data/nemesis/jmk-autoplay-hud.log`. By hand: `sh /data/nemesis/apps/jmk-a
 | `reason` | one line, why locked / failed |
 | `knobs` | the menu config keys this set's builds read (the menu hides the others) |
 | `warn` | e.g. dalvik-cache entries left |
+
+0.1.19: "계기판 길안내 지우기" is `am broadcast -a com.jmk.hud.TBT_CLEAR` from the root daemon (no extras; both patched
+apps answer it once their service has started, so a version or set without our GPM / DiPO build simply ignores it).
 
 ## Settings bridge
 

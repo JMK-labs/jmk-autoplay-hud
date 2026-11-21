@@ -7,7 +7,7 @@
 # another build of the library (as krc). No 3_bridge part (private/hud-port/v035-REPORT.md). The knobs are kr's.
 # Not the patch set dl3hev: that is Leafia's fixed-md5 set for DL3HEV22.KOR.0000.V039.001.260902.
 # <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
-2_tbt app HKMC_GPM d244aba596a361c850311bb0603d1eab bycode/krd/HKMC_GPM.tbt.lpd 454c8dc4741bf9852e18a6a2ca27be23
-2_tbt app HKMC_DiPO 072ba128b4daf9669dc329cfa168a3ee bycode/krd/HKMC_DiPO.tbt.lpd f1c23b5fe21ba6898e1cf9339caf8906
+2_tbt app HKMC_GPM d244aba596a361c850311bb0603d1eab bycode/krd/HKMC_GPM.tbt.lpd 965c4bfa035f24caeba188d9450a7e35
+2_tbt app HKMC_DiPO 072ba128b4daf9669dc329cfa168a3ee bycode/krd/HKMC_DiPO.tbt.lpd be272d864b76d0dd0147c1fa64861164
 2_tbt app Iap2ServerApp 9f32383bbf425173727ce6365971fa28 bycode/krd/Iap2ServerApp.tbt.lpd cc198983ce4e3c647eda36e23b292143
 2_tbt app HKMC_Navi_ExSL d43adb26a20f55e5bdfd5e313bb66c9d bycode/krd/HKMC_Navi_ExSL.tbt.lpd cbf5ce775fdd6e61767ea6bff2ea5d64

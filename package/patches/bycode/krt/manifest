@@ -6,11 +6,11 @@
 # to this car's numbers (the change from the Ioniq 5's stock code to theirs, line for line). Every other line is kr's.
 # <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
 # <part> file <library> <md5 of the stock library> <patch> <md5 of the result>
-2_tbt app HKMC_GPM 4b4c021c4f58cf5f5aae76e33f9151f5 bycode/kr/HKMC_GPM.tbt.lpd b02ada70f0de90a9e09d364a64559074
-2_tbt app HKMC_DiPO 7abefa3e86fddc50e6cd27e32dc16fb3 bycode/kr/HKMC_DiPO.tbt.lpd ffe9b558a288cdda39eabd92d4b5fccf
+2_tbt app HKMC_GPM 4b4c021c4f58cf5f5aae76e33f9151f5 bycode/kr/HKMC_GPM.tbt.lpd d2538947dcd6a8af532e0fb2baf7be81
+2_tbt app HKMC_DiPO 7abefa3e86fddc50e6cd27e32dc16fb3 bycode/kr/HKMC_DiPO.tbt.lpd 6dfde547549483ca65e822f5e992e275
 2_tbt app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
 2_tbt app HKMC_Navi_ExSL 41aa4615841d24e23faf02be05fca29f bycode/kr/HKMC_Navi_ExSL.tbt.lpd 77980719134a05eea6d784b2113e651f
 2_tbt file libautoreceiver_infobank.so 48ee793af8b86052503b8c952b034731 neev_kr/libautoreceiver_infobank.tbt.lpd aba7787cb6d365c5ad583a8dc6217ae2
 3_bridge app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.bridge.lpd 0ad54672b43f54ef7e58aad56c2a77b6
-3_bridge app HKMC_DiPO 7abefa3e86fddc50e6cd27e32dc16fb3 bycode/kr/HKMC_DiPO.bridge.lpd 56d9ff800ddc5a750fa2be6d247deb5d
+3_bridge app HKMC_DiPO 7abefa3e86fddc50e6cd27e32dc16fb3 bycode/kr/HKMC_DiPO.bridge.lpd 913848d61d675beb066e03f119a4cf6e
 3_bridge app PhoneProjection 1debc2d1e4ea8c27b5d3bfd0d9e365d3 bycode/krt/PhoneProjection.bridge.lpd 255e17ec5425800c19c814a7c6add6a1

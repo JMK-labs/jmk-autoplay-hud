@@ -24,6 +24,9 @@ TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'sr
              'src/tbt/wireless-iap2.diff',
              # 0.1.18: the DiPO bridge CarPlay-channel iAP2 resume (applied by src/tbt/build.sh)
              'src/tbt/cp-iap-resume.diff',
+             # 0.1.19: the turn-by-turn release at the session's end + the com.jmk.hud.TBT_CLEAR receiver
+             'src/tbt/com/jmk/hud/TbtClear.java', 'src/tbt/stubs/com/hkmc/cluster/NavigationCluster.java',
+             'src/tbt/tbt-clear.py', 'src/tbt/clear.sh',
              # 0.1.17: the generator of patches/known (our own earlier results, for ours())
              'src/mkknown.py')
 FIXED = (2026, 1, 1, 0, 0, 0)   # deterministic zip times
