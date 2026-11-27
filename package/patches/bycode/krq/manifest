@@ -6,7 +6,7 @@
 # line can be proven) and no library line (its libautoreceiver_infobank.so was not uploaded; Android Auto's lane / maneuver extras from the
 # library do not come, as on krp). The knobs are kr's.
 # <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
-2_tbt app HKMC_GPM 8c2212bebf060b63fd38b45c8a8ba8b6 bycode/krq/HKMC_GPM.tbt.lpd b4019f5da7fd492fe2d83999c984745e
-2_tbt app HKMC_DiPO cc5bb96db24da52d3be95e1935bd3ba8 bycode/krq/HKMC_DiPO.tbt.lpd f121349937ec0b2af47837c2ba6664c8
+2_tbt app HKMC_GPM 8c2212bebf060b63fd38b45c8a8ba8b6 bycode/krq/HKMC_GPM.tbt.lpd 157a712e6411f337aa05f62dc9785028
+2_tbt app HKMC_DiPO cc5bb96db24da52d3be95e1935bd3ba8 bycode/krq/HKMC_DiPO.tbt.lpd 35711f75785b5cb86cf7c18419b31d29
 2_tbt app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
 2_tbt app HKMC_Navi_ExSL fa14c57c7106da3da796e2a0b37f70ae bycode/krq/HKMC_Navi_ExSL.tbt.lpd 1a7834c1e814f87db6d92e3fab740003

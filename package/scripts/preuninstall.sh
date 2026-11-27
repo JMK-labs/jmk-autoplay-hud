@@ -27,7 +27,7 @@ if [ -f "$STOCK_LIST" ] || [ -f "$ADDED" ]; then
         report preuninstall-system-ro "$(grep ' /system ' /proc/mounts)"
         exit 1
     }
-    apps_hold
+    apps_hold $(restore_set)
     REASON=
     if ! restore_files || ! remove_added; then
         apps_release

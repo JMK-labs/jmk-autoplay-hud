@@ -11,6 +11,7 @@
 #  4. state=reboot: the head unit must restart before the apps run the new code (the settings service then sees the
 #     files on the next boot and writes state=active).
 # An update with the same patches finds every file in place and changes nothing.
+# 0.2.3: for the swap only the apps whose files change are stopped and started again (common.sh apps_hold).
 # 0.1.8 (QA 2026-11-19): the records made true to this firmware first (a firmware update's own files are never ours);
 # an update also puts back what the new target set no longer names (#7), and one whose patches do not fit keeps the
 # files the earlier version patched and says so, not "locked (nothing changed)"; room on /system is checked before the
@@ -80,6 +81,8 @@ rollback() {   # $1 = why: every stock file back, the added converter gone, then
     why=$1
     log "FAIL: $why - putting the stock files back"
     REASON=
+    # 0.2.3: the apps whose files the put-back changes (a rollback puts back every patched file, also earlier ones)
+    apps_hold $(restore_set)
     if restore_files && remove_added; then
         wipe_dalvik "$(app_names)"
         apps_release
@@ -141,6 +144,7 @@ check_recipes
 stale=$(untargeted)
 [ -n "$stale" ] && log "no longer targeted: $stale (put back to stock)"
 if [ -z "$todo" ] && [ -z "$R_TODO" ] && [ -z "$stale" ]; then
+    apps_hold   # 0.2.3: nothing changes, no app is stopped (one line per app says so)
     if [ "$prev" = active ]; then st=active; else st=reboot; [ -f "$BOOT_FILE" ] || boot_token > "$BOOT_FILE"; fi
     write_status $st ""
     log "every target is in place already ($st), nothing changed"
@@ -176,7 +180,16 @@ if [ -n "$free" ] && [ "$free" -lt "$need" ]; then
 fi
 # 0.1.25: a cut-off swap leaves this state; the service's next start runs the install again (common.sh j_cutoff)
 write_status installing "the files are being replaced"
-apps_hold
+# 0.2.3: only the apps whose files change in this run are stopped (the targets built above, the recipes' libraries, the
+# converter added, the files put back); one log line per app, "held" or "not held (unchanged)"
+chg=
+for t in $todo; do split_target "$t"; chg="$chg $(t_files)"; done
+for id in $R_TODO; do
+    chg="$chg $(recipe_file "$id")"
+    [ "$id" = carplay-utils-converter ] && [ ! -e "$LIB_DIR/libev6aac.so" ] && chg="$chg libev6aac.so"
+done
+[ -z "$stale" ] || chg="$chg $(restore_set $stale)"
+apps_hold $chg
 if [ -n "$stale" ]; then
     REASON=
     restore_files "$stale" || rollback "$REASON"

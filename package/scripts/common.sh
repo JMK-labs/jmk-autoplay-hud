@@ -1318,15 +1318,65 @@ pkg_enabled() {
     for l in $(pm list packages -e "$1" </dev/null 2>/dev/null); do [ "$l" = "package:$1" ] && return 0; done
     return 1
 }
+# 0.2.3 (CXARBN6Y, Ioniq 5, 2026-11-27): only an app whose files change in this run is stopped. Before, every app of
+# HOLD_PKGS was stopped, also those whose files stayed as they were (the navigation app, while the cluster showed
+# "check lane change assist", which uses its data). The owner of a file, by what the stock code names:
+#  - the receiver library is loaded by HKMC_GPM only (HKMC_GPM's odex names it; no other app of the five does);
+#  - the CarPlay libraries (CarPlayAndroid needs libCarPlay, libCarPlayAudio, libCarPlayCore, libCarPlayCoreUtils,
+#    libCarPlayUtils) and the converter libCarPlayUtils forwards to are loaded by HKMC_DiPO only (its odex names
+#    CarPlayAndroid; none of the other four does).
+# No dependency between two apps was found (each library belongs to one app; the apps run in their own processes), so
+# one app's change never stops another.
+pkg_of_file() {
+    case "$1" in
+        HKMC_GPM.apk|HKMC_GPM.odex|libautoreceiver_infobank.so) echo com.google.android.projection.sink ;;
+        HKMC_DiPO.apk|HKMC_DiPO.odex|libCarPlay*.so|libev6aac.so) echo com.daudio.app.dipo ;;
+        Iap2ServerApp.apk|Iap2ServerApp.odex) echo com.tcc.iap2server ;;
+        HKMC_Navi_ExSL.apk|HKMC_Navi_ExSL.odex) echo com.mnsoft.navi ;;
+        PhoneProjection.apk|PhoneProjection.odex) echo com.daudio.app.phoneprojection ;;
+        *) return 1 ;;
+    esac
+}
+# restore_set [<files>]: the files restore_files / remove_added would write now (a live file that differs from its
+# stock copy and is ours; an added file still ours), as words: what an uninstall, a lock or a rollback changes
+restore_set() {
+    local f s live got out=
+    if [ -f "$STOCK_LIST" ]; then
+        while read -r f s || [ -n "$f" ]; do
+            [ -n "$f" ] && [ -n "$s" ] || continue
+            [ -z "$1" ] || case " $1 " in *" $f "*) ;; *) continue ;; esac
+            got=$(md5of "$(live_of "$f")")
+            [ "$got" = "$s" ] && continue
+            restorable "$f" "$got" && out="$out $f"
+        done < "$STOCK_LIST"
+    fi
+    if [ -z "$1" ] && [ -f "$ADDED" ]; then
+        while read -r f s || [ -n "$f" ]; do
+            [ -n "$f" ] || continue
+            live=$(live_of "$f")
+            [ -e "$live" ] && [ "$(md5of "$live")" = "$s" ] && out="$out $f"
+        done < "$ADDED"
+    fi
+    echo $out
+}
+# apps_hold <files that change in this step>: stops the enabled apps that own one of them; one log line per app
 apps_hold() {
-    local p
-    android_up || return 0
+    local p f fl unknown= all=
+    if ! android_up; then log "no app stopped: Android is not up"; return 0; fi
+    for f in "$@"; do pkg_of_file "$f" >/dev/null || unknown="$unknown $f"; done
+    [ -z "$unknown" ] || log "WARNING: no known owner app for:$unknown - every app is stopped"
     : >> "$HOLD_FILE" 2>/dev/null || { log "WARNING: cannot record stopped apps; not stopping them"; return 0; }
     for p in $HOLD_PKGS; do
-        has_line "$p" "$HOLD_FILE" && continue   # stopped by an earlier run: stays on the list
-        pkg_enabled "$p" || continue              # absent, or disabled by the owner: left as it is
+        fl=
+        if [ -n "$unknown" ]; then fl=" (owner of a file not known)"; else
+            for f in "$@"; do [ "$(pkg_of_file "$f")" = "$p" ] && fl="$fl $f"; done
+            [ -n "$fl" ] && fl=" ($fl changes)"
+        fi
+        if [ -z "$fl" ]; then log "not held $p (unchanged)"; continue; fi
+        if has_line "$p" "$HOLD_FILE"; then log "held $p$fl: stopped by an earlier step, stays"; continue; fi
+        pkg_enabled "$p" || { log "not held $p (absent, or disabled by the owner)"; continue; }
         echo "$p" >> "$HOLD_FILE"
-        if pm disable "$p" </dev/null >/dev/null 2>&1; then log "stopped $p for the file swap"; else log "WARNING: could not stop $p"; fi
+        if pm disable "$p" </dev/null >/dev/null 2>&1; then log "held $p$fl: stopped for the file swap"; else log "WARNING: could not stop $p"; fi
     done
     return 0
 }
@@ -1589,7 +1639,7 @@ lock_hold() {
     local f s names=
     if [ -f "$STOCK_LIST" ] || [ -f "$ADDED" ]; then
         system_writable || { REASON="/system is read-only"; log "integrity lock: /system read-only, nothing put back"; return 1; }
-        apps_hold
+        apps_hold $(restore_set)
         REASON=
         if ! restore_files || ! remove_added; then
             apps_release

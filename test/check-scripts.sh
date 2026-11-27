@@ -187,7 +187,7 @@ check "by code krg: the knobs are kr's" cmp -s "$PKG/patches/bycode/krg/knobs" "
 KRV=$PKG/patches/bycode/krv/manifest
 check "by code krv: turn-by-turn only, the four apps and the library" [ "$(grep -v '^#' "$KRV" | awk '{print $1":"$3}' | tr '\n' ' ')" = "2_tbt:HKMC_GPM 2_tbt:HKMC_DiPO 2_tbt:Iap2ServerApp 2_tbt:HKMC_Navi_ExSL 2_tbt:libautoreceiver_infobank.so " ]
 check "by code krv: no 3_bridge part" eval '! grep -q "^3_bridge " "$KRV"'
-for ac in HKMC_GPM:1f29a226774d61a2b4ef899182af28cf:223b8e11c4123e969bb50d792c6851c0 HKMC_DiPO:8d0867878b78347358f136aba85a1287:ba925824f170c4b0a2b4e50dfe02d7e9 \
+for ac in HKMC_GPM:1f29a226774d61a2b4ef899182af28cf:d68ec25745a1f009b462a0ba707fda5d HKMC_DiPO:8d0867878b78347358f136aba85a1287:f795fd8db6dcd6e301c5d3e815cbd3be \
           Iap2ServerApp:661dc714e30802d505c333e33bb7f089:cc198983ce4e3c647eda36e23b292143 HKMC_Navi_ExSL:12a34cb11c9325f9a4050a86a9699469:dcdb7bc17374104aaad7ba3316655fe9; do
     a=${ac%%:*}; c=${ac#*:}; w=${c#*:}; c=${c%%:*}
     check "by code krv: $a is V037's code ($c) -> its own build ($w)" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$KRV")" = "$c bycode/krv/$a.tbt.lpd $w" ]
@@ -242,9 +242,9 @@ for pv in krc:"$KRC" krd:"$KRD"; do
     check "by code $p: no 3_bridge part" eval '! grep -q "^3_bridge " "$M"'
     check "by code $p: the knobs are kr's" cmp -s "$PKG/patches/bycode/$p/knobs" "$PKG/patches/bycode/kr/knobs"
 done
-for ac in krc:HKMC_GPM:4cf385316c37ddc4d5c28ba69d99caee:2ac1823b45cc72b30353f0e15e800df4 krc:HKMC_DiPO:84f17a7a755b5a3022a139526ba452bd:9fecbdac07490655694cd10425b47ffe \
+for ac in krc:HKMC_GPM:4cf385316c37ddc4d5c28ba69d99caee:4a7b32bd43d4771cc4ad902db5563658 krc:HKMC_DiPO:84f17a7a755b5a3022a139526ba452bd:b158cf0486c32f154fdae34e3ff6f9bc \
           krc:HKMC_Navi_ExSL:ea6e2da50080b288f908962a6c8d5794:3221dcade7641256c63d5d29841cc262 \
-          krd:HKMC_GPM:d244aba596a361c850311bb0603d1eab:2ac1823b45cc72b30353f0e15e800df4 krd:HKMC_DiPO:072ba128b4daf9669dc329cfa168a3ee:c202caf20bd19aa890d0a4a28d8d4bdf \
+          krd:HKMC_GPM:d244aba596a361c850311bb0603d1eab:4a7b32bd43d4771cc4ad902db5563658 krd:HKMC_DiPO:072ba128b4daf9669dc329cfa168a3ee:11499e9b60afadd852006394ffe58b81 \
           krd:Iap2ServerApp:9f32383bbf425173727ce6365971fa28:cc198983ce4e3c647eda36e23b292143 krd:HKMC_Navi_ExSL:d43adb26a20f55e5bdfd5e313bb66c9d:fcb28613971b8ce110c5e77cd6fb5668; do
     p=${ac%%:*}; r=${ac#*:}; a=${r%%:*}; r=${r#*:}; c=${r%%:*}; w=${r#*:}
     check "by code $p: $a is V035's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$PKG/patches/bycode/$p/manifest")" = "$c bycode/$p/$a.tbt.lpd $w" ]
@@ -278,7 +278,7 @@ check "by code choice (0.1.16): the LX2 V034 car (KOVZX33T: krd's Iap2ServerApp 
 KRM=$PKG/patches/bycode/krm/manifest
 check "by code krm: turn-by-turn only, the four apps and the library" [ "$(grep -v '^#' "$KRM" | awk '{print $1":"$3}' | tr '\n' ' ')" = "2_tbt:HKMC_GPM 2_tbt:HKMC_DiPO 2_tbt:Iap2ServerApp 2_tbt:HKMC_Navi_ExSL 2_tbt:libautoreceiver_infobank.so " ]
 check "by code krm: no 3_bridge part" eval '! grep -q "^3_bridge " "$KRM"'
-for ac in HKMC_GPM:a79f26f3689641f9274c01cdafab52d1:223b8e11c4123e969bb50d792c6851c0 HKMC_DiPO:803a1a0e58d0bc5fed3d0e1fa4ee13bd:ba925824f170c4b0a2b4e50dfe02d7e9 \
+for ac in HKMC_GPM:a79f26f3689641f9274c01cdafab52d1:d68ec25745a1f009b462a0ba707fda5d HKMC_DiPO:803a1a0e58d0bc5fed3d0e1fa4ee13bd:f795fd8db6dcd6e301c5d3e815cbd3be \
           HKMC_Navi_ExSL:93bca3a2125a1b33c572b20ce6b3a5e1:67a9a0d0b04329e52756233f3ef2042f; do
     a=${ac%%:*}; c=${ac#*:}; w=${c#*:}; c=${c%%:*}
     check "by code krm: $a is MQ4 V037's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$KRM")" = "$c bycode/krm/$a.tbt.lpd $w" ]
@@ -376,16 +376,18 @@ GPM_018=b02ada70f0de90a9e09d364a64559074; DIPO_018=56d9ff800ddc5a750fa2be6d247de
 NEW_DIPOT=6dfde547549483ca65e822f5e992e275; NEW_GPM_APK=00613075311c59881d379f384ed77327; NEW_DIPOT_APK=956eefb7194ab7c3f3294c14a6150d38
 # 0.1.34: the final results (turns.sh from 0.1.33's B_ results, which bar.sh makes from the 0.1.32 ones above; both stay the
 # intermediate steps of the chain checks below). Navi stays 0.1.33's.
-FIN_GPM=b4019f5da7fd492fe2d83999c984745e; FIN_DIPO=1f999e7152bc9d61044dfaab6974007a; T34_DIPO=7aa7e00904e10e28815e591ef76d0f31   # 0.2.0: FIN_DIPO = 0.1.34's bridge build + callout.sh
-FIN_GPM_APK=cd92507988f67c943a73de9626d6772e; FIN_DIPO_APK=abe4c375fa8165086a33e310c0c9ca41; T34_DIPO_APK=6706798fbac2d2a0073cd204990aeee2; FIN_NAVI_APK=50ef163c5630bd4adf6afb1e77ab3495
-T_GPM=$FIN_GPM; T_DIPO=$FIN_DIPO; T_GPM_C=2ac1823b45cc72b30353f0e15e800df4; T_GPM_M=223b8e11c4123e969bb50d792c6851c0
+FIN_GPM=157a712e6411f337aa05f62dc9785028; FIN_DIPO=c2165b59d16d4b3c3bb2303e0b2920df; T34_DIPO=7aa7e00904e10e28815e591ef76d0f31   # 0.2.2: textlog.sh (and for GPM guide.sh) on top of the 0.2.1 results
+T34_GPM=b4019f5da7fd492fe2d83999c984745e; T21_DIPO=1f999e7152bc9d61044dfaab6974007a   # 0.1.34's GPM (kr family) and 0.2.1's bridge result: the inputs of the 0.2.2 steps
+FIN_GPM_APK=c13961a9bdac3c8bfed62956f75682b4; FIN_DIPO_APK=1cc900093cf3be3700cc0b5c804121de; T21_DIPO_APK=abe4c375fa8165086a33e310c0c9ca41; T21_GPM_APK=cd92507988f67c943a73de9626d6772e; T34_DIPO_APK=6706798fbac2d2a0073cd204990aeee2; FIN_NAVI_APK=50ef163c5630bd4adf6afb1e77ab3495
+T_GPM=$FIN_GPM; T_DIPO=$FIN_DIPO; T_GPM_C=4a7b32bd43d4771cc4ad902db5563658; T_GPM_M=d68ec25745a1f009b462a0ba707fda5d; T34_GPM_C=2ac1823b45cc72b30353f0e15e800df4; T34_GPM_M=223b8e11c4123e969bb50d792c6851c0
 B_GPM=3acf3d096ee019acc1632e83a01feab2; B_DIPO=c9754d6f6dc75d4029ef6c9fdf88389c; B_GPM_C=e7c9a53305a4744327f9184026848d5f; B_GPM_M=8dd363e34a1a34d439b20e5a885700d0
 B_NAVI=1a7834c1e814f87db6d92e3fab740003; B_NAVI_B=bc66010be2b488f3326c4bb63d6f5129; B_NAVI_C=3221dcade7641256c63d5d29841cc262
 B_NAVI_D=fcb28613971b8ce110c5e77cd6fb5668; B_NAVI_M=67a9a0d0b04329e52756233f3ef2042f; B_NAVI_V=dcdb7bc17374104aaad7ba3316655fe9
 B_GPM_APK=4e25776beabcb68f2e48bb5ac3c5857a; B_DIPO_APK=ffbd6a1d915c9c08d3a147d84980cb04; B_NAVI_APK=$FIN_NAVI_APK
 # 0.1.36: the turn-by-turn-only DiPO builds (cpstock.sh from the 0.1.19 results: NEW_DIPOT 6dfde547 and the three below; NEW_DIPOT_APK 956eefb7
 # for neev_kr). The first is the build of kr kra krb kre krg kri krk krp krt, T36_C of krc, T36_D of krd, T36_M of krm krv.
-FIN_DIPOT=f121349937ec0b2af47837c2ba6664c8; T36_C=9fecbdac07490655694cd10425b47ffe; T36_D=c202caf20bd19aa890d0a4a28d8d4bdf; T36_M=ba925824f170c4b0a2b4e50dfe02d7e9; FIN_DIPOT_APK=134a8a511f8446fef94268a9981c8a64
+FIN_DIPOT=35711f75785b5cb86cf7c18419b31d29; T36_C=b158cf0486c32f154fdae34e3ff6f9bc; T36_D=11499e9b60afadd852006394ffe58b81; T36_M=f795fd8db6dcd6e301c5d3e815cbd3be; FIN_DIPOT_APK=6f8c260d72b44c9d024f1a57d23c1c37
+C36_F=f121349937ec0b2af47837c2ba6664c8; C36_C=9fecbdac07490655694cd10425b47ffe; C36_D=c202caf20bd19aa890d0a4a28d8d4bdf; C36_M=ba925824f170c4b0a2b4e50dfe02d7e9; C36_APK=134a8a511f8446fef94268a9981c8a64   # cpstock.sh's results: the inputs of 0.2.2's textlog.sh
 T19_C=e9b17e59a3231ffdc6b683f312957b10; T19_D=be272d864b76d0dd0147c1fa64861164; T19_M=9794821165c1037e0d15f13bb017289d
 for o in kr kra krb kre krg kri krk krp krt; do
     check "0.1.19 $o: GPM ends at the near-turn + TBT clear build $FIN_GPM (0.1.18: $GPM_018)" [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_GPM)" = $FIN_GPM ]
@@ -654,7 +656,7 @@ check "0.1.36 cpstock.sh: baksmali, cpstock.py, smali one thread; no javac / d8 
 check "0.1.36 the turn-by-turn-only DiPO deltas carry no Turns / TurnsOut / BarOut / Near class (nothing but table numbers changed)" \
     eval 'for lp in "$PKG"/patches/bycode/kr*/HKMC_DiPO.tbt.lpd "$PKG"/patches/neev_kr/HKMC_DiPO.tbt.lpd; do for c in TurnsOut Turns BarOut Near; do lpd_extra_has "$lp" "Lcom/jmk/hud/$c;"; [ $? -eq 1 ] || exit 1; done; done'
 check "0.1.36 known: the 0.1.19 results stay ours next to the new turn-by-turn-only ones (HKMC_DiPO.dex krc $T19_C / $T36_C, krd $T19_D / $T36_D, krm krv $T19_M / $T36_M)" \
-    eval 'for kv in HKMC_DiPO.dex:$T19_C HKMC_DiPO.dex:$T36_C HKMC_DiPO.dex:$T19_D HKMC_DiPO.dex:$T36_D HKMC_DiPO.dex:$T19_M HKMC_DiPO.dex:$T36_M; do grep -qx "${kv%%:*} ${kv#*:}" "$PKG/patches/known" || exit 1; done'
+    eval 'for kv in HKMC_DiPO.dex:$T19_C HKMC_DiPO.dex:$C36_C HKMC_DiPO.dex:$T19_D HKMC_DiPO.dex:$C36_D HKMC_DiPO.dex:$T19_M HKMC_DiPO.dex:$C36_M; do grep -qx "${kv%%:*} ${kv#*:}" "$PKG/patches/known" || exit 1; done'
 check "0.1.36 Lanes.java: the header keeps its line count (5 lines before the package line: attribution, repo and commit, file names, a plain // line), no car-test line in the header; class bytes are those of 0.1.35's (lanes.sh pins)" \
     eval '[ "$(sed -n 4p "$P/src/tbt/com/jmk/hud/Lanes.java")" = "//" ] && [ "$(sed -n 5p "$P/src/tbt/com/jmk/hud/Lanes.java")" = "package com.jmk.hud;" ] && sed -n 1,3p "$P/src/tbt/com/jmk/hud/Lanes.java" | grep -q "AGPL-3.0" && sed -n 1,3p "$P/src/tbt/com/jmk/hud/Lanes.java" | grep -q "fbaacf7" && ! sed -n 1,5p "$P/src/tbt/com/jmk/hud/Lanes.java" | grep -q "cluster-lane-arrows\|car-verified"'
 check "0.1.36 README: the 0.1.36 line (Korean, result only) above 0.1.35's" \
@@ -663,7 +665,7 @@ check "0.1.36 README: the 0.1.36 line (Korean, result only) above 0.1.35's" \
 # (src/tbt/tbt-clear.py on the smali tree + com/jmk/hud/TbtClear.java; src/tbt/clear.sh makes each 0.1.19 GPM / DiPO
 # result from its 0.1.18 result): every GPM / DiPO result that carries our turn-by-turn patches changes, nothing else
 TC=$P/src/tbt/tbt-clear.py; TJ=$P/src/tbt/com/jmk/hud/TbtClear.java
-R019="$FIN_GPM $FIN_DIPO $T34_DIPO $T_GPM_C $T_GPM_M $B_GPM $B_DIPO $B_GPM_C $B_GPM_M d2538947dcd6a8af532e0fb2baf7be81 965c4bfa035f24caeba188d9450a7e35 7b0fb9800dc6479d466e06760942ea13 913848d61d675beb066e03f119a4cf6e 6dfde547549483ca65e822f5e992e275 e9b17e59a3231ffdc6b683f312957b10 be272d864b76d0dd0147c1fa64861164 9794821165c1037e0d15f13bb017289d $NEW_DIPO $FIN_DIPOT $T36_C $T36_D $T36_M"
+R019="$FIN_GPM $FIN_DIPO $T34_DIPO $T34_GPM $T21_DIPO $T34_GPM_C $T34_GPM_M $C36_F $C36_C $C36_D $C36_M $FIN_DIPOT $T36_C $T36_D $T36_M $T_GPM_C $T_GPM_M $B_GPM $B_DIPO $B_GPM_C $B_GPM_M d2538947dcd6a8af532e0fb2baf7be81 965c4bfa035f24caeba188d9450a7e35 7b0fb9800dc6479d466e06760942ea13 913848d61d675beb066e03f119a4cf6e 6dfde547549483ca65e822f5e992e275 e9b17e59a3231ffdc6b683f312957b10 be272d864b76d0dd0147c1fa64861164 9794821165c1037e0d15f13bb017289d $NEW_DIPO $FIN_DIPOT $T36_C $T36_D $T36_M"
 R018="b02ada70f0de90a9e09d364a64559074 454c8dc4741bf9852e18a6a2ca27be23 1301c92348aab9290e5ee98f4b617cb4 56d9ff800ddc5a750fa2be6d247deb5d ffe9b558a288cdda39eabd92d4b5fccf fe5030232f629489d3249eb7c9ef1c05 f1c23b5fe21ba6898e1cf9339caf8906 29a4add9f184c91b163d9a8b864ce484"
 for f in src/tbt/com/jmk/hud/TbtClear.java src/tbt/stubs/com/hkmc/cluster/NavigationCluster.java src/tbt/tbt-clear.py src/tbt/clear.sh; do
     check "0.1.19 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
@@ -746,7 +748,7 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.2.1" grep -q '^package-version=0.2.1$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.2.3" grep -q '^package-version=0.2.3$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]
@@ -826,8 +828,8 @@ for f in src/tbt/callout.py src/tbt/callout.sh src/tbt/com/jmk/hud/Callout.java 
          src/callout/jmkhud/link/ReadTimeout.java src/callout/jmkhud/link/android/LocalSockets.java; do
     check "0.2.0 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
 done
-check "0.2.1 version: package-version 0.2.1, README 0.2.1 line first under Releases, the 0.2.0 line next" \
-    eval '[ "$(sed -n "s/^package-version=//p" "$PKG/NEMESIS.data")" = 0.2.1 ] && [ "$(grep -m1 "^- \*\*[0-9]" "$P/README.md" | cut -c1-11)" = "- **0.2.1**" ] && [ "$(grep "^- \*\*[0-9]" "$P/README.md" | sed -n 2p | cut -c1-11)" = "- **0.2.0**" ]'
+check "0.2.3 version: package-version 0.2.3, README 0.2.3 line first under Releases, the 0.2.2 line next" \
+    eval '[ "$(sed -n "s/^package-version=//p" "$PKG/NEMESIS.data")" = 0.2.3 ] && [ "$(grep -m1 "^- \*\*[0-9]" "$P/README.md" | cut -c1-11)" = "- **0.2.3**" ] && [ "$(grep "^- \*\*[0-9]" "$P/README.md" | sed -n 2p | cut -c1-11)" = "- **0.2.2**" ]'
 check "0.2.0 callout.py: AGPL-3.0 header; one anchor; stops with status 1 when it is not there once, when Callout is not in the tree, and when the call-out is in already" \
     eval 'grep -q "AGPL-3.0" "$CO" && grep -q "found %d times (want 1)" "$CO" && grep -q "already has the call-out" "$CO" && grep -q "is not in the tree" "$CO" && grep -q "^import" "$CO" && ! grep -q "^import hmgapi" "$CO"'
 check "0.2.0 callout.py: an empty tree is refused (exit 1, nothing written)" eval '( et=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-co0.XXXXXX"); python3 -I "$CO" "$et" >/dev/null 2>&1; erc=$?; enf=$(find "$et" -type f | wc -l | tr -d " "); rm -rf "$et"; [ $erc -eq 1 ] && [ "$enf" = 0 ] )'
@@ -848,6 +850,19 @@ check "0.2.0 known: the earlier DiPO results (0.2.0's published 5eb801b6 / apk 2
     eval 'for kv in HKMC_DiPO.dex:c1e236ddc6c9bd915c83ae51df7ae73b HKMC_DiPO.dex:3838ee7d4a7dca850d015fd3a4568c5d HKMC_DiPO.apk:451cb07b8cf553a61d3c4b1dff41f93f HKMC_DiPO.apk:0042851ef96244d6125f8f60c9d0b88b HKMC_DiPO.dex:5eb801b6f951de193d2c1a2f6a0542ba HKMC_DiPO.apk:2073eabc2ae9755e85d15115f664a29a HKMC_DiPO.dex:d0825bae5703b343f81364e857e06505 HKMC_DiPO.apk:60484003247606c14e59b679e589385a; do grep -qx "${kv%%:*} ${kv#*:}" "$PKG/patches/known" || exit 1; done'
 hin 19
 hin 20
+hin 21
+# ---------------------------------------------------------------- 0.2.2: Android Auto guidance is not switched off by silence (guide.sh), the lengths of the texts handed to the cluster go into the log (textlog.sh)
+for f in src/tbt/guide.py src/tbt/guide.sh src/tbt/textlog.py src/tbt/textlog.sh src/tbt/com/jmk/hud/TextLog.java; do
+    check "0.2.2 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
+done
+for gp in guide textlog; do
+    check "0.2.2 $gp.py: AGPL-3.0 header; stops with status 1 on an empty tree and when the edit is there already (nothing written)" \
+        eval '( et=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-gp.XXXXXX"); python3 -I "$P/src/tbt/$gp.py" "$et" >/dev/null 2>&1; erc=$?; enf=$(find "$et" -type f | wc -l | tr -d " "); rm -rf "$et"; grep -q "AGPL-3.0" "$P/src/tbt/$gp.py" && grep -q "already" "$P/src/tbt/$gp.py" && [ $erc -eq 1 ] && [ "$enf" = 0 ] )'
+done
+check "0.2.2 TextLog.java: only lengths are logged (no text in the log call), never throws, one line per change of a site's lengths" \
+    eval 'T=$P/src/tbt/com/jmk/hud/TextLog.java; grep -q "Log.i(TAG, \"Text: \" + site + \" chars=\"" "$T" && ! grep -q "Log.i(TAG, .*[^a-z]s)" "$T" && grep -q "catch (Throwable t)" "$T" && grep -q "now.equals(LAST.get(site))" "$T"'
+check "0.2.2 the new GPM and DiPO results (kr family 157a712e / c2165b59 / tbt 35711f75, krc, krd, krm) are in the manifests of every Korean profile and neev_kr; the 0.2.1 results stay in known" \
+    eval '( for o in kr kra krb kre krg kri krk krp krt krq; do [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_GPM)" = $FIN_GPM ] || exit 1; done; for o in krc krd; do [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_GPM)" = $T_GPM_C ] || exit 1; done; for o in krm krv; do [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_GPM)" = $T_GPM_M ] || exit 1; done; for o in kr kra krb kre krg kri krk krp krt; do [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $FIN_DIPO ] || exit 1; done; for kv in HKMC_GPM.dex:$T34_GPM HKMC_GPM.dex:$T34_GPM_C HKMC_GPM.dex:$T34_GPM_M HKMC_DiPO.dex:$T21_DIPO HKMC_DiPO.apk:$T21_DIPO_APK HKMC_GPM.apk:$T21_GPM_APK HKMC_DiPO.dex:$FIN_DIPO HKMC_DiPO.dex:$FIN_DIPOT HKMC_DiPO.dex:$T36_C HKMC_DiPO.dex:$T36_D HKMC_DiPO.dex:$T36_M HKMC_GPM.dex:$FIN_GPM HKMC_GPM.apk:$FIN_GPM_APK HKMC_DiPO.apk:$FIN_DIPO_APK; do grep -qx "${kv%%:*} ${kv#*:}" "$PKG/patches/known" || exit 1; done )'
 # ---------------------------------------------------------------- 4. zips
 T=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-zip.XXXXXX")
 trap 'rm -rf "$T"' EXIT
@@ -887,3 +902,4 @@ check "no code of this package in the other apps/ packages" [ -z "$leak" ]
 echo
 if [ $n_fail -eq 0 ]; then echo "all $n_ok passed"; exit 0; fi
 echo "$n_fail FAILED, $n_ok passed"; exit 1
+

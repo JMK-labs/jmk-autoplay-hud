@@ -227,7 +227,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis" "$ROOT/parent.cmdline"; }
     check "install: exit 0" [ $rc -eq 0 ]
     check "install: state=reboot" [ "$(st state)" = reboot ]
     check "install: set=neev_kr" [ "$(st set)" = neev_kr ]
-    check "install: ver=0.2.1" [ "$(st ver)" = 0.2.1 ]
+    check "install: ver=0.2.3" [ "$(st ver)" = 0.2.3 ]
     check "install: patched = every target + the audio recipe" [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]
     check "install: knobs=log,lane_dist,cp_lanes" [ "$(st knobs)" = "log,lane_dist,cp_lanes" ]
     check "install: reason empty" [ -z "$(st reason)" ]
@@ -286,9 +286,12 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis" "$ROOT/parent.cmdline"; }
     snap "$ROOT/after-preun"
     check "update's preuninstall: every file stays" cmp -s "$ROOT/after-install" "$ROOT/after-preun"
     check "update's preuninstall: records and backups stay" eval '[ -s "$ROOT/data/nemesis/jmk-autoplay-hud/applied" ] && [ -d "$ROOT/data/nemesis/backups/jmk-autoplay-hud" ]'
+    : > "$ROOT/pm.log"
     hook postinstall; rc=$?
     snap "$ROOT/after-update"
     check "update, same patches: exit 0" [ $rc -eq 0 ]
+    check "0.2.3 update, nothing changes: no app stopped, no app started" [ ! -s "$ROOT/pm.log" ]
+    check "0.2.3 update, nothing changes: one 'not held (unchanged)' line per app, no 'held' line" eval '[ "$(grep -c "^not held .* (unchanged)" "$ROOT/postinstall.out")" -eq 5 ] && ! grep -q "^held " "$ROOT/postinstall.out"'
     check "update, same patches: nothing changed" cmp -s "$ROOT/after-install" "$ROOT/after-update"
     check "update, same patches: state stays active" [ "$(st state)" = active ]
     check "update, same patches: says so" grep -q 'in place already' "$ROOT/postinstall.out"
@@ -298,8 +301,11 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis" "$ROOT/parent.cmdline"; }
     g2=$(want_app HKMC_GPM gpm-tbt-v2)
     while read -r a b c d e; do [ "$c" = HKMC_GPM ] && e=$g2; echo "$a $b $c $d $e"; done < "$HP/patches/neev_kr/manifest" > "$ROOT/m" && mv "$ROOT/m" "$HP/patches/neev_kr/manifest"
     hook preuninstall
+    : > "$ROOT/pm.log"
     hook postinstall; rc=$?
     check "update, new GPM patch: exit 0" [ $rc -eq 0 ]
+    check "0.2.3 update, GPM only: only the GPM app stopped and started again" eval '[ "$(grep -c "^pm disable" "$ROOT/pm.log")" -eq 1 ] && grep -qx "pm disable com.google.android.projection.sink" "$ROOT/pm.log" && [ "$(grep -c "^pm enable" "$ROOT/pm.log")" -eq 1 ] && grep -qx "pm enable com.google.android.projection.sink" "$ROOT/pm.log"'
+    check "0.2.3 update, GPM only: log says held for GPM, 'not held (unchanged)' for the other four" eval 'grep -q "^held com.google.android.projection.sink (.*HKMC_GPM.apk" "$ROOT/postinstall.out" && [ "$(grep -c "^not held .* (unchanged)" "$ROOT/postinstall.out")" -eq 4 ]'
     check "update, new GPM patch: GPM rebuilt from the stock copy" [ "$(q "$ROOT/system/app/HKMC_GPM.apk")" = "$g2" ]
     check "update, new GPM patch: the others untouched" [ "$(q "$ROOT/system/app/HKMC_DiPO.apk")" = "$(want_app HKMC_DiPO dipo-bridge)" ]
     check "update, new GPM patch: state=reboot" [ "$(st state)" = reboot ]
@@ -319,6 +325,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis" "$ROOT/parent.cmdline"; }
     check "uninstall: our dalvik-cache entries gone" eval '[ ! -e "$ROOT/data/dalvik-cache/system@app@HKMC_GPM.apk@classes.dex" ] && [ ! -e "$ROOT/data/dalvik-cache/system@app@PhoneProjection.apk@classes.dex" ]'
     check "uninstall: someone else's entry stays" [ -e "$ROOT/data/dalvik-cache/system@app@Other.apk@classes.dex" ]
     check "uninstall: apps stopped and started again" [ "$(grep -c '^pm disable' "$ROOT/pm.log")" -eq "$(grep -c '^pm enable' "$ROOT/pm.log")" ]
+    check "0.2.3 uninstall: the apps whose files go back are held (4 enabled ones) and started again" eval '[ "$(grep -c "^pm disable" "$ROOT/pm.log")" -eq 4 ] && grep -q "^held com.daudio.app.dipo (" "$ROOT/preuninstall.out" && grep -q "^not held com.daudio.app.phoneprojection (absent, or disabled by the owner)" "$ROOT/preuninstall.out"'
     check "uninstall: the owner's disabled app still disabled" eval '[ "$(cat "$ROOT/pm.disabled")" = com.daudio.app.phoneprojection ]'
     check "uninstall: the log is kept" [ -s "$ROOT/data/nemesis/jmk-autoplay-hud.log" ]
     check "never remount ro (whole run)" no_ro
@@ -658,6 +665,8 @@ bycode_setup() {
     check "write fails: state=failed, the stock files are back" eval '[ "$(st state)" = failed ] && case "$(st reason)" in *"stock files are back"*) true ;; *) false ;; esac'
     check "write fails: every stock file byte-identical" all_stock
     check "write fails: apps started again" [ "$(grep -c '^pm disable' "$ROOT/pm.log")" -eq "$(grep -c '^pm enable' "$ROOT/pm.log")" ]
+    check "0.2.3 write fails: every app with a written file was stopped (each once), the rollback adds none" [ "$(grep -c '^pm disable' "$ROOT/pm.log")" -eq 5 ]
+    check "0.2.3 write fails: no stopped-apps list left" [ ! -e "$S/stopped" ]
 )
 (
     setup
@@ -841,7 +850,7 @@ fw_update() {
     fw_update
     hook postinstall; rc=$?
     check "0.1.8 install after a firmware update: the old copies gone, locked on the new files (the fake set has no V040)" eval '[ $rc -eq 0 ] && [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_GPM.apk" ] && [ "$(cat "$ROOT/system/app/HKMC_GPM.apk")" = "new firmware HKMC_GPM.apk" ]'
-    check "0.1.8 ... the other files the earlier install patched stay, said so (not 'locked, nothing changed')" eval '[ "$(st state)" = reboot ] && case "$(st reason)" in "patched by 0.2.1"*) true ;; *) false ;; esac && case "$(st patched)" in *dipo*) true ;; *) false ;; esac'
+    check "0.1.8 ... the other files the earlier install patched stay, said so (not 'locked, nothing changed')" eval '[ "$(st state)" = reboot ] && case "$(st reason)" in "patched by 0.2.3"*) true ;; *) false ;; esac && case "$(st patched)" in *dipo*) true ;; *) false ;; esac'
 )
 (
     setup
@@ -891,7 +900,7 @@ fw_update() {
     stage_update; hook preuninstall; hook postinstall; rc=$?; unstage
     snap "$ROOT/after"
     check "0.1.8 update that does not fit: exit 0, nothing changed" eval '[ $rc -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after"'
-    check "0.1.8 ... state stays active, 'patched by 0.1.8', not locked" eval '[ "$(st state)" = active ] && case "$(st reason)" in "patched by 0.2.1: this version changed nothing"*) true ;; *) false ;; esac'
+    check "0.1.8 ... state stays active, 'patched by 0.1.8', not locked" eval '[ "$(st state)" = active ] && case "$(st reason)" in "patched by 0.2.3: this version changed nothing"*) true ;; *) false ;; esac'
     check "0.1.8 ... patched lists the live files, set the old one" eval '[ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ] && [ "$(st set)" = neev_kr ]'
 )
 (
@@ -1122,7 +1131,7 @@ stock_only() {   # every line of the stock list and of the auto set's stock list
     snap "$ROOT/before"
     upd
     snap "$ROOT/after"
-    check "0.1.15 a stock copy lost (the archive's too): exit 0, nothing changed, the earlier build kept" eval '[ $UPD_RC -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after" && case "$(st reason)" in "patched by 0.2.1"*) true ;; *) false ;; esac'
+    check "0.1.15 a stock copy lost (the archive's too): exit 0, nothing changed, the earlier build kept" eval '[ $UPD_RC -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after" && case "$(st reason)" in "patched by 0.2.3"*) true ;; *) false ;; esac'
     check "0.1.15 ... our patched DiPO apk never recorded or kept as the stock one" \
         eval 'grep -qx "HKMC_DiPO.apk $(q "$ROOT/stock/HKMC_DiPO.apk")" "$S/stock" && stock_only && [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_DiPO.apk" ]'
     check "0.1.15 ... the kept-old report says why (by code: kr: no stock copy of HKMC_DiPO)" grep -q 'by code: kr: no stock copy of HKMC_DiPO' "$ROOT/$OUTBOX_REL/jmk-autoplay-hud-install-postinstall-kept-old.json"
@@ -1497,7 +1506,7 @@ rewrap() {   # rewrap <apk>: another apk md5, the same dex inside (its last line
     mkdir -p "$ROOT/$OUTBOX_REL"
     hook postinstall
     J=$ROOT/data/nemesis/jmk-autoplay-hud.journal
-    check "0.1.25 the journal has the run, begin and end" eval 'grep -q " begin postinstall 0.2.1" "$J" && grep -q " end postinstall rc=0" "$J"'
+    check "0.1.25 the journal has the run, begin and end" eval 'grep -q " begin postinstall 0.2.3" "$J" && grep -q " end postinstall rc=0" "$J"'
     check "0.1.25 every write's intent and result in the journal" eval '[ "$(grep -c " intent " "$J")" -ge 6 ] && [ "$(grep -c " wrote " "$J")" -ge 6 ]'
     check "0.1.25 the made list names our DiPO build" grep -q "^HKMC_DiPO.apk $(want_app HKMC_DiPO dipo-bridge)$" "$ROOT/data/nemesis/jmk-autoplay-hud.made"
     check "0.1.25 the made list never names a stock md5" eval '! grep -q " $(q "$ROOT/stock/HKMC_DiPO.apk")$" "$ROOT/data/nemesis/jmk-autoplay-hud.made"'
@@ -1514,6 +1523,18 @@ rewrap() {   # rewrap <apk>: another apk md5, the same dex inside (its last line
     hook preuninstall; rc=$?
     check "0.1.25 ... an uninstall: every stock file back" eval '[ $rc -eq 0 ] && all_stock'
     check "0.1.25 ... the archive, journal and made list stay" eval '[ -d "$ROOT/data/nemesis/backups/jmk-autoplay-hud.stock" ] && [ -s "$J" ] && [ -s "$ROOT/data/nemesis/jmk-autoplay-hud.made" ]'
+)
+
+# 0.2.3: an install cut off with one app stopped: the restart (the settings service at boot) starts exactly that one
+(
+    setup
+    hook postinstall
+    echo com.google.android.projection.sink > "$S/stopped"
+    echo com.google.android.projection.sink >> "$ROOT/pm.disabled"
+    : > "$ROOT/pm.log"
+    newboot 2; svc
+    check "0.2.3 restart after a cut-off install: only the app on the list is started again" eval '[ "$(grep -c "^pm enable" "$ROOT/pm.log")" -eq 1 ] && grep -qx "pm enable com.google.android.projection.sink" "$ROOT/pm.log" && ! grep -q "^pm disable" "$ROOT/pm.log"'
+    check "0.2.3 restart after a cut-off install: the list is gone, the app enabled" eval '[ ! -e "$S/stopped" ] && ! grep -qx com.google.android.projection.sink "$ROOT/pm.disabled"'
 )
 
 # ---------------------------------------------------------------- 0.1.17: a superseded fixed set (dl3hev): our by-code builds first

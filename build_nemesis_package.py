@@ -42,6 +42,9 @@ TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'sr
              # 0.2.0: the DiPO bridge asks the local JMK service before it starts the car hotspot (applied by src/tbt/callout.sh);
              # src/callout/ is the client library copy (JMK's own, AGPL-3.0 compatible)
              'src/tbt/com/jmk/hud/Callout.java', 'src/tbt/callout.py', 'src/tbt/callout.sh',
+             # 0.2.2: Android Auto guidance is not switched off by silence (guide.sh), the length of the texts handed to the cluster goes into
+             # the log (textlog.sh)
+             'src/tbt/guide.py', 'src/tbt/guide.sh', 'src/tbt/textlog.py', 'src/tbt/textlog.sh', 'src/tbt/com/jmk/hud/TextLog.java',
              'src/callout/jmkhud/link/Gate.java', 'src/callout/jmkhud/link/Lex.java', 'src/callout/jmkhud/link/Clock.java',
              'src/callout/jmkhud/link/Frame.java', 'src/callout/jmkhud/link/Helper.java',
              'src/callout/jmkhud/link/HookClient.java', 'src/callout/jmkhud/link/Log.java',
