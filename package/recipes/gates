@@ -1,0 +1,3 @@
+# recipe id, stock md5 of the whole file (required before it is built), md5 of the file it must give (required after)
+# 0.1.37: the frame-wait recipe is only for the stock libCarPlayCore ef49c09b (the Korean Ioniq 5 260902 build)
+carplay-core-frames-ef49c09b ef49c09b7ab5eb72298f9973443b66b3 36c65d80ea46f833f84c7567f43ffc2b

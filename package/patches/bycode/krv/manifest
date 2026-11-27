@@ -1,0 +1,16 @@
+# by-code profile krv (2026-11-20): Hyundai Ioniq 5 Korea on the older firmware NEEV.KOR.0000.V037.001.260319 (car report
+# FI45XFSQ). Its HKMC_GPM, HKMC_DiPO, HKMC_Navi_ExSL, Iap2ServerApp and PhoneProjection are an older source revision of the
+# Ioniq 5 KR (V039) apps (another ProGuard run, some methods changed or missing), dexopted against an older framework
+# (SplitScreenManager, MicomAudioManager, MiscManager, ... have other quick-call slots). Each result is the V037 car's own
+# stock code with the kr profile's turn-by-turn patch ported onto it: the kr build (V039 code + patch) with every class
+# V037's stock code has differently put back as V037's, in the kr build's names; a class the patch changes was merged
+# per member (it touches no member V037 changed). Turn-by-turn only (2_tbt); the library is the Ioniq 5's (48ee793a),
+# so its line is kr's. No 3_bridge part: the CarPlay bridge needs V037's framework and Broadcom library to check
+# The knobs are kr's.
+# <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
+# <part> file <library> <md5 of the stock library> <patch> <md5 of the result>
+2_tbt app HKMC_GPM 1f29a226774d61a2b4ef899182af28cf bycode/krv/HKMC_GPM.tbt.lpd 223b8e11c4123e969bb50d792c6851c0
+2_tbt app HKMC_DiPO 8d0867878b78347358f136aba85a1287 bycode/krv/HKMC_DiPO.tbt.lpd ba925824f170c4b0a2b4e50dfe02d7e9
+2_tbt app Iap2ServerApp 661dc714e30802d505c333e33bb7f089 bycode/krv/Iap2ServerApp.tbt.lpd cc198983ce4e3c647eda36e23b292143
+2_tbt app HKMC_Navi_ExSL 12a34cb11c9325f9a4050a86a9699469 bycode/krv/HKMC_Navi_ExSL.tbt.lpd dcdb7bc17374104aaad7ba3316655fe9
+2_tbt file libautoreceiver_infobank.so 48ee793af8b86052503b8c952b034731 neev_kr/libautoreceiver_infobank.tbt.lpd aba7787cb6d365c5ad583a8dc6217ae2

@@ -1,0 +1,22 @@
+# by-code profile kre (2026-11-19): Korean EV6 (CVEV.KOR.0000.V039.001.260902). Its HKMC_GPM, HKMC_DiPO, HKMC_Navi_ExSL
+# and PhoneProjection are the Ioniq 5 KR's stock code built with other ProGuard names (every class matches up to the
+# renaming: instructions, call slots, constants; the same apk resource tables and manifest components); Iap2ServerApp is
+# the Ioniq 5's code (30a34f83, the same .apk). So each app result is kr's own build, PhoneProjection's bridge with the
+# one constant EV6's stock code has at another number: android:id/topPanel of its (Kia) framework, 0x010202ec ->
+# 0x010202f0 (as K8's; no drawable moves).
+# 0.1.15 (2026-11-20, the owner's call): no receiver-library line any more. 0.1.7-0.1.14 had one: EV6's
+# libautoreceiver_infobank.so (c4fbccdf, another link of the same library) with kr's library hook moved to EV6's
+# addresses (result 120bab2c). That hook
+# raises the Android Auto navigation protocol 1.4 -> 1.6 and parses messages 0x8006 / 0x8007; an EV6 Korea owner
+# (DPPB5BHV) has Android Auto dropping while driving with Naver Map only (KakaoNavi and CarPlay fine). Without it the
+# library stays stock and turn-by-turn goes the stock NextTurn path, as on krp / kri (no library line either). An update
+# puts a library an earlier version patched back to its stock copy (the targets no longer name it).
+# <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
+# <part> file <library> <md5 of the stock library> <patch> <md5 of the result>
+2_tbt app HKMC_GPM 9759e803cbff3a612f94fb2302f420a2 bycode/kre/HKMC_GPM.tbt.lpd b4019f5da7fd492fe2d83999c984745e
+2_tbt app HKMC_DiPO e8b7b69bfe0cea6862d2db6ba94ada16 bycode/kre/HKMC_DiPO.tbt.lpd f121349937ec0b2af47837c2ba6664c8
+2_tbt app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
+2_tbt app HKMC_Navi_ExSL 153eb1b41dd727bf3949a5a27ec59493 bycode/kre/HKMC_Navi_ExSL.tbt.lpd 1a7834c1e814f87db6d92e3fab740003
+3_bridge app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.bridge.lpd 0ad54672b43f54ef7e58aad56c2a77b6
+3_bridge app HKMC_DiPO e8b7b69bfe0cea6862d2db6ba94ada16 bycode/kre/HKMC_DiPO.bridge.lpd 1f999e7152bc9d61044dfaab6974007a
+3_bridge app PhoneProjection 7e61ce5caa6bdc1ad02563fc084e240a bycode/kre/PhoneProjection.bridge.lpd 52816a4c37a512da5a118f101ab5f766

@@ -1,0 +1,11 @@
+# by-code profile kr (src/mkbycode.py): made from the neev_kr set and that car's own stock files.
+# <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
+# <part> file <library> <md5 of the stock library> <patch> <md5 of the result>
+2_tbt app HKMC_GPM 4b4c021c4f58cf5f5aae76e33f9151f5 bycode/kr/HKMC_GPM.tbt.lpd b4019f5da7fd492fe2d83999c984745e
+2_tbt app HKMC_DiPO 7abefa3e86fddc50e6cd27e32dc16fb3 bycode/kr/HKMC_DiPO.tbt.lpd f121349937ec0b2af47837c2ba6664c8
+2_tbt app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
+2_tbt app HKMC_Navi_ExSL 41aa4615841d24e23faf02be05fca29f bycode/kr/HKMC_Navi_ExSL.tbt.lpd 1a7834c1e814f87db6d92e3fab740003
+2_tbt file libautoreceiver_infobank.so 48ee793af8b86052503b8c952b034731 neev_kr/libautoreceiver_infobank.tbt.lpd aba7787cb6d365c5ad583a8dc6217ae2
+3_bridge app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.bridge.lpd 0ad54672b43f54ef7e58aad56c2a77b6
+3_bridge app HKMC_DiPO 7abefa3e86fddc50e6cd27e32dc16fb3 bycode/kr/HKMC_DiPO.bridge.lpd 1f999e7152bc9d61044dfaab6974007a
+3_bridge app PhoneProjection d89764a2b7aa475badb9d3c28e3aecc3 bycode/kr/PhoneProjection.bridge.lpd 865b2d8188d54ea50aabcc489d91ea62

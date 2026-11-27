@@ -1,0 +1,12 @@
+# by-code profile krq (2026-11-26): Kia Sportage Hybrid Korea (NQ5HEV.KOR.0000.V038.001.260604, car O3IH3AVV). Its HKMC_GPM, HKMC_DiPO and
+# HKMC_Navi_ExSL are the Ioniq 5 KR's stock code (V039) with other ProGuard names and quickened call numbers (every method body, constant and
+# class is the same after the names are taken out; two sibling classes swap their names in each app); resources.arsc ids and the manifest
+# components equal kr's (only the build time differs); Iap2ServerApp is the Ioniq 5's own code (30a34f83). So each result is kr's own
+# turn-by-turn build. Turn-by-turn only: no PhoneProjection / bridge part (its framework files were not uploaded, so no bridge_framework
+# line can be proven) and no library line (its libautoreceiver_infobank.so was not uploaded; Android Auto's lane / maneuver extras from the
+# library do not come, as on krp). The knobs are kr's.
+# <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
+2_tbt app HKMC_GPM 8c2212bebf060b63fd38b45c8a8ba8b6 bycode/krq/HKMC_GPM.tbt.lpd b4019f5da7fd492fe2d83999c984745e
+2_tbt app HKMC_DiPO cc5bb96db24da52d3be95e1935bd3ba8 bycode/krq/HKMC_DiPO.tbt.lpd f121349937ec0b2af47837c2ba6664c8
+2_tbt app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
+2_tbt app HKMC_Navi_ExSL fa14c57c7106da3da796e2a0b37f70ae bycode/krq/HKMC_Navi_ExSL.tbt.lpd 1a7834c1e814f87db6d92e3fab740003

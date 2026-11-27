@@ -1,0 +1,13 @@
+# by-code profile krd (2026-11-20): Kia K5 Hybrid DL3HEV Korea on the older firmware DL3HEV.KOR.0000.V035.001.250507
+# (car report 325RLNAK). Its apps are krc's source revision (KA4 / NX4HEV V035: the same code once renamed) built with
+# other ProGuard names and dexopted against another framework (its core.odex is group B's / DL3HEV22 V039's, 03ba00da,
+# not the Ioniq 5's). Each result is that car's own stock code with the kr profile's turn-by-turn patch ported onto it,
+# as krv's / krc's; GPM's result is krc's own (the same code in kr's names), Navi's krc's but for two framework string IDs
+# its stock code has at its framework's numbers, Iap2ServerApp's krv's (V037's code with one other quick-call slot). Turn-by-turn only (2_tbt). No library line: its libautoreceiver_infobank.so (ef1e6378) is
+# another build of the library (as krc). No 3_bridge part. The knobs are kr's.
+# Not the patch set dl3hev: that is Leafia's fixed-md5 set for DL3HEV22.KOR.0000.V039.001.260902.
+# <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
+2_tbt app HKMC_GPM d244aba596a361c850311bb0603d1eab bycode/krd/HKMC_GPM.tbt.lpd 2ac1823b45cc72b30353f0e15e800df4
+2_tbt app HKMC_DiPO 072ba128b4daf9669dc329cfa168a3ee bycode/krd/HKMC_DiPO.tbt.lpd c202caf20bd19aa890d0a4a28d8d4bdf
+2_tbt app Iap2ServerApp 9f32383bbf425173727ce6365971fa28 bycode/krd/Iap2ServerApp.tbt.lpd cc198983ce4e3c647eda36e23b292143
+2_tbt app HKMC_Navi_ExSL d43adb26a20f55e5bdfd5e313bb66c9d bycode/krd/HKMC_Navi_ExSL.tbt.lpd fcb28613971b8ce110c5e77cd6fb5668

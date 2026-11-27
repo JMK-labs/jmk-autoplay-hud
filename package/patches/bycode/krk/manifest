@@ -1,0 +1,29 @@
+# by-code profile krk (2026-11-21): Kia cars on group B's app code (krb's GPM 0f2a3aea, DiPO 11e53c78, Iap2ServerApp
+# ac63fada, Navi 6f4fe6b2, the library 48ee793a) whose framework puts android:id/topPanel at 0x010202f0, as K8's does:
+# the Niro Hybrid DEPEHEV.KOR.0000.V039.001.260902 (car report NLSXQRH5: its 16 boot odex files and framework-res are
+# DL3HEV22's byte for byte). Their PhoneProjection (a13280bf) is group B's 4e8915b2 instruction for instruction (raw
+# quickened dumps: 794 of 795 classes byte-identical, the app resource table the same 576 names and numbers); the one
+# difference is that topPanel constant in popup/ac. kra's bridge build (fb039a63) is krb's (255e17ec) with exactly
+# that constant changed, so PhoneProjection's bridge is kra's build; every outside ref of the three bridge results
+# binds on this framework as on group B's. The turn-by-turn part and the DiPO / Iap2ServerApp bridge lines are krb's
+# word for word. The knobs are kr's.
+# 0.1.20: the bridge only where the framework was seen (DEPEHEV: NLSXQRH5; DL3HEV22: HAQVO2CK, byte for byte the same);
+# the other cars of this code (DL3, DL322, MQ422HEV, MQ4HEV, …) keep krb's turn-by-turn until their framework comes in
+bridge_products DEPEHEV.KOR.0000.V039.001.260902 DL3HEV22.KOR.0000.V039.001.260902
+# 0.1.28 (the owner: open every car of that framework): the files the two cars share byte for byte (16 boot odex the
+# same; framework-res.apk is DL3HEV22's, its resources.arsc DEPEHEV's too); any car with all four gets the bridge
+bridge_framework framework-res.apk=687eeabb4dab7aaf552438c658d5d9a9 framework.odex=eab5af504694910d946f9067310b744a framework2.odex=ad18c214d13478cd1ee877869ac9f00f automotive.odex=3f6c3bf1258723cfa2a6dc75280f19fb
+# 0.1.32 (325RLNAK, K5 hybrid DL3HEV V039, its files sent 2026-11-23): framework.odex, framework2.odex and automotive.odex are
+# the same bytes and its resources.arsc is DEPEHEV's and DL3HEV22's (1b053372); only framework-res.apk is its own. One more
+# line is one more seen framework (any one fits)
+bridge_framework framework-res.apk=bae0bd131af2e07d9e25f073880b1938 framework.odex=eab5af504694910d946f9067310b744a framework2.odex=ad18c214d13478cd1ee877869ac9f00f automotive.odex=3f6c3bf1258723cfa2a6dc75280f19fb
+# <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
+# <part> file <library> <md5 of the stock library> <patch> <md5 of the result>
+2_tbt app HKMC_GPM 0f2a3aea66a6eb7ba3c0db5fe65fc684 bycode/krb/HKMC_GPM.tbt.lpd b4019f5da7fd492fe2d83999c984745e
+2_tbt app HKMC_DiPO 11e53c789566ac82397e0bed6dda510a bycode/krb/HKMC_DiPO.tbt.lpd f121349937ec0b2af47837c2ba6664c8
+2_tbt app Iap2ServerApp ac63fada887e5acc594d96b100238692 bycode/krb/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
+2_tbt app HKMC_Navi_ExSL 6f4fe6b2c6dfb311cdbb2e9f2e2ec5aa bycode/krb/HKMC_Navi_ExSL.tbt.lpd bc66010be2b488f3326c4bb63d6f5129
+2_tbt file libautoreceiver_infobank.so 48ee793af8b86052503b8c952b034731 neev_kr/libautoreceiver_infobank.tbt.lpd aba7787cb6d365c5ad583a8dc6217ae2
+3_bridge app Iap2ServerApp ac63fada887e5acc594d96b100238692 bycode/krb/Iap2ServerApp.bridge.lpd 0ad54672b43f54ef7e58aad56c2a77b6
+3_bridge app HKMC_DiPO 11e53c789566ac82397e0bed6dda510a bycode/krb/HKMC_DiPO.bridge.lpd 1f999e7152bc9d61044dfaab6974007a
+3_bridge app PhoneProjection a13280bf1adef39877ff6addb5b8ae76 bycode/krk/PhoneProjection.bridge.lpd fb039a6307e3389b71bfdac48de44612

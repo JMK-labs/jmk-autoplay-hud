@@ -1,0 +1,71 @@
+--- a/com/leafia/kr/LeafiaCpStandard.smali
++++ b/com/leafia/kr/LeafiaCpStandard.smali
+@@ -451,7 +451,7 @@
+ .end method
+ 
+ .method public static declared-synchronized format(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;I)[I
+-    .registers 12
++    .registers 13
+ 
+     const-class v0, Lcom/leafia/kr/LeafiaCpStandard;
+ 
+@@ -459,6 +459,9 @@
+ 
+     const/4 v1, 0x0
+ 
++    # (jmk, HUD add-on 0.1.11) keep the component's route guidance (p2 is reused below) for com.jmk.hud.Near
++    move-object v8, p2
++
+     :try_start_4
+     invoke-static {p0, p1, p2}, Lcom/leafia/kr/LeafiaCpStandard;->facts(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)[I
+ 
+@@ -527,8 +530,13 @@
+ 
+     const/4 v2, 0x6
+ 
+-    aget p0, p0, v2
++    aget v2, p0, v2
+ 
++    # (jmk, HUD add-on 0.1.11) put-off, jump-hold and the near-turn window with hysteresis (com.jmk.hud.Near, src/tbt)
++    invoke-static {v8, p0, v2}, Lcom/jmk/hud/Near;->cp(Ljava/lang/Object;[II)I
++
++    move-result p0
++
+     invoke-static {v3, p2, p3, p1, p0}, Lcom/leafia/kr/LeafiaStandard;->stock(IIIII)[I
+ 
+     move-result-object p0
+@@ -1534,6 +1542,9 @@
+ 
+     :try_start_3
+     invoke-static {p0}, Lcom/leafia/kr/LeafiaCpStandard;->routeBegin(Ljava/lang/Object;)V
++
++    # (jmk, HUD add-on 0.1.11) the near-turn state of this component starts over
++    invoke-static {p0}, Lcom/jmk/hud/Near;->cpForget(Ljava/lang/Object;)V
+     :try_end_6
+     .catchall {:try_start_3 .. :try_end_6} :catchall_8
+ 
+--- a/com/leafia/kr/LeafiaTurn.smali
++++ b/com/leafia/kr/LeafiaTurn.smali
+@@ -2702,6 +2702,9 @@
+     move-result-wide v0
+ 
+     invoke-static {v0, v1, p0}, Lcom/leafia/kr/LeafiaTurn;->disarm(JLjava/lang/String;)V
++
++    # (jmk, HUD add-on 0.1.11) the near-turn state goes with the turn memory
++    invoke-static {}, Lcom/jmk/hud/Near;->aaForget()V
+ 
+     const/4 p0, 0x0
+ 
+@@ -2975,7 +2978,12 @@
+     float-to-int p1, p1
+ 
+     sget v1, Lcom/leafia/kr/LeafiaTurn;->emittedMeters:I
++
++    # (jmk, HUD add-on 0.1.11) the near-turn window with hysteresis (com.jmk.hud.Near, src/tbt)
++    invoke-static {v0, p2, v1}, Lcom/jmk/hud/Near;->aa(III)I
+ 
++    move-result v1
++
+     invoke-static {v0, p2, p0, p1, v1}, Lcom/leafia/kr/LeafiaStandard;->format(IIIII)[I
+ 
+     move-result-object p0

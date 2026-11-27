@@ -1,0 +1,20 @@
+# by-code profile krb (2026-11-19): Korean cars whose apps run Ioniq 5 KR's app code, dexopted against another framework
+# (android.os.Message and WifiManager have one virtual method fewer there, so the quick-call vtable indices in each
+# .odex differ; Navi was also compiled with two other framework string IDs): TMFL, DN822, DN823HEV, CN7HEV22, LX2.KOR
+# V039.001.260902 (Santa Fe TM FL, Sonata DN8, Avante Hybrid, Palisade). The results are the kr profile's own builds (Navi: with the two string IDs of this framework,
+# 0x010406b6/b7 -> 0x010406ad/ae). 2026-11-20, the CarPlay bridge (3_bridge): their PhoneProjection (4e8915b2) is the
+# Tucson's stock code (krt, 1debc2d1) with other ProGuard names (every instruction, call slot, field offset and constant
+# the same) and the Tucson's apk resources byte for byte; their framework (a CN7HEV car's 16 boot odex files, the ones
+# their stock odex names) keeps android:id/topPanel at the Ioniq 5's number and binds every outside call of the bridge
+# as the Ioniq 5's does. So PhoneProjection's bridge is krt's / krp's build (kr's with K8's 8 drawable numbers), and
+# DiPO / Iap2ServerApp end at kr's bridge builds.
+# <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
+# <part> file <library> <md5 of the stock library> <patch> <md5 of the result>
+2_tbt app HKMC_GPM 0f2a3aea66a6eb7ba3c0db5fe65fc684 bycode/krb/HKMC_GPM.tbt.lpd b4019f5da7fd492fe2d83999c984745e
+2_tbt app HKMC_DiPO 11e53c789566ac82397e0bed6dda510a bycode/krb/HKMC_DiPO.tbt.lpd f121349937ec0b2af47837c2ba6664c8
+2_tbt app Iap2ServerApp ac63fada887e5acc594d96b100238692 bycode/krb/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
+2_tbt app HKMC_Navi_ExSL 6f4fe6b2c6dfb311cdbb2e9f2e2ec5aa bycode/krb/HKMC_Navi_ExSL.tbt.lpd bc66010be2b488f3326c4bb63d6f5129
+2_tbt file libautoreceiver_infobank.so 48ee793af8b86052503b8c952b034731 neev_kr/libautoreceiver_infobank.tbt.lpd aba7787cb6d365c5ad583a8dc6217ae2
+3_bridge app Iap2ServerApp ac63fada887e5acc594d96b100238692 bycode/krb/Iap2ServerApp.bridge.lpd 0ad54672b43f54ef7e58aad56c2a77b6
+3_bridge app HKMC_DiPO 11e53c789566ac82397e0bed6dda510a bycode/krb/HKMC_DiPO.bridge.lpd 1f999e7152bc9d61044dfaab6974007a
+3_bridge app PhoneProjection 4e8915b28483230964250e3da9463e4e bycode/krb/PhoneProjection.bridge.lpd 255e17ec5425800c19c814a7c6add6a1

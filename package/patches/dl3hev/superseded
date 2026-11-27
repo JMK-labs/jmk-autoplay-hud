@@ -1,0 +1,6 @@
+# 0.1.17: Leafia's original fixed set for the Kia K5 Hybrid Korea, unchanged since projection.tbt (none of our
+# turn-by-turn changes: 0.1.5, the 0.1.11 near-turn filter, no settings knobs). Its stock files are those of many Korean
+# V039.001.260902 cars (DL3, DL322, DL3HEV22, MQ422HEV, MQ4HEV, YGPE, CKPE, DEPEHEV): their HKMC_GPM, HKMC_DiPO,
+# Iap2ServerApp and HKMC_Navi_ExSL code is group B's (0f2a3aea, 11e53c78, ac63fada, 6f4fe6b2; every Leafia dl3hev delta
+# rebuilds its target md5 from it), so the by-code profile krb fits them. A set with
+# this file is the fallback: the by-code profiles are tried first, this set is used only when none fits.
