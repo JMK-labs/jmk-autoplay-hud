@@ -1546,6 +1546,7 @@ knob_props() {
         log) echo "persist.leafia.log persist.leafia.lane.log" ;;   # Leafia writes both for its "log" key
         lane_dist) echo persist.leafia.lane.dist ;;
         cp_lanes) echo persist.leafia.cp.lanes ;;                   # the bridge Iap2ServerApp: ask CarPlay for lanes
+        cp_keepbt) echo persist.leafia.cp.keepbt ;;                 # 0.2.6, the bridge HKMC_DiPO: wireless CarPlay keeps the phone's Bluetooth
         *) return 1 ;;
     esac
 }
@@ -1555,13 +1556,14 @@ knob_value() {
         log) case "$2" in 0) echo 0 ;; *) echo 1 ;; esac ;;
         lane_dist) case "$2" in 0) echo off ;; *) echo label ;; esac ;;
         cp_lanes) case "$2" in 0) echo 0 ;; *) echo 1 ;; esac ;;
+        cp_keepbt) case "$2" in 0) echo 0 ;; *) echo 1 ;; esac ;;
         *) return 1 ;;
     esac
 }
 # Switches of Leafia builds we do not ship (bridge, BtSettings) and the ones its r8 runtime retired: never ours. A value
 # left by an earlier Leafia install is cleared so the patched apps run with their defaults.
 LEAFIA_OTHER_PROPS="persist.leafia.lane.src persist.leafia.lane.hl persist.leafia.lane.mode persist.leafia.lane.gauge persist.leafia.lane.dim persist.leafia.lane.gate persist.leafia.turn.split persist.leafia.tbt.standard persist.leafia.owner.r4bridge persist.leafia.delete.aa"
-LEAFIA_PROPS="persist.leafia.log persist.leafia.lane.log persist.leafia.lane.dist persist.leafia.cp.lanes $LEAFIA_OTHER_PROPS"
+LEAFIA_PROPS="persist.leafia.log persist.leafia.lane.log persist.leafia.lane.dist persist.leafia.cp.lanes persist.leafia.cp.keepbt $LEAFIA_OTHER_PROPS"
 
 conf_get() {
     local l

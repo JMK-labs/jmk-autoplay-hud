@@ -197,7 +197,7 @@ for ac in HKMC_GPM:1f29a226774d61a2b4ef899182af28cf:d68ec25745a1f009b462a0ba707f
     check "by code krv: $a's build is not kr's (V037's own stock code under the patch)" [ "$w" != "$(want_of "$PKG/patches/bycode/kr/manifest" 2_tbt $a)" ]
 done
 check "by code krv: the library line is kr's" [ "$(grep '^2_tbt file ' "$KRV")" = "$(grep '^2_tbt file ' "$PKG/patches/bycode/kr/manifest")" ]
-check "by code krv: the knobs are kr's" cmp -s "$PKG/patches/bycode/krv/knobs" "$PKG/patches/bycode/kr/knobs"
+check "by code krv: the knobs are kr's without the Bluetooth key (only the bridge builds read it)" eval '[ "$(grep -v "persist.leafia.cp.keepbt" "$PKG/patches/bycode/kr/knobs" | sed "s/ cp_keepbt//")" = "$(cat "$PKG/patches/bycode/krv/knobs")" ]'
 # the profile choice (common.sh bycode_build, sourced as it ships) on the real manifests, for each known car's codes:
 # only codesum (the car's helper jar), bycode_make (the build) and md5of (toolbox md5) are replaced
 sel_of() {   # sel_of <GPM> <DiPO> <Iap2> <Navi> <PhoneProjection> <library md5>: "<profile> <parts>" or "none"
@@ -240,7 +240,7 @@ for pv in krc:"$KRC" krd:"$KRD"; do
     p=${pv%%:*}; M=${pv#*:}
     check "by code $p: turn-by-turn only, the four apps, no library line" [ "$(grep -v '^#' "$M" | awk '{print $1":"$2":"$3}' | tr '\n' ' ')" = "2_tbt:app:HKMC_GPM 2_tbt:app:HKMC_DiPO 2_tbt:app:Iap2ServerApp 2_tbt:app:HKMC_Navi_ExSL " ]
     check "by code $p: no 3_bridge part" eval '! grep -q "^3_bridge " "$M"'
-    check "by code $p: the knobs are kr's" cmp -s "$PKG/patches/bycode/$p/knobs" "$PKG/patches/bycode/kr/knobs"
+    check "by code $p: the knobs are kr's without the Bluetooth key (only the bridge builds read it)" eval '[ "$(grep -v "persist.leafia.cp.keepbt" "$PKG/patches/bycode/kr/knobs" | sed "s/ cp_keepbt//")" = "$(cat "$PKG/patches/bycode/$p/knobs")" ]'
 done
 for ac in krc:HKMC_GPM:4cf385316c37ddc4d5c28ba69d99caee:4a7b32bd43d4771cc4ad902db5563658 krc:HKMC_DiPO:84f17a7a755b5a3022a139526ba452bd:70a507c3a77677fa7f656d5f2326c759 \
           krc:HKMC_Navi_ExSL:ea6e2da50080b288f908962a6c8d5794:3221dcade7641256c63d5d29841cc262 \
@@ -294,7 +294,7 @@ for o in kr kra krb krc krd kre krg kri krk krp krt krv us; do
 done
 check "by code krm: Iap2ServerApp is krd's code (9f32383b): krd's line, word for word" [ "$(grep '^2_tbt app Iap2ServerApp ' "$KRM")" = "$(grep '^2_tbt app Iap2ServerApp ' "$KRD")" ]
 check "by code krm: the library line is kr's (the Ioniq 5's library, 48ee793a)" [ "$(grep '^2_tbt file ' "$KRM")" = "$(grep '^2_tbt file ' "$PKG/patches/bycode/kr/manifest")" ]
-check "by code krm: the knobs are kr's" cmp -s "$PKG/patches/bycode/krm/knobs" "$PKG/patches/bycode/kr/knobs"
+check "by code krm: the knobs are kr's without the Bluetooth key (only the bridge builds read it)" eval '[ "$(grep -v "persist.leafia.cp.keepbt" "$PKG/patches/bycode/kr/knobs" | sed "s/ cp_keepbt//")" = "$(cat "$PKG/patches/bycode/krm/knobs")" ]'
 MQ4="a79f26f3689641f9274c01cdafab52d1 803a1a0e58d0bc5fed3d0e1fa4ee13bd 9f32383bbf425173727ce6365971fa28 93bca3a2125a1b33c572b20ce6b3a5e1"
 check "by code choice (0.1.18): a Sorento MQ4 V037 car (DWW5FPAD's codes) gets krm, turn-by-turn only" [ "$(sel_of $MQ4 8d1a93d8b23ef49abd2ccfeb8449e97f $LIB_KR)" = "krm 2_tbt" ]
 check "by code choice (0.1.18): a Grandeur IGPE V037 car (OB3JWHQB's codes, its own PhoneProjection) gets krm" [ "$(sel_of $MQ4 db3b717a98318abff7c7a0119644351d $LIB_KR)" = "krm 2_tbt" ]
@@ -376,9 +376,9 @@ GPM_018=b02ada70f0de90a9e09d364a64559074; DIPO_018=56d9ff800ddc5a750fa2be6d247de
 NEW_DIPOT=6dfde547549483ca65e822f5e992e275; NEW_GPM_APK=00613075311c59881d379f384ed77327; NEW_DIPOT_APK=956eefb7194ab7c3f3294c14a6150d38
 # 0.1.34: the final results (turns.sh from 0.1.33's B_ results, which bar.sh makes from the 0.1.32 ones above; both stay the
 # intermediate steps of the chain checks below). Navi stays 0.1.33's.
-FIN_GPM=157a712e6411f337aa05f62dc9785028; P22_DIPO=c2165b59d16d4b3c3bb2303e0b2920df; T25_CO=68e07332eda0890665e8f046d4c60f8c; T25_TL=3a680d026039df0986ff675e4a1fcdca; P24_DIPO=9f7589c6a36e0ca76c79b368f554d5ad; FIN_DIPO=bf4ca0e4cf5e8becff7dc98fbb955539; T34_DIPO=7aa7e00904e10e28815e591ef76d0f31   # 0.2.2: textlog.sh (and for GPM guide.sh) on top of the 0.2.1 results
+FIN_GPM=157a712e6411f337aa05f62dc9785028; P22_DIPO=c2165b59d16d4b3c3bb2303e0b2920df; T25_CO=68e07332eda0890665e8f046d4c60f8c; T25_TL=3a680d026039df0986ff675e4a1fcdca; P24_DIPO=9f7589c6a36e0ca76c79b368f554d5ad; P25_DIPO=bf4ca0e4cf5e8becff7dc98fbb955539; FIN_DIPO=61169fae782dc684f4915a956065a4de; T34_DIPO=7aa7e00904e10e28815e591ef76d0f31   # 0.2.2: textlog.sh (and for GPM guide.sh) on top of the 0.2.1 results
 T34_GPM=b4019f5da7fd492fe2d83999c984745e; T21_DIPO=1f999e7152bc9d61044dfaab6974007a   # 0.1.34's GPM (kr family) and 0.2.1's bridge result: the inputs of the 0.2.2 steps
-FIN_GPM_APK=c13961a9bdac3c8bfed62956f75682b4; P22_DIPO_APK=1cc900093cf3be3700cc0b5c804121de; P24_DIPO_APK=0588991b38a64a805a76f0e409ede488; FIN_DIPO_APK=32036c71adb6d59fc1600090b6cc35b0; T21_DIPO_APK=abe4c375fa8165086a33e310c0c9ca41; T21_GPM_APK=cd92507988f67c943a73de9626d6772e; T34_DIPO_APK=6706798fbac2d2a0073cd204990aeee2; FIN_NAVI_APK=50ef163c5630bd4adf6afb1e77ab3495
+FIN_GPM_APK=c13961a9bdac3c8bfed62956f75682b4; P22_DIPO_APK=1cc900093cf3be3700cc0b5c804121de; P24_DIPO_APK=0588991b38a64a805a76f0e409ede488; P25_DIPO_APK=32036c71adb6d59fc1600090b6cc35b0; FIN_DIPO_APK=cb9291834b5279a592beb36b30a8563f; T21_DIPO_APK=abe4c375fa8165086a33e310c0c9ca41; T21_GPM_APK=cd92507988f67c943a73de9626d6772e; T34_DIPO_APK=6706798fbac2d2a0073cd204990aeee2; FIN_NAVI_APK=50ef163c5630bd4adf6afb1e77ab3495
 T_GPM=$FIN_GPM; T_DIPO=$FIN_DIPO; T_GPM_C=4a7b32bd43d4771cc4ad902db5563658; T_GPM_M=d68ec25745a1f009b462a0ba707fda5d; T34_GPM_C=2ac1823b45cc72b30353f0e15e800df4; T34_GPM_M=223b8e11c4123e969bb50d792c6851c0
 B_GPM=3acf3d096ee019acc1632e83a01feab2; B_DIPO=c9754d6f6dc75d4029ef6c9fdf88389c; B_GPM_C=e7c9a53305a4744327f9184026848d5f; B_GPM_M=8dd363e34a1a34d439b20e5a885700d0
 B_NAVI=1a7834c1e814f87db6d92e3fab740003; B_NAVI_B=bc66010be2b488f3326c4bb63d6f5129; B_NAVI_C=3221dcade7641256c63d5d29841cc262
@@ -667,7 +667,7 @@ check "0.1.36 README: the 0.1.36 line (Korean, result only) above 0.1.35's" \
 # (src/tbt/tbt-clear.py on the smali tree + com/jmk/hud/TbtClear.java; src/tbt/clear.sh makes each 0.1.19 GPM / DiPO
 # result from its 0.1.18 result): every GPM / DiPO result that carries our turn-by-turn patches changes, nothing else
 TC=$P/src/tbt/tbt-clear.py; TJ=$P/src/tbt/com/jmk/hud/TbtClear.java
-R019="$FIN_GPM $FIN_DIPO $P24_DIPO $P24_DIPOT $P24_C $P24_D $P24_M $P22_DIPO $P22_DIPOT $P22_C $P22_D $P22_M $T34_DIPO $T34_GPM $T21_DIPO $T34_GPM_C $T34_GPM_M $C36_F $C36_C $C36_D $C36_M $FIN_DIPOT $T36_C $T36_D $T36_M $T_GPM_C $T_GPM_M $B_GPM $B_DIPO $B_GPM_C $B_GPM_M d2538947dcd6a8af532e0fb2baf7be81 965c4bfa035f24caeba188d9450a7e35 7b0fb9800dc6479d466e06760942ea13 913848d61d675beb066e03f119a4cf6e 6dfde547549483ca65e822f5e992e275 e9b17e59a3231ffdc6b683f312957b10 be272d864b76d0dd0147c1fa64861164 9794821165c1037e0d15f13bb017289d $NEW_DIPO $FIN_DIPOT $T36_C $T36_D $T36_M"
+R019="$FIN_GPM $FIN_DIPO $P25_DIPO $P24_DIPO $P24_DIPOT $P24_C $P24_D $P24_M $P22_DIPO $P22_DIPOT $P22_C $P22_D $P22_M $T34_DIPO $T34_GPM $T21_DIPO $T34_GPM_C $T34_GPM_M $C36_F $C36_C $C36_D $C36_M $FIN_DIPOT $T36_C $T36_D $T36_M $T_GPM_C $T_GPM_M $B_GPM $B_DIPO $B_GPM_C $B_GPM_M d2538947dcd6a8af532e0fb2baf7be81 965c4bfa035f24caeba188d9450a7e35 7b0fb9800dc6479d466e06760942ea13 913848d61d675beb066e03f119a4cf6e 6dfde547549483ca65e822f5e992e275 e9b17e59a3231ffdc6b683f312957b10 be272d864b76d0dd0147c1fa64861164 9794821165c1037e0d15f13bb017289d $NEW_DIPO $FIN_DIPOT $T36_C $T36_D $T36_M"
 R018="b02ada70f0de90a9e09d364a64559074 454c8dc4741bf9852e18a6a2ca27be23 1301c92348aab9290e5ee98f4b617cb4 56d9ff800ddc5a750fa2be6d247deb5d ffe9b558a288cdda39eabd92d4b5fccf fe5030232f629489d3249eb7c9ef1c05 f1c23b5fe21ba6898e1cf9339caf8906 29a4add9f184c91b163d9a8b864ce484"
 for f in src/tbt/com/jmk/hud/TbtClear.java src/tbt/stubs/com/hkmc/cluster/NavigationCluster.java src/tbt/tbt-clear.py src/tbt/clear.sh; do
     check "0.1.19 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
@@ -722,7 +722,7 @@ while read -r pre set name; do
 done < "$PKG/patches/cars"
 for f in "$PKG"/patches/*/knobs; do
     keys=$(grep -v '^#' "$f" | tr ' ' '\n' | grep .)
-    for k in $keys; do check "knobs ${f#$PKG/}: $k has a switch in common.sh" eval 'case "$k" in log|lane_dist|cp_lanes) true ;; *) false ;; esac'; done
+    for k in $keys; do check "knobs ${f#$PKG/}: $k has a switch in common.sh" eval 'case "$k" in log|lane_dist|cp_lanes|cp_keepbt) true ;; *) false ;; esac'; done
 done
 check "neev_kr: 6 targets (GPM, Navi, lib from 2_tbt; Iap2, DiPO, PhoneProjection from 3_bridge)" \
     [ "$(effective neev_kr | while read -r a b c d e; do echo "$a:$c"; done | tr '\n' ' ')" = "2_tbt:HKMC_GPM 2_tbt:HKMC_Navi_ExSL 2_tbt:libautoreceiver_infobank.so 3_bridge:Iap2ServerApp 3_bridge:HKMC_DiPO 3_bridge:PhoneProjection " ]
@@ -750,13 +750,15 @@ for r in "$PKG"/recipes/*.recipe; do
 done
 check "lpatch is Leafia 1.0.5's (sha256 b11077ab…)" [ "$(shasum -a 256 "$PKG/tools/lpatch" | cut -d' ' -f1)" = b11077ab6bbba7a2dbed225340d06db46c843a667a3813f894f2927ec61c2bb6 ]
 check "libev6aac.so is Leafia's (md5 = CONV_SUM)" [ "$(md5 -q "$PKG/files/libev6aac.so")" = "$(grep -o 'CONV_SUM=[0-9a-f]*' "$PKG/scripts/common.sh" | cut -d= -f2)" ]
-check "version: NEMESIS.data package-version 0.2.5" grep -q '^package-version=0.2.5$' "$PKG/NEMESIS.data"
+check "version: NEMESIS.data package-version 0.2.6" grep -q '^package-version=0.2.6$' "$PKG/NEMESIS.data"
 before=$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)
 if bash "$P/src/build-codesum.sh" >/dev/null 2>&1; then
     check "tools/codesum.jar is the build of src/jmkhud/CodeSum.java (src/build-codesum.sh gives the same bytes)" [ "$(shasum -a 256 "$PKG/tools/codesum.jar" | cut -d' ' -f1)" = "$before" ]
 fi
 check "NOTICE names tools/codesum.jar with its sha256" grep -q "$before" "$P/NOTICE.md"
-check "NEMESIS.data: id, depends, os" eval 'grep -q "^id=jmk-autoplay-hud$" "$PKG/NEMESIS.data" && grep -q "^depends=\"jmk-autoplay\"$" "$PKG/NEMESIS.data" && grep -q "^os=\"\*.KOR.\*\"$" "$PKG/NEMESIS.data"'
+check "0.2.6 NEMESIS.data depends: jmk-autoplay stays, the three packages that also edit these /system files are refused in both install orders (!id); the preinstall refusal of Danpung stays" \
+    eval 'D=$(sed -n "s/^depends=\"\(.*\)\"$/\1/p" "$PKG/NEMESIS.data"); [ "$D" = "jmk-autoplay,!danpung,!enhanced.projection,!wireless.carplay.aa" ] && grep -q "other=\$(other_projection)" "$PKG/scripts/preinstall.sh" && grep -q "danpung\*" "$PKG/scripts/common.sh"'
+check "NEMESIS.data: id, depends, os" eval 'grep -q "^id=jmk-autoplay-hud$" "$PKG/NEMESIS.data" && grep -q "^depends=\"jmk-autoplay,!danpung,!enhanced.projection,!wireless.carplay.aa\"$" "$PKG/NEMESIS.data" && grep -q "^os=\"\*.KOR.\*\"$" "$PKG/NEMESIS.data"'
 
 # 0.1.37: the frame wait of libCarPlayCore (recipes/carplay-core-frames-ef49c09b.recipe, from the Open-HMG wireless mod, AGPL-3.0, tag v2.2.0-rc.9
 # commit f657ca4): written only to the stock ef49c09b (recipes/gates: whole-file md5 before, result md5 after), five bytes, put back on uninstall
@@ -808,7 +810,7 @@ for ac in HKMC_GPM:8c2212bebf060b63fd38b45c8a8ba8b6:bycode/krq/HKMC_GPM.tbt.lpd 
     done
 done
 check "by code krq: Iap2ServerApp is kr's line word for word (the same code, kr's delta)" [ "$(grep '^2_tbt app Iap2ServerApp ' "$KRQ")" = "$(grep '^2_tbt app Iap2ServerApp ' "$KRM_K")" ]
-check "by code krq: the knobs are kr's" cmp -s "$PKG/patches/bycode/krq/knobs" "$PKG/patches/bycode/kr/knobs"
+check "by code krq: the knobs are kr's without the Bluetooth key (only the bridge builds read it)" eval '[ "$(grep -v "persist.leafia.cp.keepbt" "$PKG/patches/bycode/kr/knobs" | sed "s/ cp_keepbt//")" = "$(cat "$PKG/patches/bycode/krq/knobs")" ]'
 check "by code choice (0.1.38): a Sportage Hybrid V038 car (O3IH3AVV's codes, its own PhoneProjection) gets krq, turn-by-turn only (the library does not matter: no line)" \
     eval '[ "$(sel_of 8c2212bebf060b63fd38b45c8a8ba8b6 cc5bb96db24da52d3be95e1935bd3ba8 30a34f8331e3c74a18c0241a28a036ea fa14c57c7106da3da796e2a0b37f70ae 2c9636333884e579733d40ed5f7fd14a $LIB_KR)" = "krq 2_tbt" ] && [ "$(sel_of 8c2212bebf060b63fd38b45c8a8ba8b6 cc5bb96db24da52d3be95e1935bd3ba8 30a34f8331e3c74a18c0241a28a036ea fa14c57c7106da3da796e2a0b37f70ae 2c9636333884e579733d40ed5f7fd14a 0123456789abcdef0123456789abcdef)" = "krq 2_tbt" ]'
 check "by code choice (0.1.38): the Sportage Hybrid's GPM code with kr's DiPO code fits nothing (every line of the part must match)" [ "$(sel_of 8c2212bebf060b63fd38b45c8a8ba8b6 7abefa3e86fddc50e6cd27e32dc16fb3 30a34f8331e3c74a18c0241a28a036ea fa14c57c7106da3da796e2a0b37f70ae 2c9636333884e579733d40ed5f7fd14a $LIB_KR)" = none ]
@@ -830,8 +832,8 @@ for f in src/tbt/callout.py src/tbt/callout.sh src/tbt/com/jmk/hud/Callout.java 
          src/callout/jmkhud/link/ReadTimeout.java src/callout/jmkhud/link/android/LocalSockets.java; do
     check "0.2.0 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
 done
-check "0.2.5 version: package-version 0.2.5, README 0.2.5 line first under Releases, the 0.2.3 line next (0.2.4 was never published)" \
-    eval '[ "$(sed -n "s/^package-version=//p" "$PKG/NEMESIS.data")" = 0.2.5 ] && [ "$(grep -m1 "^- \*\*[0-9]" "$P/README.md" | cut -c1-11)" = "- **0.2.5**" ] && [ "$(grep "^- \*\*[0-9]" "$P/README.md" | sed -n 2p | cut -c1-11)" = "- **0.2.3**" ]'
+check "0.2.6 version: package-version 0.2.6, README 0.2.6 line first under Releases, the 0.2.5 line next" \
+    eval '[ "$(sed -n "s/^package-version=//p" "$PKG/NEMESIS.data")" = 0.2.6 ] && [ "$(grep -m1 "^- \*\*[0-9]" "$P/README.md" | cut -c1-11)" = "- **0.2.6**" ] && [ "$(grep "^- \*\*[0-9]" "$P/README.md" | sed -n 2p | cut -c1-11)" = "- **0.2.5**" ]'
 check "0.2.0 callout.py: AGPL-3.0 header; one anchor; stops with status 1 when it is not there once, when Callout is not in the tree, and when the call-out is in already" \
     eval 'grep -q "AGPL-3.0" "$CO" && grep -q "found %d times (want 1)" "$CO" && grep -q "already has the call-out" "$CO" && grep -q "is not in the tree" "$CO" && grep -q "^import" "$CO" && ! grep -q "^import hmgapi" "$CO"'
 check "0.2.0 callout.py: an empty tree is refused (exit 1, nothing written)" eval '( et=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-co0.XXXXXX"); python3 -I "$CO" "$et" >/dev/null 2>&1; erc=$?; enf=$(find "$et" -type f | wc -l | tr -d " "); rm -rf "$et"; [ $erc -eq 1 ] && [ "$enf" = 0 ] )'
@@ -874,7 +876,7 @@ check "0.2.4 cpend.py: AGPL-3.0 header; stops with status 1 on an empty tree and
 check "0.2.4 EndLog.java: one line naming the path, no text and no route data, never throws, only short stock method names and two fixed names are written" \
     eval 'T=$P/src/tbt/com/jmk/hud/EndLog.java; grep -q "Log.i(TAG, \"Guide end: CarPlay turn-by-turn blanked by \" + why)" "$T" && grep -q "catch (Throwable t)" "$T" && grep -q "n.length() <= 3" "$T" && [ "$(grep -c "Log\." "$T")" = 1 ]'
 check "0.2.5 the new DiPO results (bridge $FIN_DIPO; turn-by-turn-only $FIN_DIPOT, krc $T36_C, krd $T36_D, krm krv $T36_M) are in the manifests of every Korean profile and neev_kr (apks $FIN_DIPO_APK / $FIN_DIPOT_APK); the 0.2.2 and 0.2.4 results stay in known" \
-    eval '( for o in kr kra krb kre krg kri krk krp krt; do [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $FIN_DIPO ] || exit 1; [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_DiPO)" = $FIN_DIPOT ] || exit 1; done; [ "$(want_of "$PKG/patches/bycode/krq/manifest" 2_tbt HKMC_DiPO)" = $FIN_DIPOT ] || exit 1; [ "$(want_of "$PKG/patches/bycode/krc/manifest" 2_tbt HKMC_DiPO)" = $T36_C ] || exit 1; [ "$(want_of "$PKG/patches/bycode/krd/manifest" 2_tbt HKMC_DiPO)" = $T36_D ] || exit 1; for o in krm krv; do [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_DiPO)" = $T36_M ] || exit 1; done; grep -q "^3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd $FIN_DIPO_APK$" "$PKG/patches/neev_kr/manifest" && grep -q "^2_tbt app HKMC_DiPO neev_kr/HKMC_DiPO.tbt.lpd $FIN_DIPOT_APK$" "$PKG/patches/neev_kr/manifest" && for kv in HKMC_DiPO.dex:$P22_DIPO HKMC_DiPO.dex:$P22_DIPOT HKMC_DiPO.dex:$P22_C HKMC_DiPO.dex:$P22_D HKMC_DiPO.dex:$P22_M HKMC_DiPO.apk:$P22_DIPO_APK HKMC_DiPO.dex:$P24_DIPO HKMC_DiPO.dex:$P24_DIPOT HKMC_DiPO.dex:$P24_C HKMC_DiPO.dex:$P24_D HKMC_DiPO.dex:$P24_M HKMC_DiPO.apk:$P24_DIPO_APK HKMC_DiPO.dex:$FIN_DIPO HKMC_DiPO.dex:$FIN_DIPOT HKMC_DiPO.apk:$FIN_DIPO_APK; do grep -qx "${kv%%:*} ${kv#*:}" "$PKG/patches/known" || exit 1; done )'
+    eval '( for o in kr kra krb kre krg kri krk krp krt; do [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $FIN_DIPO ] || exit 1; [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_DiPO)" = $FIN_DIPOT ] || exit 1; done; [ "$(want_of "$PKG/patches/bycode/krq/manifest" 2_tbt HKMC_DiPO)" = $FIN_DIPOT ] || exit 1; [ "$(want_of "$PKG/patches/bycode/krc/manifest" 2_tbt HKMC_DiPO)" = $T36_C ] || exit 1; [ "$(want_of "$PKG/patches/bycode/krd/manifest" 2_tbt HKMC_DiPO)" = $T36_D ] || exit 1; for o in krm krv; do [ "$(want_of "$PKG/patches/bycode/$o/manifest" 2_tbt HKMC_DiPO)" = $T36_M ] || exit 1; done; grep -q "^3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd $FIN_DIPO_APK$" "$PKG/patches/neev_kr/manifest" && grep -q "^2_tbt app HKMC_DiPO neev_kr/HKMC_DiPO.tbt.lpd $FIN_DIPOT_APK$" "$PKG/patches/neev_kr/manifest" && for kv in HKMC_DiPO.dex:$P22_DIPO HKMC_DiPO.dex:$P22_DIPOT HKMC_DiPO.dex:$P22_C HKMC_DiPO.dex:$P22_D HKMC_DiPO.dex:$P22_M HKMC_DiPO.apk:$P22_DIPO_APK HKMC_DiPO.dex:$P25_DIPO HKMC_DiPO.apk:$P25_DIPO_APK HKMC_DiPO.dex:$P24_DIPO HKMC_DiPO.dex:$P24_DIPOT HKMC_DiPO.dex:$P24_C HKMC_DiPO.dex:$P24_D HKMC_DiPO.dex:$P24_M HKMC_DiPO.apk:$P24_DIPO_APK HKMC_DiPO.dex:$FIN_DIPO HKMC_DiPO.dex:$FIN_DIPOT HKMC_DiPO.apk:$FIN_DIPO_APK; do grep -qx "${kv%%:*} ${kv#*:}" "$PKG/patches/known" || exit 1; done )'
 check "0.2.5 source src/tbt/com/jmk/hud/Keep.java in the package (TOP_FILES)" eval '[ -s "$P/src/tbt/com/jmk/hud/Keep.java" ] && grep -q "src/tbt/com/jmk/hud/Keep.java" "$P/build_nemesis_package.py"'
 check "0.2.5 Keep.java: the approved sentence is in its header, letter for letter; every hook is inside try / catch Throwable; no reflection beyond the two stock names and Callout.busy" \
     eval 'K=$P/src/tbt/com/jmk/hud/Keep.java; grep -qF -- "HUD DiPO bridge: a local JMK service (\`jmk.core\`) decides how the route display proceeds." "$K" && [ "$(grep -c "catch (Throwable t)" "$K")" -ge 8 ] && [ "$(grep -c "Class.forName(" "$K")" = 2 ]'
@@ -896,7 +898,41 @@ if command -v javac >/dev/null 2>&1 && command -v java >/dev/null 2>&1; then
 else
     echo "(no javac / java on this Mac: the 0.2.5 Keep JVM checks skipped)"
 fi
+# ---------------------------------------------------------------- 0.2.6: wireless CarPlay keeps the phone's Bluetooth connected (btkeep.sh)
+for f in src/tbt/btkeep.py src/tbt/btkeep.sh src/tbt/com/jmk/hud/BtKeep.java; do
+    check "0.2.6 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
+done
+check "0.2.6 btkeep.py: AGPL-3.0 header; stops with status 1 on an empty tree and when the edit is there already (nothing written)" \
+    eval '( et=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-gp.XXXXXX"); python3 -I "$P/src/tbt/btkeep.py" "$et" >/dev/null 2>&1; erc=$?; enf=$(find "$et" -type f | wc -l | tr -d " "); rm -rf "$et"; grep -q "AGPL-3.0" "$P/src/tbt/btkeep.py" && grep -q "already" "$P/src/tbt/btkeep.py" && [ $erc -eq 1 ] && [ "$enf" = 0 ] )'
+check "0.2.6 BtKeep.java: the approved sentence is in its header, letter for letter; the source of the rule (Danpung cp_keepbt, AGPL-3.0) is named; every entry is inside try / catch Throwable" \
+    eval 'K=$P/src/tbt/com/jmk/hud/BtKeep.java; grep -qF -- "Wireless CarPlay keeps the phone" "$K" && grep -qF -- "s Bluetooth connected." "$K" && grep -q "Danpung 0.8.0-r6c, AGPL-3.0" "$K" && [ "$(grep -c "catch (Throwable t)" "$K")" -ge 3 ]'
+check "0.2.6 BtKeep.java: no time rule (no clock, no timer, no sleep); the switch is persist.leafia.cp.keepbt, off only for 0" \
+    eval 'K=$P/src/tbt/com/jmk/hud/BtKeep.java; ! grep -q "nanoTime\|currentTimeMillis\|elapsedRealtime\|Timer\|sleep\|postDelayed" "$K" && grep -q "persist.leafia.cp.keepbt" "$K" && grep -q "!\"0\".equals(v)" "$K"'
+check "0.2.6 the cp_keepbt knob: the bridge profiles list it (neev_kr kr kra krb kre krg kri krk krp krt), the turn-by-turn-only ones do not (krc krd krm krq krv); common.sh maps it to persist.leafia.cp.keepbt (0 = off, anything else 1) and clears it at uninstall" \
+    eval '( for o in kr kra krb kre krg kri krk krp krt; do grep -qx "log lane_dist cp_lanes cp_keepbt" "$PKG/patches/bycode/$o/knobs" || exit 1; done; grep -qx "log lane_dist cp_lanes cp_keepbt" "$PKG/patches/neev_kr/knobs" || exit 1; for o in krc krd krm krq krv; do grep -qx "log lane_dist cp_lanes" "$PKG/patches/bycode/$o/knobs" || exit 1; done; grep -q "cp_keepbt) echo persist.leafia.cp.keepbt" "$PKG/scripts/common.sh" && grep -q "cp_keepbt) case \"\$2\" in 0) echo 0 ;; \*) echo 1 ;; esac ;;" "$PKG/scripts/common.sh" && grep -q "^LEAFIA_PROPS=.*persist.leafia.cp.keepbt" "$PKG/scripts/common.sh" )'
+check "0.2.6 the bridge DiPO deltas end at $FIN_DIPO (apk $FIN_DIPO_APK in neev_kr); the turn-by-turn-only ones stay; the 0.2.5 bridge result stays in known" \
+    eval '( for o in kr kra krb kre krg kri krk krp krt; do [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $FIN_DIPO ] || exit 1; done; grep -q "^3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd $FIN_DIPO_APK$" "$PKG/patches/neev_kr/manifest" || exit 1; for kv in HKMC_DiPO.dex:$FIN_DIPO HKMC_DiPO.apk:$FIN_DIPO_APK HKMC_DiPO.dex:$P25_DIPO HKMC_DiPO.apk:$P25_DIPO_APK; do grep -qx "${kv%%:*} ${kv#*:}" "$PKG/patches/known" || exit 1; done )'
+if command -v javac >/dev/null 2>&1 && command -v java >/dev/null 2>&1; then
+    BK=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-btkeep.XXXXXX")
+    if javac -source 7 -target 7 -Xlint:-options -d "$BK" $(find "$here/btkeep/stub" -name '*.java') "$P/src/tbt/com/jmk/hud/BtKeep.java" "$here/btkeep/BtKeepTest.java" 2>/dev/null; then
+        for sc in wireless off wired ended log; do
+            out=$(java -cp "$BK" com.jmk.hud.BtKeepTest $sc 2>/dev/null | tail -1)
+            check "0.2.6 BtKeep on the JVM, $sc: $out" eval '[ "$out" = "btkeep: $sc passed" ]'
+        done
+        BK2=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-btkeep.XXXXXX"); cp -R "$BK/." "$BK2/"; rm -f "$BK2/com/ev6/cpwl/Bridge.class"
+        out=$(java -cp "$BK2" com.jmk.hud.BtKeepTest noflags 2>/dev/null | tail -1)
+        check "0.2.6 BtKeep on the JVM, the bridge class cannot be read (stock code runs): $out" eval '[ "$out" = "btkeep: noflags passed" ]'
+        rm -f "$BK2/android/os/SystemProperties.class"; cp "$BK/com/ev6/cpwl/Bridge.class" "$BK2/com/ev6/cpwl/Bridge.class" 2>/dev/null
+        out=$(java -cp "$BK2" com.jmk.hud.BtKeepTest noprop 2>/dev/null | tail -1)
+        check "0.2.6 BtKeep on the JVM, the system properties cannot be read (stock code runs): $out" eval '[ "$out" = "btkeep: noprop passed" ]'
+        rm -rf "$BK2"
+    else
+        check "0.2.6 BtKeep on the JVM: the sources compile" false
+    fi
+    rm -rf "$BK"
+fi
 hin 22
+hin 23
 # ---------------------------------------------------------------- 4. zips
 T=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-zip.XXXXXX")
 trap 'rm -rf "$T"' EXIT

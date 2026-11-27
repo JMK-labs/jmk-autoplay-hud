@@ -46,6 +46,7 @@ history say which build was driven. A car whose files are not exactly a known st
 
 ## Releases (results)
 
+- **0.2.6**: Wireless CarPlay keeps the phone's Bluetooth connected.
 - **0.2.5**: HUD DiPO bridge: a local JMK service (`jmk.core`) decides how the route display proceeds.
 - **0.2.3**: 업데이트할 때 바뀌는 순정 앱만 다시 시작합니다.
 - **0.2.2**: 안드로이드 오토 길안내가 직진 구간에서 꺼졌다 켜졌다 하지 않습니다. 계기판으로 넘기는 안내 문구의 길이를 기록합니다(문구 내용은 기록하지 않습니다).

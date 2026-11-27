@@ -143,7 +143,7 @@ EOF
         echo "3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd $(want_app HKMC_DiPO dipo-bridge)"
         echo "3_bridge app PhoneProjection neev_kr/PhoneProjection.bridge.lpd $(want_app PhoneProjection pp-bridge)"
     } > "$HP/patches/neev_kr/manifest"
-    echo "log lane_dist cp_lanes" > "$HP/patches/neev_kr/knobs"
+    echo "log lane_dist cp_lanes cp_keepbt" > "$HP/patches/neev_kr/knobs"
     echo "HKMC_GPM.apk 11111111111111111111111111111111" > "$HP/patches/other/stock"
     echo "2_tbt app HKMC_GPM other/x.lpd 22222222222222222222222222222222" > "$HP/patches/other/manifest"
     # recipes: audio fits (PATCHABLE), core and utils are NATIVE on this fake firmware (as on KR 260902)
@@ -227,9 +227,9 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis" "$ROOT/parent.cmdline"; }
     check "install: exit 0" [ $rc -eq 0 ]
     check "install: state=reboot" [ "$(st state)" = reboot ]
     check "install: set=neev_kr" [ "$(st set)" = neev_kr ]
-    check "install: ver=0.2.5" [ "$(st ver)" = 0.2.5 ]
+    check "install: ver=0.2.6" [ "$(st ver)" = 0.2.6 ]
     check "install: patched = every target + the audio recipe" [ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ]
-    check "install: knobs=log,lane_dist,cp_lanes" [ "$(st knobs)" = "log,lane_dist,cp_lanes" ]
+    check "install: knobs=log,lane_dist,cp_lanes,cp_keepbt" [ "$(st knobs)" = "log,lane_dist,cp_lanes,cp_keepbt" ]
     check "install: reason empty" [ -z "$(st reason)" ]
     for a in HKMC_GPM:gpm-tbt HKMC_Navi_ExSL:navi-tbt Iap2ServerApp:iap2-bridge HKMC_DiPO:dipo-bridge PhoneProjection:pp-bridge; do
         n=${a%%:*}; p=${a#*:}
@@ -264,20 +264,23 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis" "$ROOT/parent.cmdline"; }
     check "service, same boot: state stays reboot" [ "$(st state)" = reboot ]
     check "service: no config -> log=1, lane.log=1, lane.dist=label, cp.lanes=1" \
         [ "$(prop persist.leafia.log)/$(prop persist.leafia.lane.log)/$(prop persist.leafia.lane.dist)/$(prop persist.leafia.cp.lanes)" = "1/1/label/1" ]
+    check "0.2.6 service: no config -> persist.leafia.cp.keepbt=1 (wireless CarPlay keeps the phone's Bluetooth)" [ "$(prop persist.leafia.cp.keepbt)" = 1 ]
     check "service: a retired switch left by Leafia is cleared" [ -z "$(prop persist.leafia.lane.mode)" ]
     echo "boot-2" > "$ROOT/proc/sys/kernel/random/boot_id"
     : > "$ROOT/setprop.log"
     svc
     check "service, next boot: state=active" [ "$(st state)" = active ]
     check "service, next boot: switches already right -> no setprop" [ ! -s "$ROOT/setprop.log" ]
-    printf '%s\n' on_cluster=1 look=simple log=0 lane_dist=0 cp_lanes=0 lanes=0 ar_dist=500 > "$ROOT/data/local/tmp/jmk-autoplay-hud/config"
+    printf '%s\n' on_cluster=1 look=simple log=0 lane_dist=0 cp_lanes=0 cp_keepbt=0 lanes=0 ar_dist=500 > "$ROOT/data/local/tmp/jmk-autoplay-hud/config"
     svc
     check "service: config log=0 lane_dist=0 cp_lanes=0 -> 0/0/off/0" \
         [ "$(prop persist.leafia.log)/$(prop persist.leafia.lane.log)/$(prop persist.leafia.lane.dist)/$(prop persist.leafia.cp.lanes)" = "0/0/off/0" ]
-    check "service: keys without a switch set nothing" [ "$(grep -vc '^persist\.leafia\.\(log\|lane\.log\|lane\.dist\|cp\.lanes\)=' "$ROOT/setprop.log")" -eq 0 ]
-    printf '%s\n' log=yes lane_dist=2 > "$ROOT/data/local/tmp/jmk-autoplay-hud/config"
+    check "0.2.6 service: config cp_keepbt=0 -> persist.leafia.cp.keepbt=0 (the stock behaviour)" [ "$(prop persist.leafia.cp.keepbt)" = 0 ]
+    check "service: keys without a switch set nothing" [ "$(grep -vc '^persist\.leafia\.\(log\|lane\.log\|lane\.dist\|cp\.lanes\|cp\.keepbt\)=' "$ROOT/setprop.log")" -eq 0 ]
+    printf '%s\n' log=yes lane_dist=2 cp_keepbt=maybe > "$ROOT/data/local/tmp/jmk-autoplay-hud/config"
     svc
     check "service: invalid values -> the defaults" [ "$(prop persist.leafia.log)/$(prop persist.leafia.lane.dist)/$(prop persist.leafia.cp.lanes)" = "1/label/1" ]
+    check "0.2.6 service: an invalid cp_keepbt value -> the default 1" [ "$(prop persist.leafia.cp.keepbt)" = 1 ]
 
     snap "$ROOT/after-install"
     stage_update
@@ -321,7 +324,7 @@ unstage() { rm -rf "$ROOT/data/local/tmp/nemesis" "$ROOT/parent.cmdline"; }
     check "uninstall: every stock file byte-identical" all_stock
     check "uninstall: backups removed" [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud" ]
     check "uninstall: state removed" [ ! -e "$ROOT/data/nemesis/jmk-autoplay-hud" ]
-    check "uninstall: the switches cleared" [ -z "$(prop persist.leafia.log)$(prop persist.leafia.lane.dist)$(prop persist.leafia.cp.lanes)" ]
+    check "uninstall: the switches cleared" [ -z "$(prop persist.leafia.log)$(prop persist.leafia.lane.dist)$(prop persist.leafia.cp.lanes)$(prop persist.leafia.cp.keepbt)" ]
     check "uninstall: our dalvik-cache entries gone" eval '[ ! -e "$ROOT/data/dalvik-cache/system@app@HKMC_GPM.apk@classes.dex" ] && [ ! -e "$ROOT/data/dalvik-cache/system@app@PhoneProjection.apk@classes.dex" ]'
     check "uninstall: someone else's entry stays" [ -e "$ROOT/data/dalvik-cache/system@app@Other.apk@classes.dex" ]
     check "uninstall: apps stopped and started again" [ "$(grep -c '^pm disable' "$ROOT/pm.log")" -eq "$(grep -c '^pm enable' "$ROOT/pm.log")" ]
@@ -474,7 +477,7 @@ bycode_setup() {
     done
     echo "FAKELPD $pp PhoneProjection-bridge" > "$HP/patches/bycode/kr/PhoneProjection.bridge.lpd"
     echo "3_bridge app PhoneProjection $pp bycode/kr/PhoneProjection.bridge.lpd $(want_file PhoneProjection-bridge)" >> "$HP/patches/bycode/kr/manifest"
-    echo "log lane_dist cp_lanes" > "$HP/patches/bycode/kr/knobs"
+    echo "log lane_dist cp_lanes cp_keepbt" > "$HP/patches/bycode/kr/knobs"
 }
 (
     bycode_setup other
@@ -485,7 +488,7 @@ bycode_setup() {
     check "by code: DiPO is its turn-by-turn build in this car's own apk" eval '[ "$(cat "$ROOT/system/app/HKMC_DiPO.apk")" = "$(cat "$ROOT/stock/HKMC_DiPO.apk"; echo "dex HKMC_DiPO-tbt")" ]'
     check "by code: GPM, Navi and the library patched too" eval 'grep -q "dex HKMC_GPM-tbt" "$ROOT/system/app/HKMC_GPM.apk" && grep -q "dex HKMC_Navi_ExSL-tbt" "$ROOT/system/app/HKMC_Navi_ExSL.apk" && grep -q "dex lib-tbt" "$ROOT/system/lib/libautoreceiver_infobank.so"'
     check "by code: PhoneProjection untouched" same_file "$ROOT/stock/PhoneProjection.apk" "$ROOT/system/app/PhoneProjection.apk"
-    check "by code: the profile's knobs" eval '[ "$(st knobs)" = log,lane_dist,cp_lanes ]'
+    check "by code: the profile's knobs" eval '[ "$(st knobs)" = log,lane_dist,cp_lanes,cp_keepbt ]'
     R=$ROOT/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-other-model-set.json
     check "by code: one report with profile, parts and code" grep -q 'set auto (profile kr, parts 2_tbt); product GL3HEV.KOR.0000.V039.001.260902; code .*HKMC_DiPO.code=' "$R"
     hook postinstall; rc=$?
@@ -850,7 +853,7 @@ fw_update() {
     fw_update
     hook postinstall; rc=$?
     check "0.1.8 install after a firmware update: the old copies gone, locked on the new files (the fake set has no V040)" eval '[ $rc -eq 0 ] && [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_GPM.apk" ] && [ "$(cat "$ROOT/system/app/HKMC_GPM.apk")" = "new firmware HKMC_GPM.apk" ]'
-    check "0.1.8 ... the other files the earlier install patched stay, said so (not 'locked, nothing changed')" eval '[ "$(st state)" = reboot ] && case "$(st reason)" in "patched by 0.2.5"*) true ;; *) false ;; esac && case "$(st patched)" in *dipo*) true ;; *) false ;; esac'
+    check "0.1.8 ... the other files the earlier install patched stay, said so (not 'locked, nothing changed')" eval '[ "$(st state)" = reboot ] && case "$(st reason)" in "patched by 0.2.6"*) true ;; *) false ;; esac && case "$(st patched)" in *dipo*) true ;; *) false ;; esac'
 )
 (
     setup
@@ -900,7 +903,7 @@ fw_update() {
     stage_update; hook preuninstall; hook postinstall; rc=$?; unstage
     snap "$ROOT/after"
     check "0.1.8 update that does not fit: exit 0, nothing changed" eval '[ $rc -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after"'
-    check "0.1.8 ... state stays active, 'patched by 0.1.8', not locked" eval '[ "$(st state)" = active ] && case "$(st reason)" in "patched by 0.2.5: this version changed nothing"*) true ;; *) false ;; esac'
+    check "0.1.8 ... state stays active, 'patched by 0.1.8', not locked" eval '[ "$(st state)" = active ] && case "$(st reason)" in "patched by 0.2.6: this version changed nothing"*) true ;; *) false ;; esac'
     check "0.1.8 ... patched lists the live files, set the old one" eval '[ "$(st patched)" = "gpm,navi,lib,iap2,dipo,pp,audio" ] && [ "$(st set)" = neev_kr ]'
 )
 (
@@ -1131,7 +1134,7 @@ stock_only() {   # every line of the stock list and of the auto set's stock list
     snap "$ROOT/before"
     upd
     snap "$ROOT/after"
-    check "0.1.15 a stock copy lost (the archive's too): exit 0, nothing changed, the earlier build kept" eval '[ $UPD_RC -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after" && case "$(st reason)" in "patched by 0.2.5"*) true ;; *) false ;; esac'
+    check "0.1.15 a stock copy lost (the archive's too): exit 0, nothing changed, the earlier build kept" eval '[ $UPD_RC -eq 0 ] && cmp -s "$ROOT/before" "$ROOT/after" && case "$(st reason)" in "patched by 0.2.6"*) true ;; *) false ;; esac'
     check "0.1.15 ... our patched DiPO apk never recorded or kept as the stock one" \
         eval 'grep -qx "HKMC_DiPO.apk $(q "$ROOT/stock/HKMC_DiPO.apk")" "$S/stock" && stock_only && [ ! -e "$ROOT/data/nemesis/backups/jmk-autoplay-hud/HKMC_DiPO.apk" ]'
     check "0.1.15 ... the kept-old report says why (by code: kr: no stock copy of HKMC_DiPO)" grep -q 'by code: kr: no stock copy of HKMC_DiPO' "$ROOT/$OUTBOX_REL/jmk-autoplay-hud-install-postinstall-kept-old.json"
@@ -1506,7 +1509,7 @@ rewrap() {   # rewrap <apk>: another apk md5, the same dex inside (its last line
     mkdir -p "$ROOT/$OUTBOX_REL"
     hook postinstall
     J=$ROOT/data/nemesis/jmk-autoplay-hud.journal
-    check "0.1.25 the journal has the run, begin and end" eval 'grep -q " begin postinstall 0.2.5" "$J" && grep -q " end postinstall rc=0" "$J"'
+    check "0.1.25 the journal has the run, begin and end" eval 'grep -q " begin postinstall 0.2.6" "$J" && grep -q " end postinstall rc=0" "$J"'
     check "0.1.25 every write's intent and result in the journal" eval '[ "$(grep -c " intent " "$J")" -ge 6 ] && [ "$(grep -c " wrote " "$J")" -ge 6 ]'
     check "0.1.25 the made list names our DiPO build" grep -q "^HKMC_DiPO.apk $(want_app HKMC_DiPO dipo-bridge)$" "$ROOT/data/nemesis/jmk-autoplay-hud.made"
     check "0.1.25 the made list never names a stock md5" eval '! grep -q " $(q "$ROOT/stock/HKMC_DiPO.apk")$" "$ROOT/data/nemesis/jmk-autoplay-hud.made"'
@@ -1569,7 +1572,7 @@ four_copies() { local a; for a in HKMC_GPM HKMC_DiPO Iap2ServerApp HKMC_Navi_ExS
     old_set_setup
     hook postinstall; rc=$?
     check "0.1.17 superseded set: a first install takes the by-code profile (kr, turn-by-turn; PhoneProjection another code), not the set" eval '[ $rc -eq 0 ] && [ "$(st set)" = auto ] && [ "$(cat "$S/auto/profile")" = kr ] && [ "$(cat "$S/auto/parts")" = 2_tbt ]'
-    check "0.1.17 ... our builds in the car's own apks, the profile's knobs, PhoneProjection stock" eval 'ours_built && [ "$(st knobs)" = log,lane_dist,cp_lanes ] && same_file "$ROOT/stock/PhoneProjection.apk" "$ROOT/system/app/PhoneProjection.apk"'
+    check "0.1.17 ... our builds in the car's own apks, the profile's knobs, PhoneProjection stock" eval 'ours_built && [ "$(st knobs)" = log,lane_dist,cp_lanes,cp_keepbt ] && same_file "$ROOT/stock/PhoneProjection.apk" "$ROOT/system/app/PhoneProjection.apk"'
 )
 (
     old_set_setup

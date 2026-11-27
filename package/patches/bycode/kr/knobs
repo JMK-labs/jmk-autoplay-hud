@@ -2,6 +2,7 @@
 # Found in this set's patch data (the persist.* names inside each .lpd's inflated delta):
 #   HKMC_GPM, HKMC_Navi_ExSL (2_tbt), HKMC_DiPO (3_bridge): persist.leafia.log, persist.leafia.lane.log, persist.leafia.lane.dist
 #   Iap2ServerApp (3_bridge): persist.leafia.cp.lanes, persist.leafia.log
+#   HKMC_DiPO (3_bridge, 0.2.6): persist.leafia.cp.keepbt
 #   PhoneProjection (3_bridge), libautoreceiver_infobank.so: none
 # A set without this file reads none (the menu hides every option that has no switch).
-log lane_dist cp_lanes
+log lane_dist cp_lanes cp_keepbt

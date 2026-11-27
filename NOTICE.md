@@ -167,6 +167,11 @@ patch data is data; the binaries are listed below with their sources).
   by `src/tbt/lanes.sh` after `apple.sh`: DiPO bridge d89ed80a -> e1d75f6d) are JMK's own, AGPL-3.0; the compile-only stub
   `src/tbt/stubs/com/leafia/kr/LeafiaLane.java` stands for Leafia's lane log call and is never built into a dex.
 - Thanks, as upstream: W-Floyd.
+- **Danpung 0.8.0-r6c** (a Korean fork of HMG Leafia Plus, AGPL-3.0, `LICENSES/AGPL-3.0.txt` in its package): the rule of its
+  `cp_keepbt` setting ("do not drop the phone's Bluetooth during wireless CarPlay"): in the DiPO bridge build the stock `setDipoConnectStatus`
+  (`f/c.g(Z)Z`) is left out while a wireless CarPlay session is up, unless the car's own USB CarPlay is in use, and the setting turns it off with
+  the value `0`. Here it is rewritten as `src/tbt/com/jmk/hud/BtKeep.java` and the hooks of `src/tbt/btkeep.py` (JMK's own code, AGPL-3.0; the
+  switch is `persist.leafia.cp.keepbt`, on unless `0`; no time window). Its code was read; this is a rewrite, not a copy.
 
 No manufacturer APK, odex, jar or library is shipped: the head unit rebuilds each file from its own exact stock copy,
 and every patch checks the stock md5 (or the stock bytes, for a recipe) first.
