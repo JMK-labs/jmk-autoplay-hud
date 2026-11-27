@@ -1,6 +1,7 @@
 package jmkhud.link;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -117,6 +118,83 @@ public final class HookClient {
                 reported = true;
                 log.line(Lex.get(Lex.LATE) + (clock.el() - t0) + Lex.get(Lex.HOLD) + ("1".equals(answer.get(Lex.get(Lex.SKIP))) ? 1 : 0));
             }
+        }
+    }
+
+    /** The answer to {@link #ask}: the reply frame when one came in the budget, else null; how is as in {@link Answer}. */
+    public static final class Reply {
+        public final Frame frame;
+        public final String how;
+        public final long ms;
+
+        Reply(Frame frame, String how, long ms) { this.frame = frame; this.how = how; this.ms = ms; }
+    }
+
+    /**
+     * Any request with an answer, under the same rules as {@link #hotspotOn}: the one helper thread of the process, at most
+     * {@code budgetMs} of the caller's time, never throws. dl= is set from the budget. how: "answered" (frame set, whatever its type),
+     * "refused" (nobody listens, the server is not root, or hello was not answered ok), "gate", "timeout".
+     */
+    public Reply ask(final String verb, final Map<String, String> fields, final int budgetMs) {
+        final long t0 = clock.el();
+        try {
+            if (!gate.allow()) return new Reply(null, Lex.get(Lex.GATE), clock.el() - t0);
+            final long myseq = seq.getAndAdd(2);
+            final Frame[] got = helper.call(verb, new Callable<Frame[]>() {
+                public Frame[] call() throws Exception {
+                    Map<String, String> m = new java.util.LinkedHashMap<String, String>();
+                    if (fields != null) m.putAll(fields);
+                    m.put("dl", String.valueOf(Math.max(1, budgetMs - 20)));
+                    return exchange(myseq, verb, m, budgetMs);
+                }
+            }, budgetMs);
+            long ms = clock.el() - t0;
+            if (got == REFUSED) { gate.failure(); return new Reply(null, "refused", ms); }
+            if (got == null || got[1] == null) {
+                gate.failure();
+                log.line(Lex.get(Lex.NO_ANSWER_ANY) + verb + " " + ms + Lex.get(Lex.MS));
+                return new Reply(null, "timeout", ms);
+            }
+            gate.success();
+            return new Reply(got[1], "answered", ms);
+        } catch (Throwable t) {
+            return new Reply(null, "refused", clock.el() - t0);
+        }
+    }
+
+    /** A one-way line (noreply=1): nobody waits for it, nothing is read back, never throws. */
+    public void tell(final String verb, final Map<String, String> fields) {
+        try {
+            if (!gate.allow()) return;
+            helper.call(verb, new Callable<Boolean>() {
+                public Boolean call() throws Exception {
+                    Transport.Conn c = open();
+                    if (c == null) return Boolean.FALSE;
+                    try {
+                        c.writeLine(Wire.encode(Frame.request(PROTO, seq.getAndIncrement(), "hello", Frame.kv("role", role, "ver", ver))));
+                        Map<String, String> m = new java.util.LinkedHashMap<String, String>();
+                        if (fields != null) m.putAll(fields);
+                        m.put("noreply", "1");
+                        c.writeLine(Wire.encode(Frame.request(PROTO, seq.getAndIncrement(), verb, m)));
+                        return Boolean.TRUE;
+                    } finally { c.close(); }
+                }
+            }, 100);
+        } catch (Throwable t) { /* a one-way line is never worth a failure */ }
+    }
+
+    /** [0] = the answer to hello, [1] = the answer to the request (null when it did not come). */
+    private Frame[] exchange(long myseq, String verb, Map<String, String> fields, int budgetMs) throws IOException {
+        Transport.Conn c = open();
+        if (c == null) return REFUSED;
+        try {
+            c.writeLine(Wire.encode(Frame.request(PROTO, myseq, "hello", Frame.kv("role", role, "ver", ver))));
+            c.writeLine(Wire.encode(Frame.request(PROTO, myseq + 1, verb, fields)));
+            Frame h = Wire.decode(c.readLine(Math.max(1, budgetMs)));
+            if (h == null || !h.type.equals("ok")) return REFUSED;
+            return new Frame[] { h, Wire.decode(c.readLine(Math.max(1, budgetMs))) };
+        } finally {
+            c.close();
         }
     }
 

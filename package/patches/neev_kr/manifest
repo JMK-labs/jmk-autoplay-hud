@@ -1,8 +1,8 @@
 2_tbt app HKMC_GPM neev_kr/HKMC_GPM.tbt.lpd c13961a9bdac3c8bfed62956f75682b4
-2_tbt app HKMC_DiPO neev_kr/HKMC_DiPO.tbt.lpd 6f8c260d72b44c9d024f1a57d23c1c37
+2_tbt app HKMC_DiPO neev_kr/HKMC_DiPO.tbt.lpd 3f70c0cd7812d8bf32e1d6cc3eb900f4
 2_tbt app Iap2ServerApp neev_kr/Iap2ServerApp.tbt.lpd 7e90fa7d8a161ade71e11dc15e56c410
 2_tbt app HKMC_Navi_ExSL neev_kr/HKMC_Navi_ExSL.tbt.lpd 50ef163c5630bd4adf6afb1e77ab3495
 2_tbt file libautoreceiver_infobank.so neev_kr/libautoreceiver_infobank.tbt.lpd aba7787cb6d365c5ad583a8dc6217ae2
 3_bridge app Iap2ServerApp neev_kr/Iap2ServerApp.bridge.lpd 30c94ea638980401423c56772e778b25
-3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd 1cc900093cf3be3700cc0b5c804121de
+3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd 32036c71adb6d59fc1600090b6cc35b0
 3_bridge app PhoneProjection neev_kr/PhoneProjection.bridge.lpd 677200417207a2e4ff6929550020b459

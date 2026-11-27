@@ -21,6 +21,10 @@ public final class Lex {
     public static final int SERVER_UID = 14;
     public static final int NOT_ROOT = 15;
     public static final int UNSUPPORTED = 16;
+    public static final int KEEP_ASK = 17;
+    public static final int KEEP_NOTE = 18;
+    public static final int NO_ANSWER_ANY = 19;
+    public static final int MS = 20;
 
     private static final String[] C = {
         "hotspot.on",
@@ -40,6 +44,10 @@ public final class Lex {
         "service: server uid ",
         " not root",
         "service: unsupported by peer proto=",
+        "keep.ask",
+        "keep.note",
+        "service: no answer ",
+        " ms",
     };
 
     /** The text of an id, or null for an id that does not exist. */

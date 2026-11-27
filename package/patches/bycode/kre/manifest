@@ -14,9 +14,9 @@
 # <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
 # <part> file <library> <md5 of the stock library> <patch> <md5 of the result>
 2_tbt app HKMC_GPM 9759e803cbff3a612f94fb2302f420a2 bycode/kre/HKMC_GPM.tbt.lpd 157a712e6411f337aa05f62dc9785028
-2_tbt app HKMC_DiPO e8b7b69bfe0cea6862d2db6ba94ada16 bycode/kre/HKMC_DiPO.tbt.lpd 35711f75785b5cb86cf7c18419b31d29
+2_tbt app HKMC_DiPO e8b7b69bfe0cea6862d2db6ba94ada16 bycode/kre/HKMC_DiPO.tbt.lpd 9684024a51b53b3c8363dd9aae4e9388
 2_tbt app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
 2_tbt app HKMC_Navi_ExSL 153eb1b41dd727bf3949a5a27ec59493 bycode/kre/HKMC_Navi_ExSL.tbt.lpd 1a7834c1e814f87db6d92e3fab740003
 3_bridge app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.bridge.lpd 0ad54672b43f54ef7e58aad56c2a77b6
-3_bridge app HKMC_DiPO e8b7b69bfe0cea6862d2db6ba94ada16 bycode/kre/HKMC_DiPO.bridge.lpd c2165b59d16d4b3c3bb2303e0b2920df
+3_bridge app HKMC_DiPO e8b7b69bfe0cea6862d2db6ba94ada16 bycode/kre/HKMC_DiPO.bridge.lpd bf4ca0e4cf5e8becff7dc98fbb955539
 3_bridge app PhoneProjection 7e61ce5caa6bdc1ad02563fc084e240a bycode/kre/PhoneProjection.bridge.lpd 52816a4c37a512da5a118f101ab5f766

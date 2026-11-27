@@ -10,7 +10,7 @@
 # <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
 # <part> file <library> <md5 of the stock library> <patch> <md5 of the result>
 2_tbt app HKMC_GPM a79f26f3689641f9274c01cdafab52d1 bycode/krm/HKMC_GPM.tbt.lpd d68ec25745a1f009b462a0ba707fda5d
-2_tbt app HKMC_DiPO 803a1a0e58d0bc5fed3d0e1fa4ee13bd bycode/krm/HKMC_DiPO.tbt.lpd f795fd8db6dcd6e301c5d3e815cbd3be
+2_tbt app HKMC_DiPO 803a1a0e58d0bc5fed3d0e1fa4ee13bd bycode/krm/HKMC_DiPO.tbt.lpd 1f5da4289e81e268fee6221084dd4862
 2_tbt app Iap2ServerApp 9f32383bbf425173727ce6365971fa28 bycode/krd/Iap2ServerApp.tbt.lpd cc198983ce4e3c647eda36e23b292143
 2_tbt app HKMC_Navi_ExSL 93bca3a2125a1b33c572b20ce6b3a5e1 bycode/krm/HKMC_Navi_ExSL.tbt.lpd 67a9a0d0b04329e52756233f3ef2042f
 2_tbt file libautoreceiver_infobank.so 48ee793af8b86052503b8c952b034731 neev_kr/libautoreceiver_infobank.tbt.lpd aba7787cb6d365c5ad583a8dc6217ae2

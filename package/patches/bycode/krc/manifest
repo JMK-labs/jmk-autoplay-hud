@@ -13,6 +13,6 @@
 #. The knobs are kr's.
 # <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
 2_tbt app HKMC_GPM 4cf385316c37ddc4d5c28ba69d99caee bycode/krc/HKMC_GPM.tbt.lpd 4a7b32bd43d4771cc4ad902db5563658
-2_tbt app HKMC_DiPO 84f17a7a755b5a3022a139526ba452bd bycode/krc/HKMC_DiPO.tbt.lpd b158cf0486c32f154fdae34e3ff6f9bc
+2_tbt app HKMC_DiPO 84f17a7a755b5a3022a139526ba452bd bycode/krc/HKMC_DiPO.tbt.lpd 70a507c3a77677fa7f656d5f2326c759
 2_tbt app Iap2ServerApp 661dc714e30802d505c333e33bb7f089 bycode/krv/Iap2ServerApp.tbt.lpd cc198983ce4e3c647eda36e23b292143
 2_tbt app HKMC_Navi_ExSL ea6e2da50080b288f908962a6c8d5794 bycode/krc/HKMC_Navi_ExSL.tbt.lpd 3221dcade7641256c63d5d29841cc262

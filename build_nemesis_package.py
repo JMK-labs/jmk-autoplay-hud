@@ -45,6 +45,8 @@ TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'sr
              # 0.2.2: Android Auto guidance is not switched off by silence (guide.sh), the length of the texts handed to the cluster goes into
              # the log (textlog.sh)
              'src/tbt/guide.py', 'src/tbt/guide.sh', 'src/tbt/textlog.py', 'src/tbt/textlog.sh', 'src/tbt/com/jmk/hud/TextLog.java',
+             # 0.2.4: CarPlay guidance not ended by silence, each blank of the cluster's turn-by-turn named in the log (cpend.sh)
+             'src/tbt/cpend.py', 'src/tbt/cpend.sh', 'src/tbt/com/jmk/hud/EndLog.java', 'src/tbt/com/jmk/hud/Keep.java',
              'src/callout/jmkhud/link/Gate.java', 'src/callout/jmkhud/link/Lex.java', 'src/callout/jmkhud/link/Clock.java',
              'src/callout/jmkhud/link/Frame.java', 'src/callout/jmkhud/link/Helper.java',
              'src/callout/jmkhud/link/HookClient.java', 'src/callout/jmkhud/link/Log.java',

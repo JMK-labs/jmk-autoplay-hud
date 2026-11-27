@@ -46,8 +46,9 @@ history say which build was driven. A car whose files are not exactly a known st
 
 ## Releases (results)
 
+- **0.2.5**: HUD DiPO bridge: a local JMK service (`jmk.core`) decides how the route display proceeds.
 - **0.2.3**: 업데이트할 때 바뀌는 순정 앱만 다시 시작합니다.
-- **0.2.2**: Android Auto turn-by-turn no longer switches itself off on long straight roads. The length of the texts handed to the car's cluster interface is written to the log (lengths only).
+- **0.2.2**: 안드로이드 오토 길안내가 직진 구간에서 꺼졌다 켜졌다 하지 않습니다. 계기판으로 넘기는 안내 문구의 길이를 기록합니다(문구 내용은 기록하지 않습니다).
 - **0.2.1**: no change in behaviour (internal cleanup).
 - **0.2.0**: HUD DiPO bridge: at the point where Leafia starts the car hotspot it asks a local JMK service (`jmk.core`) first and skips its own start when the service answers that it should (the hotspot is already on or being started, or the car's settings keep it off) — readable in the public HUD source.
 - **0.1.38**: 펌웨어를 업데이트한 차에서 삭제 · 업데이트할 때 순정 파일을 예전 것으로 되돌리지 않습니다. 스포티지 하이브리드(이전 펌웨어 V038)에서 계기판 · HUD 길안내가 설치됩니다.

@@ -19,15 +19,23 @@ public final class Callout {
     private static final String VER = "0.2.1";
     private static final int WAIT_MS = 300;
 
+    private static final java.util.concurrent.atomic.AtomicInteger FLIGHT = new java.util.concurrent.atomic.AtomicInteger();
+
     private Callout() { }
 
+    /** True while a hotspot question is in flight in this process (the client's helper thread is shared with the other questions). */
+    public static boolean busy() { return FLIGHT.get() > 0; }
+
     public static int ask() {
+        FLIGHT.incrementAndGet();
         try {
             HookClient.Answer a = client().hotspotOn(WAIT_MS);
             if (a.hold) return 1;
             return "timeout".equals(a.how) ? 2 : 0;
         } catch (Throwable t) {
             return 0;
+        } finally {
+            FLIGHT.decrementAndGet();
         }
     }
 
