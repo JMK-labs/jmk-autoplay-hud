@@ -8,9 +8,9 @@
 # Android Auto's lane / maneuver extras from the library do not come there; everything else of 2_tbt and 3_bridge does.
 # <part> app <App> <md5 of the dex inside the stock .odex> <patch> <md5 of the result dex>
 2_tbt app HKMC_GPM 2487f61fcbae1a779fd92271c7a0360e bycode/krp/HKMC_GPM.tbt.lpd 157a712e6411f337aa05f62dc9785028
-2_tbt app HKMC_DiPO ce035a13280e222b919d664677928538 bycode/krp/HKMC_DiPO.tbt.lpd 9684024a51b53b3c8363dd9aae4e9388
+2_tbt app HKMC_DiPO ce035a13280e222b919d664677928538 bycode/krp/HKMC_DiPO.tbt.lpd 3ff67af759ad3304eac6956d345aae7c
 2_tbt app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.tbt.lpd 02368c2553da339abccf22e312d00fce
 2_tbt app HKMC_Navi_ExSL bc5ac4a4672362651fb0e523e68f01d3 bycode/krp/HKMC_Navi_ExSL.tbt.lpd 1a7834c1e814f87db6d92e3fab740003
 3_bridge app Iap2ServerApp 30a34f8331e3c74a18c0241a28a036ea bycode/kr/Iap2ServerApp.bridge.lpd 0ad54672b43f54ef7e58aad56c2a77b6
-3_bridge app HKMC_DiPO ce035a13280e222b919d664677928538 bycode/krp/HKMC_DiPO.bridge.lpd 61169fae782dc684f4915a956065a4de
+3_bridge app HKMC_DiPO ce035a13280e222b919d664677928538 bycode/krp/HKMC_DiPO.bridge.lpd 91f91850c21ac076ca8086e2fde798ee
 3_bridge app PhoneProjection 4ddd81e7e095073156c1130449fdafed bycode/krp/PhoneProjection.bridge.lpd 255e17ec5425800c19c814a7c6add6a1

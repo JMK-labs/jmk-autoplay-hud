@@ -17,7 +17,7 @@ jars=${SMALI_JARS:-$here/../../../../tools/bin}
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 javac -source 7 -target 7 -Xlint:-options -bootclasspath "$platform" -d "$work/classes" \
-    $(find "$here/../callout/jmkhud/link" -name '*.java' | sort) "$here/com/jmk/hud/EndLog.java" "$here/com/jmk/hud/Keep.java"
+    $(find "$here/../callout/jmkhud/link" -name '*.java' | sort) "$here/com/jmk/hud/EndLog.java" "$here/com/jmk/hud/Evt.java" "$here/com/jmk/hud/Keep.java"
 (cd "$work/classes" && jar cf "$work/endlog.jar" com jmkhud)
 "$d8" --min-api 19 --release --lib "$platform" --output "$work" "$work/endlog.jar"
 java -jar "$jars/baksmali-2.5.2.jar" d -a 19 "$base" -o "$work/tree"

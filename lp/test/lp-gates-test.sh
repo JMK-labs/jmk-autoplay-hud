@@ -49,6 +49,19 @@ car n NATIVE 1.18.0 ""; pre; check "preinstall: 1.18, status unreadable: passes"
 car o NATIVE; rmdir "$T/data/nemesis/apps/jmk-autoplay"; pre; check "preinstall: no AutoPlay refused" test $RC = 1
 car p NATIVE; mkdir "$T/data/nemesis/apps/danpung"; pre; check "preinstall: danpung refused" test $RC = 1
 car q NATIVE; mkdir "$T/data/nemesis/apps/jmk-wifi"; pre; check "preinstall: our own packages are not 'other projection'" test $RC = 0
+# the last check: a HUD odex with a code no profile knows (tools/hud-step unknown exits 11 and prints app=<name> code=<8 hex>)
+cp "$PK/tools/hud-step" "$WORK/hud-step.real"
+stub() { printf '#!/bin/sh\n[ "$1" = unknown ] || exit 1\necho "unknown-code check noise"\n%s\nexit %s\n' "$1" "$2" > "$PK/tools/hud-step"; }
+car r NATIVE; stub 'echo "app=HKMC_GPM code=97012354"' 11; pre
+check "preinstall: an unknown HUD code refused (1)" test $RC = 1
+check "  the popup sentence, no claim which port it is" has "확인되지 않은 시스템 파일이 있어 설치하지 않았습니다"
+check "  the app and the 8 hex digits are logged" has "app=HKMC_GPM code=97012354"
+check "  report install: hud-unknown-code with the detail" grep -q '"msg":"install: hud-unknown-code","detail":"app=HKMC_GPM code=97012354"' "$T/data/local/tmp/jmk-map-menu/outbox/jmk-autoplay-hud-install-hud-unknown-code.json"
+car s NATIVE; stub 'echo "unknown=none"' 0; pre; check "preinstall: no unknown code passes" test $RC = 0
+car t NATIVE; stub 'echo "could not read"' 1; pre; check "preinstall: a code that cannot be read is not judged (passes)" test $RC = 0
+car u NATIVE; rm "$PK/tools/hud-step"; pre; check "preinstall: no hud-step in the package is not judged (passes)" test $RC = 0
+car v NATIVE; stub 'echo "app=HKMC_GPM code=97012354"' 11; mkdir "$T/data/nemesis/apps/danpung"; pre; check "preinstall: another port's package is still refused first (other projection text)" has "another phone-projection package"
+cp "$WORK/hud-step.real" "$PK/tools/hud-step"
 # the head unit's tool shell has no printf, sed, awk, head, tail, cut, tr, find, basename, busybox (09-LivePatch 3.4): none in the LP scripts and the tool
 bad=$(grep -nE '(^|[ |;(`$])(printf|sed|awk|head|tail|cut|tr|find|basename|busybox)( |$)' "$here/../package/tools/hud-step" "$here/../package/scripts/"*.sh "$here/../package/svc/"*.sh "$here/../package/bin/"*.sh | grep -vE '^[^:]*:[0-9]+:[[:space:]]*#' | grep -v 'no printf')
 check "no command the head unit's tool shell lacks" test -z "$bad"; [ -z "$bad" ] || echo "$bad"

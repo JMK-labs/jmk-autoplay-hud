@@ -91,6 +91,24 @@ if [ -n "$JMK_HS_AUDIO" ] && [ -f "$JMK_HS_AUDIO" ]; then
     check "  reason says restore first" has "restore the stock files first"
     check "  no output" test ! -s "$WORK/audio2.so"
 fi
+# the lane recipe on the real stock libiap2session.so (optional sample: JMK_HS_IAP2S, md5 fc7cb675…): built, its own result refused, any other md5 passed through with the log line
+if [ -n "$JMK_HS_IAP2S" ] && [ -f "$JMK_HS_IAP2S" ]; then
+    check "Lanes: the sample is the stock file the recipe is gated on" test "$(q "$JMK_HS_IAP2S")" = fc7cb675b46a44bd893a1edc054c5e71
+    step recipes libiap2session.so "$JMK_HS_IAP2S" "$WORK/iap2s.so"
+    check "Lanes: stock libiap2session.so builds with the recipe (0)" test $RC = 0
+    check "Lanes: result md5 is the gate's" test "$(q "$WORK/iap2s.so")" = 4ce639fea732b1ec052407d0b5548c42
+    step recipes libiap2session.so "$WORK/iap2s.so" "$WORK/iap2s2.so"
+    check "Lanes: the recipe's own result as <in> is passed through (10), never refused (an exit 1 would fail the whole install)" test $RC = 10
+    check "  no output, the line says the lane part stays off" test ! -s "$WORK/iap2s2.so" && has "lanes off"
+    cp "$JMK_HS_IAP2S" "$WORK/other.so"; printf 'Z' | dd of="$WORK/other.so" bs=1 seek=4096 conv=notrunc 2>/dev/null
+    om=$(q "$WORK/other.so")
+    step recipes libiap2session.so "$WORK/other.so" "$WORK/iap2s3.so"
+    check "Lanes: another md5 is passed through (10), nothing written" test $RC = 10 -a ! -s "$WORK/iap2s3.so"
+    check "  the log line names the first 8 hex digits and says lanes off" has "cp lanes: lib md5 ${om%????????????????????????} not known, lanes off"
+    : > "$WORK/empty.so"; echo x > "$WORK/empty.so"
+    step recipes libiap2session.so "$WORK/empty.so" "$WORK/iap2s4.so"
+    check "Lanes: a file that is no library at all is passed through (10) with the same line" test $RC = 10
+fi
 # the pins
 cp "$WORK/gpm.odex" "$WORK/own.odex"      # an apk-shaped file is not an odex: odexdex fails
 step odex HKMC_GPM "$WORK/own.odex" "$WORK/o2.odex"
@@ -112,4 +130,20 @@ cp "$S/app/HKMC_Navi_ExSL.odex" "$WORK/bad.odex"; sz=$(wc -c < "$WORK/bad.odex")
 step odex HKMC_Navi_ExSL "$WORK/bad.odex" "$WORK/bad.out"
 check "code that is in no profile: never built (pass-through 10)" test "$RC" = 10
 check "  no output" test ! -s "$WORK/bad.out"
+# preinstall's question: does any HUD odex of this unit carry a code no profile knows? (tools/hud-step unknown)
+step unknown
+check "unknown: a stock unit has no unknown code (exit 0)" test "$RC" = 0
+check "  the answer line" has "unknown=none"
+cp "$S/app/HKMC_Navi_ExSL.odex" "$WORK/navi.keep"; cp "$WORK/bad.odex" "$S/app/HKMC_Navi_ExSL.odex"
+step unknown
+check "unknown: a Navi odex with another code is found (exit 11)" test "$RC" = 11
+check "  names the app and the first 8 hex digits of the code" has "app=HKMC_Navi_ExSL code="
+check "  the code is not stock and not ours, said in the log" has "code "
+echo "      $(echo "$OUT" | tail -1)"
+echo 'not an odex' > "$S/app/HKMC_Navi_ExSL.odex"
+step unknown
+check "unknown: a code that cannot be read is not judged (exit 0)" test "$RC" = 0
+cp "$WORK/navi.keep" "$S/app/HKMC_Navi_ExSL.odex"
+step unknown
+check "unknown: stock again, exit 0" test "$RC" = 0
 echo "---- $PASS passed, $FAILN failed"; [ $FAILN -eq 0 ]

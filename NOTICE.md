@@ -166,6 +166,11 @@ patch data is data; the binaries are listed below with their sources).
   NEEV.KOR 260902 on 2026-11-05 (its `.agents/cluster-lane-arrows.md`). The three hooks that feed it (`src/tbt/lanes.py`, run
   by `src/tbt/lanes.sh` after `apple.sh`: DiPO bridge d89ed80a -> e1d75f6d) are JMK's own, AGPL-3.0; the compile-only stub
   `src/tbt/stubs/com/leafia/kr/LeafiaLane.java` stands for Leafia's lane log call and is never built into a dex.
+- **HMG-Seogaemo** again (same repository and commit, AGPL-3.0), for the 0.3.3 lane decoder `src/tbt/com/jmk/hud/RawLanes.java`: the field list of the iAP2 lane message 0x5204 (its
+  `.agents/carplay-tbt-external/iap2-protocol.md` and `CpLaneDecoder.java.src`: LaneInformation sub-parameters LaneIndex, LaneStatus, LaneAngle (repeated), LaneAngleHighlight), ported and
+  adapted. The hook that feeds it (`src/tbt/rawlanes.py`, run by `src/tbt/rawlanes.sh`) and the recipe that lets the message through (`package/recipes/carplay-lanes-iap2.recipe`: the message
+  id of the lane row of libiap2session's handler table, found in the stock file, and raw parameter types) are JMK's own, AGPL-3.0; the compile-only stub
+  `src/tbt/stubs/com/tcc/iap2/Iap2NotiMsg.java` stands for the head unit's message class and is never built into a dex.
 - Thanks, as upstream: W-Floyd.
 - **Danpung 0.8.0-r6c** (a Korean fork of HMG Leafia Plus, AGPL-3.0, `LICENSES/AGPL-3.0.txt` in its package): the rule of its
   `cp_keepbt` setting ("do not drop the phone's Bluetooth during wireless CarPlay"): in the DiPO bridge build the stock `setDipoConnectStatus`

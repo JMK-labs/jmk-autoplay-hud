@@ -187,7 +187,7 @@ check "by code krg: the knobs are kr's" cmp -s "$PKG/patches/bycode/krg/knobs" "
 KRV=$PKG/patches/bycode/krv/manifest
 check "by code krv: turn-by-turn only, the four apps and the library" [ "$(grep -v '^#' "$KRV" | awk '{print $1":"$3}' | tr '\n' ' ')" = "2_tbt:HKMC_GPM 2_tbt:HKMC_DiPO 2_tbt:Iap2ServerApp 2_tbt:HKMC_Navi_ExSL 2_tbt:libautoreceiver_infobank.so " ]
 check "by code krv: no 3_bridge part" eval '! grep -q "^3_bridge " "$KRV"'
-for ac in HKMC_GPM:1f29a226774d61a2b4ef899182af28cf:d68ec25745a1f009b462a0ba707fda5d HKMC_DiPO:8d0867878b78347358f136aba85a1287:1f5da4289e81e268fee6221084dd4862 \
+for ac in HKMC_GPM:1f29a226774d61a2b4ef899182af28cf:d68ec25745a1f009b462a0ba707fda5d HKMC_DiPO:8d0867878b78347358f136aba85a1287:2c35d0474a684ce64c8de1344d902726 \
           Iap2ServerApp:661dc714e30802d505c333e33bb7f089:cc198983ce4e3c647eda36e23b292143 HKMC_Navi_ExSL:12a34cb11c9325f9a4050a86a9699469:dcdb7bc17374104aaad7ba3316655fe9; do
     a=${ac%%:*}; c=${ac#*:}; w=${c#*:}; c=${c%%:*}
     check "by code krv: $a is V037's code ($c) -> its own build ($w)" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$KRV")" = "$c bycode/krv/$a.tbt.lpd $w" ]
@@ -242,9 +242,9 @@ for pv in krc:"$KRC" krd:"$KRD"; do
     check "by code $p: no 3_bridge part" eval '! grep -q "^3_bridge " "$M"'
     check "by code $p: the knobs are kr's without the Bluetooth key (only the bridge builds read it)" eval '[ "$(grep -v "persist.leafia.cp.keepbt" "$PKG/patches/bycode/kr/knobs" | sed "s/ cp_keepbt//")" = "$(cat "$PKG/patches/bycode/$p/knobs")" ]'
 done
-for ac in krc:HKMC_GPM:4cf385316c37ddc4d5c28ba69d99caee:4a7b32bd43d4771cc4ad902db5563658 krc:HKMC_DiPO:84f17a7a755b5a3022a139526ba452bd:70a507c3a77677fa7f656d5f2326c759 \
+for ac in krc:HKMC_GPM:4cf385316c37ddc4d5c28ba69d99caee:4a7b32bd43d4771cc4ad902db5563658 krc:HKMC_DiPO:84f17a7a755b5a3022a139526ba452bd:392ad678754574bc66a7a14bd015899b \
           krc:HKMC_Navi_ExSL:ea6e2da50080b288f908962a6c8d5794:3221dcade7641256c63d5d29841cc262 \
-          krd:HKMC_GPM:d244aba596a361c850311bb0603d1eab:4a7b32bd43d4771cc4ad902db5563658 krd:HKMC_DiPO:072ba128b4daf9669dc329cfa168a3ee:a1e991eb8c742ed285d63d2131404265 \
+          krd:HKMC_GPM:d244aba596a361c850311bb0603d1eab:4a7b32bd43d4771cc4ad902db5563658 krd:HKMC_DiPO:072ba128b4daf9669dc329cfa168a3ee:9cc12db862ce060cee97b946727d7db5 \
           krd:Iap2ServerApp:9f32383bbf425173727ce6365971fa28:cc198983ce4e3c647eda36e23b292143 krd:HKMC_Navi_ExSL:d43adb26a20f55e5bdfd5e313bb66c9d:fcb28613971b8ce110c5e77cd6fb5668; do
     p=${ac%%:*}; r=${ac#*:}; a=${r%%:*}; r=${r#*:}; c=${r%%:*}; w=${r#*:}
     check "by code $p: $a is V035's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$PKG/patches/bycode/$p/manifest")" = "$c bycode/$p/$a.tbt.lpd $w" ]
@@ -278,7 +278,7 @@ check "by code choice (0.1.16): the LX2 V034 car (KOVZX33T: krd's Iap2ServerApp 
 KRM=$PKG/patches/bycode/krm/manifest
 check "by code krm: turn-by-turn only, the four apps and the library" [ "$(grep -v '^#' "$KRM" | awk '{print $1":"$3}' | tr '\n' ' ')" = "2_tbt:HKMC_GPM 2_tbt:HKMC_DiPO 2_tbt:Iap2ServerApp 2_tbt:HKMC_Navi_ExSL 2_tbt:libautoreceiver_infobank.so " ]
 check "by code krm: no 3_bridge part" eval '! grep -q "^3_bridge " "$KRM"'
-for ac in HKMC_GPM:a79f26f3689641f9274c01cdafab52d1:d68ec25745a1f009b462a0ba707fda5d HKMC_DiPO:803a1a0e58d0bc5fed3d0e1fa4ee13bd:1f5da4289e81e268fee6221084dd4862 \
+for ac in HKMC_GPM:a79f26f3689641f9274c01cdafab52d1:d68ec25745a1f009b462a0ba707fda5d HKMC_DiPO:803a1a0e58d0bc5fed3d0e1fa4ee13bd:2c35d0474a684ce64c8de1344d902726 \
           HKMC_Navi_ExSL:93bca3a2125a1b33c572b20ce6b3a5e1:67a9a0d0b04329e52756233f3ef2042f; do
     a=${ac%%:*}; c=${ac#*:}; w=${c#*:}; c=${c%%:*}
     check "by code krm: $a is MQ4 V037's code ($c) -> its own delta, result $w" [ "$(awk -v n=$a '$1=="2_tbt" && $3==n {print $4" "$5" "$6}' "$KRM")" = "$c bycode/krm/$a.tbt.lpd $w" ]
@@ -376,9 +376,9 @@ GPM_018=b02ada70f0de90a9e09d364a64559074; DIPO_018=56d9ff800ddc5a750fa2be6d247de
 NEW_DIPOT=6dfde547549483ca65e822f5e992e275; NEW_GPM_APK=00613075311c59881d379f384ed77327; NEW_DIPOT_APK=956eefb7194ab7c3f3294c14a6150d38
 # 0.1.34: the final results (turns.sh from 0.1.33's B_ results, which bar.sh makes from the 0.1.32 ones above; both stay the
 # intermediate steps of the chain checks below). Navi stays 0.1.33's.
-FIN_GPM=157a712e6411f337aa05f62dc9785028; P22_DIPO=c2165b59d16d4b3c3bb2303e0b2920df; T25_CO=68e07332eda0890665e8f046d4c60f8c; T25_TL=3a680d026039df0986ff675e4a1fcdca; P24_DIPO=9f7589c6a36e0ca76c79b368f554d5ad; P25_DIPO=bf4ca0e4cf5e8becff7dc98fbb955539; FIN_DIPO=61169fae782dc684f4915a956065a4de; T34_DIPO=7aa7e00904e10e28815e591ef76d0f31   # 0.2.2: textlog.sh (and for GPM guide.sh) on top of the 0.2.1 results
+FIN_GPM=157a712e6411f337aa05f62dc9785028; P22_DIPO=c2165b59d16d4b3c3bb2303e0b2920df; T25_CO=68e07332eda0890665e8f046d4c60f8c; T25_TL=3a680d026039df0986ff675e4a1fcdca; P24_DIPO=9f7589c6a36e0ca76c79b368f554d5ad; P25_DIPO=bf4ca0e4cf5e8becff7dc98fbb955539; P26_DIPO=61169fae782dc684f4915a956065a4de; FIN_DIPO=91f91850c21ac076ca8086e2fde798ee; T34_DIPO=7aa7e00904e10e28815e591ef76d0f31   # 0.2.2: textlog.sh (and for GPM guide.sh) on top of the 0.2.1 results
 T34_GPM=b4019f5da7fd492fe2d83999c984745e; T21_DIPO=1f999e7152bc9d61044dfaab6974007a   # 0.1.34's GPM (kr family) and 0.2.1's bridge result: the inputs of the 0.2.2 steps
-FIN_GPM_APK=c13961a9bdac3c8bfed62956f75682b4; P22_DIPO_APK=1cc900093cf3be3700cc0b5c804121de; P24_DIPO_APK=0588991b38a64a805a76f0e409ede488; P25_DIPO_APK=32036c71adb6d59fc1600090b6cc35b0; FIN_DIPO_APK=cb9291834b5279a592beb36b30a8563f; T21_DIPO_APK=abe4c375fa8165086a33e310c0c9ca41; T21_GPM_APK=cd92507988f67c943a73de9626d6772e; T34_DIPO_APK=6706798fbac2d2a0073cd204990aeee2; FIN_NAVI_APK=50ef163c5630bd4adf6afb1e77ab3495
+FIN_GPM_APK=c13961a9bdac3c8bfed62956f75682b4; P22_DIPO_APK=1cc900093cf3be3700cc0b5c804121de; P24_DIPO_APK=0588991b38a64a805a76f0e409ede488; P25_DIPO_APK=32036c71adb6d59fc1600090b6cc35b0; FIN_DIPO_APK=5df9d55ecff798c08b04527bdaf837e6; T21_DIPO_APK=abe4c375fa8165086a33e310c0c9ca41; T21_GPM_APK=cd92507988f67c943a73de9626d6772e; T34_DIPO_APK=6706798fbac2d2a0073cd204990aeee2; FIN_NAVI_APK=50ef163c5630bd4adf6afb1e77ab3495
 T_GPM=$FIN_GPM; T_DIPO=$FIN_DIPO; T_GPM_C=4a7b32bd43d4771cc4ad902db5563658; T_GPM_M=d68ec25745a1f009b462a0ba707fda5d; T34_GPM_C=2ac1823b45cc72b30353f0e15e800df4; T34_GPM_M=223b8e11c4123e969bb50d792c6851c0
 B_GPM=3acf3d096ee019acc1632e83a01feab2; B_DIPO=c9754d6f6dc75d4029ef6c9fdf88389c; B_GPM_C=e7c9a53305a4744327f9184026848d5f; B_GPM_M=8dd363e34a1a34d439b20e5a885700d0
 B_NAVI=1a7834c1e814f87db6d92e3fab740003; B_NAVI_B=bc66010be2b488f3326c4bb63d6f5129; B_NAVI_C=3221dcade7641256c63d5d29841cc262
@@ -388,7 +388,8 @@ B_GPM_APK=4e25776beabcb68f2e48bb5ac3c5857a; B_DIPO_APK=ffbd6a1d915c9c08d3a147d84
 # for neev_kr). The first is the build of kr kra krb kre krg kri krk krp krt, T36_C of krc, T36_D of krd, T36_M of krm krv.
 P22_DIPOT=35711f75785b5cb86cf7c18419b31d29; P22_C=b158cf0486c32f154fdae34e3ff6f9bc; P22_D=11499e9b60afadd852006394ffe58b81; P22_M=f795fd8db6dcd6e301c5d3e815cbd3be; P22_DIPOT_APK=6f8c260d72b44c9d024f1a57d23c1c37
 P24_DIPOT=68873db55529d9058afd63a4f24b57a9; P24_C=c085d26ab266804cc3bae47d6763041d; P24_D=eb871121b421e015f455ff6ec3230640; P24_M=ff3d92a2360a4949799e35bdb56be816; P24_DIPOT_APK=95a92e1a711acb859585a6e245f3ca7e
-FIN_DIPOT=9684024a51b53b3c8363dd9aae4e9388; T36_C=70a507c3a77677fa7f656d5f2326c759; T36_D=a1e991eb8c742ed285d63d2131404265; T36_M=1f5da4289e81e268fee6221084dd4862; FIN_DIPOT_APK=3f70c0cd7812d8bf32e1d6cc3eb900f4   # 0.2.4: cpend.sh on top of the 0.2.2 results (P22_*)
+P26_DIPOT=9684024a51b53b3c8363dd9aae4e9388; P26_C=70a507c3a77677fa7f656d5f2326c759; P26_D=a1e991eb8c742ed285d63d2131404265; P26_M=1f5da4289e81e268fee6221084dd4862; P26_DIPOT_APK=3f70c0cd7812d8bf32e1d6cc3eb900f4; P26_DIPO_APK=cb9291834b5279a592beb36b30a8563f   # 0.2.4-0.2.6 results
+FIN_DIPOT=3ff67af759ad3304eac6956d345aae7c; T36_C=392ad678754574bc66a7a14bd015899b; T36_D=9cc12db862ce060cee97b946727d7db5; T36_M=2c35d0474a684ce64c8de1344d902726; FIN_DIPOT_APK=94dddca51155c8894fd832fceb38adbf   # 0.3.2: cpend.sh (the new Keep / EndLog / Evt) on top of the 0.2.2 results (P22_*)
 C36_F=f121349937ec0b2af47837c2ba6664c8; C36_C=9fecbdac07490655694cd10425b47ffe; C36_D=c202caf20bd19aa890d0a4a28d8d4bdf; C36_M=ba925824f170c4b0a2b4e50dfe02d7e9; C36_APK=134a8a511f8446fef94268a9981c8a64   # cpstock.sh's results: the inputs of 0.2.2's textlog.sh
 T19_C=e9b17e59a3231ffdc6b683f312957b10; T19_D=be272d864b76d0dd0147c1fa64861164; T19_M=9794821165c1037e0d15f13bb017289d
 for o in kr kra krb kre krg kri krk krp krt; do
@@ -768,8 +769,8 @@ check "0.1.37 frames recipe header: AGPL-3.0, the Open-HMG repo, the tag, commit
     eval 'sed -n 1,6p "$FR" | grep -q "AGPL-3.0" && sed -n 1,6p "$FR" | grep -q "github.com/Open-HMG/hmgapi-wireless-cp-aa" && sed -n 1,6p "$FR" | grep -q "v2.2.0-rc.9" && sed -n 1,6p "$FR" | grep -q "f657ca4" && sed -n 1,6p "$FR" | grep -q "carplay-core-frames-ef49c09b.recipe" && sed -n 1,6p "$FR" | grep -q "#25" && sed -n 1,6p "$FR" | grep -q "#26"'
 check "0.1.37 frames recipe: id, the library, one verify of 42 bytes at 0x1482a, two patches (0x1483a 0a, 0x14840 c0f20007), no native line" \
     eval '[ "$(grep -v "^#" "$FR" | tr "\n" "|")" = "id carplay-core-frames-ef49c09b|file /system/lib/libCarPlayCore.so|verify 0x1482a 42 f167a8b61d9bbfe2a86eb973668a8abd 18c301cd2a43825630dbb44810b3d7fd|patch 0x1483a 0a|patch 0x14840 c0f20007|" ]'
-check "0.1.37 recipes/gates: the one data line, the stock md5 $CORE_STOCK and the result md5 $CORE_FRAMES" \
-    eval '[ "$(grep -v "^#" "$PKG/recipes/gates" | tr "\n" "|")" = "carplay-core-frames-ef49c09b $CORE_STOCK $CORE_FRAMES|" ]'
+check "0.1.37 recipes/gates: the data lines (0.3.3 adds the lane recipe), the stock md5 $CORE_STOCK and the result md5 $CORE_FRAMES" \
+    eval '[ "$(grep -v "^#" "$PKG/recipes/gates" | tr "\n" "|")" = "carplay-core-frames-ef49c09b $CORE_STOCK $CORE_FRAMES|carplay-lanes-iap2 fc7cb675b46a44bd893a1edc054c5e71 4ce639fea732b1ec052407d0b5548c42|" ]'
 check "0.1.37 NOTICE: the Open-HMG wireless mod, AGPL-3.0, tag v2.2.0-rc.9, commit f657ca4, issue #25 and pull request #26" \
     eval 'grep -q "Open-HMG/hmgapi-wireless-cp-aa" "$P/NOTICE.md" && grep -q "v2.2.0-rc.9" "$P/NOTICE.md" && grep -q "f657ca4" "$P/NOTICE.md" && grep -q "pull request #26" "$P/NOTICE.md"'
 check "0.1.37 common.sh: the frames recipe is listed before carplay-core-wifi; the gate is read from recipes/gates before building and after (stock md5, result md5), one recipe writes a file once" \
@@ -832,8 +833,8 @@ for f in src/tbt/callout.py src/tbt/callout.sh src/tbt/com/jmk/hud/Callout.java 
          src/callout/jmkhud/link/ReadTimeout.java src/callout/jmkhud/link/android/LocalSockets.java; do
     check "0.2.0 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
 done
-check "0.2.6 version: package-version 0.2.6, README 0.2.6 line first under Releases, the 0.2.5 line next" \
-    eval '[ "$(sed -n "s/^package-version=//p" "$PKG/NEMESIS.data")" = 0.2.6 ] && [ "$(grep -m1 "^- \*\*[0-9]" "$P/README.md" | cut -c1-11)" = "- **0.2.6**" ] && [ "$(grep "^- \*\*[0-9]" "$P/README.md" | sed -n 2p | cut -c1-11)" = "- **0.2.5**" ]'
+check "0.2.6 version: package-version 0.2.6 (the legacy package), the README 0.2.6 line directly above the 0.2.5 line (the LivePatch lines 0.3.x come before them)" \
+    eval '[ "$(sed -n "s/^package-version=//p" "$PKG/NEMESIS.data")" = 0.2.6 ] && [ "$(grep "^- \*\*0\.2\.6\*\*" "$P/README.md" | wc -l | tr -d " ")" = 1 ] && [ "$(grep -A1 "^- \*\*0\.2\.6\*\*" "$P/README.md" | sed -n 2p | cut -c1-11)" = "- **0.2.5**" ]'
 check "0.2.0 callout.py: AGPL-3.0 header; one anchor; stops with status 1 when it is not there once, when Callout is not in the tree, and when the call-out is in already" \
     eval 'grep -q "AGPL-3.0" "$CO" && grep -q "found %d times (want 1)" "$CO" && grep -q "already has the call-out" "$CO" && grep -q "is not in the tree" "$CO" && grep -q "^import" "$CO" && ! grep -q "^import hmgapi" "$CO"'
 check "0.2.0 callout.py: an empty tree is refused (exit 1, nothing written)" eval '( et=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-co0.XXXXXX"); python3 -I "$CO" "$et" >/dev/null 2>&1; erc=$?; enf=$(find "$et" -type f | wc -l | tr -d " "); rm -rf "$et"; [ $erc -eq 1 ] && [ "$enf" = 0 ] )'
@@ -884,16 +885,52 @@ check "0.2.5 Keep.java: the words on the wire are the pinned ones (Lex.KEEP_ASK 
     eval 'K=$P/src/tbt/com/jmk/hud/Keep.java; for w in "Lex.KEEP_ASK" "Lex.KEEP_NOTE" \"quiet_ms\" \"since_state_ms\" \"can_refresh\" \"refresh\" \"reason\" \"jmk.core\" \"hud-dipo\"; do grep -q "$w" "$K" || exit 1; done'
 check "0.2.5 Keep.java: the question's budget is 300 ms; notes at most one a second and 60 an hour" \
     eval 'K=$P/src/tbt/com/jmk/hud/Keep.java; grep -q "ASK_MS = 300" "$K" && grep -q "NOTE_GAP_MS = 1000" "$K" && grep -q "NOTE_HOUR_MAX = 60" "$K"'
+check "0.3.2 source src/tbt/com/jmk/hud/Evt.java in the package (TOP_FILES); cpend.sh compiles it" eval '[ -s "$P/src/tbt/com/jmk/hud/Evt.java" ] && grep -q "src/tbt/com/jmk/hud/Evt.java" "$P/build_nemesis_package.py" && grep -q "com/jmk/hud/Evt.java" "$P/src/tbt/cpend.sh"'
+check "0.3.2 Keep.java: no timer thread (main-looper Handler), no time or failure count decides an end: only an answer drop ends (zero keeps on none; due ends only on DROP), the question and the note have their own client" \
+    eval 'K=$P/src/tbt/com/jmk/hud/Keep.java; ! grep -q "java.util.Timer" "$K" && grep -q "postDelayed" "$K" && grep -q "if (act == DROP)" "$K" && ! grep -q "act == DROP || act == NONE" "$K" && grep -q "client(true)" "$K" && grep -q "client(false)" "$K" && ! grep -q "HookClient.get(" "$K"'
+for f in src/tbt/evt.py src/tbt/evt.sh; do
+    check "0.3.2 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
+done
+check "0.3.2 evt.py: AGPL-3.0 header; stops with status 1 on an empty tree and when the edit is there already (nothing written); the three hand-overs, the source store and the restart call are each found exactly once" \
+    eval '( et=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-gp.XXXXXX"); python3 -I "$P/src/tbt/evt.py" "$et" >/dev/null 2>&1; erc=$?; enf=$(find "$et" -type f | wc -l | tr -d " "); rm -rf "$et"; grep -q "AGPL-3.0" "$P/src/tbt/evt.py" && grep -q "already" "$P/src/tbt/evt.py" && grep -q "(want 1)" "$P/src/tbt/evt.py" && [ $erc -eq 1 ] && [ "$enf" = 0 ] )'
+check "0.3.2 evt.py hooks: Iap2SvcTransportReadDone x3 (Evt.iapIn), the source name store (Evt.source), LeafiaRgRestart.run (Evt.restart): no other place, no timer" \
+    eval 'E=$P/src/tbt/evt.py; [ "$(grep -c "Evt;->" "$E")" -ge 3 ] && grep -q "iapIn" "$E" && grep -q "Evt;->source" "$E" && grep -q "Evt;->restart" "$E" && ! grep -q "Timer\|postDelayed" "$E"'
+check "0.3.2 Evt.java: plain words only (letters, digits, dash), one line per event, never throws, no route data" \
+    eval 'E=$P/src/tbt/com/jmk/hud/Evt.java; grep -q "A-Za-z0-9-" "$E" && [ "$(grep -c "Log.i(TAG" "$E")" -ge 2 ] && [ "$(grep -c "catch (Throwable t)" "$E")" -ge 2 ]'
+# ---------------------------------------------------------------- 0.3.3: the CarPlay lane message gets through libiap2session and is decoded (carplay-lanes-iap2 recipe, rawlanes.sh)
+for f in src/tbt/rawlanes.py src/tbt/rawlanes.sh src/tbt/com/jmk/hud/RawLanes.java src/tbt/stubs/com/tcc/iap2/Iap2NotiMsg.java; do
+    check "0.3.3 source $f in the package (TOP_FILES)" eval '[ -s "$P/$f" ] && grep -q "$f" "$P/build_nemesis_package.py"'
+done
+check "0.3.3 rawlanes.py: AGPL-3.0 header; stops with status 1 on an empty tree and when the edit is there already (nothing written); applyLanes and laneOne are each found exactly once" \
+    eval '( et=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-gp.XXXXXX"); python3 -I "$P/src/tbt/rawlanes.py" "$et" >/dev/null 2>&1; erc=$?; enf=$(find "$et" -type f | wc -l | tr -d " "); rm -rf "$et"; grep -q "AGPL-3.0" "$P/src/tbt/rawlanes.py" && grep -q "already" "$P/src/tbt/rawlanes.py" && grep -q "(want 1)" "$P/src/tbt/rawlanes.py" && [ $erc -eq 1 ] && [ "$enf" = 0 ] )'
+check "0.3.3 RawLanes.java: the attribution (hmg-seogaemo fbaacf7, AGPL-3.0) is in the header; every entry is inside try / catch Throwable; the log line starts with 'cp lanes: raw n='" \
+    eval 'R=$P/src/tbt/com/jmk/hud/RawLanes.java; grep -q "seogaemo/hmg-seogaemo" "$R" && grep -q "fbaacf7" "$R" && grep -q "AGPL-3.0" "$R" && [ "$(grep -c "catch (Throwable t)" "$R")" -ge 2 ] && grep -q "cp lanes: raw n=" "$R"'
+check "0.3.3 the lane recipe: gated on the stock libiap2session fc7cb675 (result 4ce639fe), one verify per edited place, no other file" \
+    eval 'R=$PKG/recipes/carplay-lanes-iap2.recipe; grep -q "^file /system/lib/libiap2session.so" "$R" && [ "$(grep -c "^verify " "$R")" = 6 ] && [ "$(grep -c "^patch " "$R")" = 7 ] && grep -q "^carplay-lanes-iap2 fc7cb675b46a44bd893a1edc054c5e71 4ce639fea732b1ec052407d0b5548c42$" "$PKG/recipes/gates"'
+check "0.3.3 the bridge DiPO deltas end at $FIN_DIPO (apk $FIN_DIPO_APK in neev_kr); the 0.2.6 bridge result stays in known" \
+    eval '( for o in kr kra krb kre krg kri krk krp krt; do [ "$(want_of "$PKG/patches/bycode/$o/manifest" 3_bridge HKMC_DiPO)" = $FIN_DIPO ] || exit 1; done; grep -q "^3_bridge app HKMC_DiPO neev_kr/HKMC_DiPO.bridge.lpd $FIN_DIPO_APK$" "$PKG/patches/neev_kr/manifest" && grep -q "^HKMC_DiPO.dex $FIN_DIPO\$" "$PKG/patches/known" && grep -q "^HKMC_DiPO.dex $P26_DIPO\$" "$PKG/patches/known" )'
 if command -v javac >/dev/null 2>&1 && command -v java >/dev/null 2>&1; then
     KT=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-keep.XXXXXX")
-    if javac -source 7 -target 7 -Xlint:-options -d "$KT" $(find "$here/keep/stub" -name '*.java') $(find "$P/src/callout/jmkhud/link" -name '*.java' | grep -v '/android/') "$P/src/tbt/com/jmk/hud/Keep.java" "$here/keep/KeepTest.java" 2>/dev/null; then
-        for sc in none keep drop refresh refreshrecheck norefresh silence recheck busy notes; do
+    if javac -source 7 -target 7 -Xlint:-options -d "$KT" $(find "$here/keep/stub" -name '*.java') $(find "$P/src/callout/jmkhud/link" -name '*.java' | grep -v '/android/') "$P/src/tbt/com/jmk/hud/Keep.java" "$P/src/tbt/com/jmk/hud/EndLog.java" "$P/src/tbt/com/jmk/hud/Evt.java" "$here/keep/KeepTest.java" "$here/keep/EndLogTest.java" "$here/keep/EvtTest.java" 2>/dev/null; then
+        for sc in none late latekeep latestale again againdrop gate separate restart restartkeep restartnone keep drop refresh refreshrecheck norefresh silence recheck busy notes; do
             out=$(java -cp "$KT" com.jmk.hud.KeepTest $sc 2>/dev/null | tail -1)
-            check "0.2.5 Keep on the JVM, $sc: $out" eval '[ "$out" = "keep: $sc passed" ]'
+            check "0.3.2 Keep on the JVM, $sc: $out" eval '[ "$out" = "keep: $sc passed" ]'
         done
+        out=$(java -cp "$KT" com.jmk.hud.EndLogTest 2>/dev/null | tail -1)
+        check "0.3.2 EndLog counts every blank (Evt line: why / proj / trig / seq / pid) on the JVM: $out" eval '[ "$out" = "endlog: passed" ]'
+        out=$(java -cp "$KT" com.jmk.hud.EvtTest 2>/dev/null | tail -1)
+        check "0.3.2 Evt on the JVM (lane count, source token, guarded restart, plain words): $out" eval '[ "$out" = "evt: passed" ]'
     else
         check "0.2.5 Keep on the JVM: the sources compile" false
     fi
+        RL=$(mktemp -d "${TMPDIR:-/tmp}/jmk-hud-rawlanes.XXXXXX")
+    if javac -source 7 -target 7 -Xlint:-options -d "$RL" $(find "$here/rawlanes/stub" -name '*.java') "$P/src/tbt/com/jmk/hud/RawLanes.java" "$P/src/tbt/com/jmk/hud/Evt.java" "$here/rawlanes/RawLanesTest.java" 2>/dev/null; then
+        out=$(java -cp "$RL" com.jmk.hud.RawLanesTest 2>/dev/null | tail -1)
+        check "0.3.3 RawLanes on the JVM (one lane, several, repeated angles, empty, truncated, unknown id, bad lengths): $out" eval '[ "$out" = "rawlanes: passed" ]'
+    else
+        check "0.3.3 RawLanes on the JVM: the sources compile" false
+    fi
+    rm -rf "$RL"
     rm -rf "$KT"
 else
     echo "(no javac / java on this Mac: the 0.2.5 Keep JVM checks skipped)"
@@ -961,6 +998,7 @@ check "full zip: every set" eval '[ "$(unzip -Z1 "$P/dist/jmk-autoplay-hud-$V.zi
 # a release (published, open: not obfuscated) is the full test zip itself, byte for byte
 for r in "$P"/dist/release/*.zip; do
     [ -e "$r" ] || continue
+    unzip -Z1 "$r" | grep -qx migrate.meta && continue     # the LivePatch release (release.sh): judged by lp-ci, the same bytes as lp/build_lp_package.py's test build (lp/test/build-test.sh)
     check "release ${r##*/} = the full build" cmp -s "$r" "$P/dist/${r##*/}"
 done
 

@@ -2,7 +2,8 @@
 # jmk-autoplay-hud (LivePatch build; AGPL-3.0, see LICENSE and NOTICE.md): one LivePatch exec step for one file.
 #   hud-step odex   <App>   <in: the app's .odex> <out>    the app's by-code build (the profile's patch rebuilds its code), put in the stock apk, optimised
 #   hud-step lib    <lib>   <in: the library>     <out>    the profile's library patch (libautoreceiver_infobank.so)
-#   hud-step recipes <lib>  <in: the library>     <out>    the CarPlay library recipes (libCarPlayCore.so, libCarPlayAudio.so)
+#   hud-step recipes <lib>  <in: the library>     <out>    the CarPlay library recipes (libCarPlayCore.so, libCarPlayAudio.so, libiap2session.so)
+#   hud-step unknown                                         (preinstall) does a HUD odex of this unit carry a code no profile knows? prints "app=<App> code=<8 hex>" and exits 11 for the first odex whose code is neither a stock code nor a result of ours in any profile; 0 = none foreign (an unreadable code is not foreign)
 #   hud-step profile                                         (the settings service) which profile this unit's stock code fits: "profile=<p> parts=<..> apps=<a,b> libs=<l>" (exit 0) or "profile=none" (exit 10)
 # NEMESIS runs it as `cd <staged pkg>/tools && hud-step <args> <in> <out>` ([ASSUMED], 09-LivePatch 3.4 and livepatch.c): data is found from $0, not from the cwd.
 # Exit 0 = <out> written; 10 = pass through (this firmware gets nothing here; the log line says why); 1 = refused (the last line printed is the reason NEMESIS shows).
@@ -32,7 +33,7 @@ W=$R/data/local/tmp/jmk-hud-step.$$
 cleanup() { rm -rf "$W" 2>/dev/null; }
 trap cleanup 0
 mkdir -p "$W" 2>/dev/null || { echo "hud-step: cannot make $W"; exit 1; }
-if [ "$MODE" != profile ]; then [ -f "$IN" ] && [ -n "$OUT" ] || { echo "hud-step: usage: hud-step odex|lib|recipes <name> <in> <out>   |   hud-step profile"; exit 1; }; fi
+if [ "$MODE" != profile ] && [ "$MODE" != unknown ]; then [ -f "$IN" ] && [ -n "$OUT" ] || { echo "hud-step: usage: hud-step odex|lib|recipes <name> <in> <out>   |   hud-step profile"; exit 1; }; fi
 chmod 0755 "$LPATCH" 2>/dev/null
 [ -x "$LPATCH" ] || refuse "lpatch is not executable ($LPATCH)"
 
@@ -253,6 +254,32 @@ recipe_gate() {   # recipe_gate <id> <1 stock|2 result>
 
 BCP=${BOOTCLASSPATH:-$DEXOPT_BCP}
 case "$MODE" in
+unknown)
+    # A code is "known" when some profile lists it as a stock code (column 4) or as our result (column 6), or the legacy list names it. Anything else on a
+    # HUD app is an unknown code (another port's output and the stock of a firmware we have no profile for look the same): the install is refused before it writes
+    # anything, and nothing says which of the two it is. Never guessed from a name or a chip.
+    collect_stock
+    say "unknown-code check: stock code:${CODES}"
+    bad=
+    for n in $(bycode_names app); do
+        code=${CODES#*" $n.code="}; code=${code%% *}
+        case "$code" in ''|none) say "unknown-code check $n: code not readable, not judged"; continue ;; esac
+        known=
+        for d in "$BYCODE"/*/manifest; do
+            [ -f "$d" ] || continue
+            while read -r p k nn c x w || [ -n "$p" ]; do
+                case "$p" in ''|'#'*) continue ;; esac
+                [ "$k" = app ] && [ "$nn" = "$n" ] || continue
+                if [ "$c" = "$code" ] || [ "$w" = "$code" ]; then known=1; break; fi
+            done < "$d"
+            [ -z "$known" ] || break
+        done
+        [ -n "$known" ] || { has_line "$n.dex $code" "$KNOWN" && known=1; }
+        if [ -n "$known" ]; then say "unknown-code check $n: code $code is known"
+        else say "unknown-code check $n: code $code is in no profile (not stock, not ours)"; [ -n "$bad" ] || bad="app=$n code=${code%????????????????????????}"; fi
+    done
+    if [ -n "$bad" ]; then echo "$bad"; exit 11; fi
+    echo "unknown=none"; exit 0 ;;
 profile)
     via=stock
     if ! choose >/dev/null; then
@@ -305,23 +332,26 @@ recipes)
     mine=$(md5of "$IN")
     if has_line "$NAME $mine" "$KNOWN"; then refuse "$IN is a build of this add-on (md5 $mine): restore the stock files first (legacy-restore)"; fi
     done_id=
-    for id in carplay-audio-formats carplay-core-frames-ef49c09b carplay-core-wifi; do
+    for id in carplay-audio-formats carplay-core-frames-ef49c09b carplay-core-wifi carplay-lanes-iap2; do
         [ -f "$RECIPES/$id.recipe" ] || continue
         f=$(recipe_file "$id") || continue
         [ "$f" = "$NAME" ] || continue
+        # the lane recipe is the one part nothing else depends on: whatever is wrong with it, the answer is a pass-through (10, nothing written, a line that says lanes are off), never a refusal (1 fails the whole install)
+        soft=0; [ "$id" != carplay-lanes-iap2 ] || soft=1
+        bad() { if [ "$soft" = 1 ]; then say "$1"; say "cp lanes: lib md5 ${mine%????????????????????????} not usable, lanes off"; pass "the lane part stays off"; else refuse "$1"; fi; }
         st=$(lp_state "$id" "$IN")
         case "$st" in
             PATCHABLE) ;;
-            APPLIED) refuse "$IN already carries the recipe $id (md5 $mine): it is not the stock file, restore the stock files first (legacy-restore)" ;;
-            *) say "recipe $id: $st: nothing to do"; continue ;;
+            APPLIED) bad "$IN already carries the recipe $id (md5 $mine): it is not the stock file, restore the stock files first (legacy-restore)" ;;
+            *) say "recipe $id: $st: nothing to do"; [ "$id" != carplay-lanes-iap2 ] || say "cp lanes: lib md5 ${mine%????????????????????????} not known, lanes off"; continue ;;
         esac
         gs=$(recipe_gate "$id" 1)
-        if [ -n "$gs" ] && [ "$mine" != "$gs" ]; then say "recipe $id: $NAME is $mine, the recipe is for $gs: skipped"; continue; fi
+        if [ -n "$gs" ] && [ "$mine" != "$gs" ]; then say "recipe $id: $NAME is $mine, the recipe is for $gs: skipped"; [ "$id" != carplay-lanes-iap2 ] || say "cp lanes: lib md5 ${mine%????????????????????????} not known, lanes off"; continue; fi
         rm -f "$OUT"
-        "$LPATCH" apply "$RECIPES/$id.recipe" "$IN" "$OUT" >/dev/null 2>&1 && [ -s "$OUT" ] && [ "$(lp_state "$id" "$OUT")" = APPLIED ] || { rm -f "$OUT"; refuse "recipe $id did not apply to $NAME"; }
+        "$LPATCH" apply "$RECIPES/$id.recipe" "$IN" "$OUT" >/dev/null 2>&1 && [ -s "$OUT" ] && [ "$(lp_state "$id" "$OUT")" = APPLIED ] || { rm -f "$OUT"; bad "recipe $id did not apply to $NAME"; }
         gr=$(recipe_gate "$id" 2)
         got=$(md5of "$OUT")
-        if [ -n "$gr" ] && [ "$got" != "$gr" ]; then rm -f "$OUT"; refuse "recipe $id gave $got, not the $gr it must give"; fi
+        if [ -n "$gr" ] && [ "$got" != "$gr" ]; then rm -f "$OUT"; bad "recipe $id gave $got, not the $gr it must give"; fi
         say "built $NAME with recipe $id ($got)"
         done_id=$id
         break      # one recipe at most writes a file

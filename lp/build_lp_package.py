@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """jmk-autoplay-hud, NEMESIS 1.17 LivePatch build: a deterministic signed ZIP from lp/package/ plus the Korean by-code profiles of ../package/ (AGPL-3.0, see LICENSE).
 
-    python3 lp/build_lp_package.py            # dist/test/jmk-autoplay-hud-<v>-lp.zip
+    python3 lp/build_lp_package.py            # dist/test/jmk-autoplay-hud-<v>-lp.zip   (a test build)
+    python3 lp/build_lp_package.py --release  # dist/release/jmk-autoplay-hud-<v>.zip, the same bytes (release.sh)
 
-Test builds only: the output never goes to dist/release and is never published from here. Same inputs and the same built date
+A test build never goes to dist/release and is never published from here; the release form is what release.sh makes. Same inputs and the same built date
 (JMK_BUILT_DATE=YYYY-MM-DD, default today) give the same bytes. Nothing is obfuscated: the zip is the source.
-Ships: the Korean profiles (kr*) with only the patches their manifests name, the three CarPlay library recipes (no converter recipe, no libev6aac.so),
+Ships: the Korean profiles (kr*) with only the patches their manifests name, the four CarPlay library recipes (the lane recipe for libiap2session.so, gated on one md5; no converter recipe, no libev6aac.so),
 tools/hud-step + lpatch, the legacy restore, the sources the legacy zip carries. NEMESIS.data's [patch.N] sections and migrate.meta are written here.
 """
 import hashlib, os, re, sys, zipfile
@@ -21,8 +22,9 @@ OLD = PROJECT / 'package'
 FIXED = (2026, 1, 1, 0, 0, 0)
 STOP = {'HKMC_GPM': 'com.google.android.projection.sink', 'HKMC_DiPO': 'com.daudio.app.dipo', 'Iap2ServerApp': 'com.tcc.iap2server',
         'HKMC_Navi_ExSL': 'com.mnsoft.navi', 'PhoneProjection': 'com.daudio.app.phoneprojection'}
-RECIPES = ('carplay-audio-formats', 'carplay-core-frames-ef49c09b', 'carplay-core-wifi')   # not carplay-utils-converter: libev6aac.so is not shipped
-LP_VERSION = '0.3.1'    # the first LivePatch HUD version (migrate.meta legacy_below)
+RECIPES = ('carplay-audio-formats', 'carplay-core-frames-ef49c09b', 'carplay-core-wifi', 'carplay-lanes-iap2')   # not carplay-utils-converter: libev6aac.so is not shipped
+LP_VERSION = '0.3.3'    # this build's version
+LEGACY_BELOW = '0.3.1'  # the first LivePatch HUD version: an installed HUD below it is the legacy one (migrate.meta legacy_below)
 VERSION_RE = re.compile(r'^\d+\.\d+\.\d+$')
 
 
@@ -93,7 +95,7 @@ def main():
     if len(legacy.field(nem, 'short-desc')) > 64 or len(legacy.field(nem, 'detailed-desc')) > 256:
         raise SystemExit('short-desc must be <= 64 and detailed-desc <= 256 characters')
     entries['NEMESIS.data'] = legacy.built_stamp(nem.encode('utf-8'))
-    entries['migrate.meta'] = (PKG / 'migrate.meta.in').read_text().replace('@VERSION@', ver).encode('utf-8')
+    entries['migrate.meta'] = (PKG / 'migrate.meta.in').read_text().replace('@VERSION@', ver).replace('@LEGACY_BELOW@', LEGACY_BELOW).encode('utf-8')
     # the Korean profiles: manifest + knobs, and only the patches the manifests name (paths are relative to patches/)
     need = set()
     for name, rows in profs.items():
@@ -123,7 +125,7 @@ def main():
     for path in sorted((PROJECT / 'LICENSES').iterdir()):
         if path.is_file():
             entries['LICENSES/' + path.name] = path.read_bytes()
-    out = PROJECT / 'dist' / 'test' / ('jmk-autoplay-hud-%s-lp.zip' % ver)
+    out = PROJECT / 'dist' / 'release' / ('jmk-autoplay-hud-%s.zip' % ver) if '--release' in sys.argv[1:] else PROJECT / 'dist' / 'test' / ('jmk-autoplay-hud-%s-lp.zip' % ver)
     out.parent.mkdir(parents=True, exist_ok=True)
     execs = ('tools/hud-step', 'tools/lpatch')
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:

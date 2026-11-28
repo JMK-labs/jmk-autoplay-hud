@@ -1,4 +1,4 @@
-# The migration from the legacy (file-swapping) HUD to this LivePatch build, read by the JMK MAP menu's runner (PROCESS-FLOWS 19).
+# The migration from the legacy (file-swapping) HUD to this LivePatch build, read by the JMK MAP menu's runner.
 id=jmk-autoplay-hud
 mode=reinstall
 restore=scripts/legacy-restore.sh
@@ -6,4 +6,4 @@ verify=scripts/legacy-verify.sh
 needs-nemesis=1.17
 gate=scripts/converter-check.sh
 preflight=scripts/preflight.sh
-legacy_below=@VERSION@
+legacy_below=@LEGACY_BELOW@

@@ -31,6 +31,8 @@ TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'sr
              'src/tbt/com/jmk/hud/Apple.java', 'src/tbt/apple.py', 'src/tbt/apple.sh',
              # 0.1.29: the CarPlay lane values (applied by src/tbt/lanes.sh)
              'src/tbt/com/jmk/hud/Lanes.java', 'src/tbt/lanes.py', 'src/tbt/lanes.sh', 'src/tbt/stubs/com/leafia/kr/LeafiaLane.java',
+             # 0.3.3: the CarPlay lane message arrives raw; its decoder (applied by src/tbt/rawlanes.sh)
+             'src/tbt/com/jmk/hud/RawLanes.java', 'src/tbt/rawlanes.py', 'src/tbt/rawlanes.sh', 'src/tbt/stubs/com/tcc/iap2/Iap2NotiMsg.java',
              # 0.1.33: the cluster near-turn distance bar from the phone's guidance (applied by src/tbt/bar.sh; Near.java
              # here replaces the 0.1.11 class of src/tbt/com/jmk/hud)
              'src/tbt/bar/com/jmk/hud/Near.java', 'src/tbt/bar/com/jmk/hud/Bar.java',
@@ -46,7 +48,7 @@ TOP_FILES = ('LICENSE', 'NOTICE.md', 'README.md', 'src/jmkhud/CodeSum.java', 'sr
              # the log (textlog.sh)
              'src/tbt/guide.py', 'src/tbt/guide.sh', 'src/tbt/textlog.py', 'src/tbt/textlog.sh', 'src/tbt/com/jmk/hud/TextLog.java',
              # 0.2.4: CarPlay guidance not ended by silence, each blank of the cluster's turn-by-turn named in the log (cpend.sh)
-             'src/tbt/cpend.py', 'src/tbt/cpend.sh', 'src/tbt/com/jmk/hud/EndLog.java', 'src/tbt/com/jmk/hud/Keep.java',
+             'src/tbt/cpend.py', 'src/tbt/cpend.sh', 'src/tbt/evt.py', 'src/tbt/evt.sh', 'src/tbt/com/jmk/hud/EndLog.java', 'src/tbt/com/jmk/hud/Evt.java', 'src/tbt/com/jmk/hud/Keep.java',
              # 0.2.6: wireless CarPlay keeps the phone's Bluetooth connected (btkeep.sh)
              'src/tbt/btkeep.py', 'src/tbt/btkeep.sh', 'src/tbt/com/jmk/hud/BtKeep.java',
              'src/callout/jmkhud/link/Gate.java', 'src/callout/jmkhud/link/Lex.java', 'src/callout/jmkhud/link/Clock.java',

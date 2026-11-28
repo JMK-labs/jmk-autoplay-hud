@@ -46,6 +46,7 @@ history say which build was driven. A car whose files are not exactly a known st
 
 ## Releases (results)
 
+- **0.3.3**: NEMESIS 1.17에서 시스템 파일을 수정하지 않고 설치됩니다. 카플레이 길안내 중 내비 앱이 보내는 차선 안내를 계기판·HUD에 표시합니다. 경로를 다시 찾거나 앱을 바꿀 때 길안내가 꺼지던 문제를 고쳤습니다. 확인되지 않은 시스템 파일이 있는 차에는 설치하지 않습니다. 길안내가 끝난 이유와 차선 정보를 받은 횟수를 하루 한 번 집계해 보냅니다.
 - **0.3.1**: Installs through NEMESIS 1.17 LivePatch: no file in /system is edited.
 - **0.2.6**: Wireless CarPlay keeps the phone's Bluetooth connected.
 - **0.2.5**: HUD DiPO bridge: a local JMK service (`jmk.core`) decides how the route display proceeds.

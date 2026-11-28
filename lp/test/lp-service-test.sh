@@ -54,6 +54,14 @@ echo boot-B > "$T/proc/sys/kernel/random/boot_id"; export LPS=$'wrapper=1 safe=0
 svc
 check "next boot, mounted: active" test "$(st state)" = active
 check "  patched tags" test "$(st patched)" = "gpm,dipo,lib,core"
+# the lane lib: mounted, listed as unmounted (a mount failure) or absent: the state is active either way (nothing else depends on it); only a mounted one is a patched tag
+echo boot-B > "$T/proc/sys/kernel/random/boot_id"; BASE_LPS=$'wrapper=1 safe=0\n/system/app/HKMC_GPM.odex mounted\n/system/app/HKMC_DiPO.odex mounted\n/system/lib/libautoreceiver_infobank.so mounted'
+export LPS="$BASE_LPS"$'\n/system/lib/libiap2session.so mounted'; svc
+check "lane lib mounted: active, tag iap2s" test "$(st state)" = active -a "$(st patched)" = "gpm,dipo,lib,iap2s"
+export LPS="$BASE_LPS"$'\n/system/lib/libiap2session.so unmounted'; svc
+check "lane lib unmounted (mount failure): still active, no iap2s tag, nothing else changed" test "$(st state)" = active -a "$(st patched)" = "gpm,dipo,lib"
+export LPS="$BASE_LPS"; svc
+check "lane lib absent (any other md5: the step passed through): still active, the same tags" test "$(st state)" = active -a "$(st patched)" = "gpm,dipo,lib"
 # next boot, nothing mounted: failed
 export LPS=$'wrapper=1 safe=0\n/system/app/HKMC_GPM.odex mounted'; svc
 check "next boot, DiPO not mounted: failed" test "$(st state)" = failed

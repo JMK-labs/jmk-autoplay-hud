@@ -14,7 +14,7 @@ tag_of() {
     case "$1" in
         HKMC_GPM) echo gpm ;; HKMC_DiPO) echo dipo ;; Iap2ServerApp) echo iap2 ;; HKMC_Navi_ExSL) echo navi ;;
         PhoneProjection) echo pp ;; libautoreceiver_infobank.so) echo lib ;; libCarPlayAudio.so) echo audio ;;
-        libCarPlayCore.so) echo core ;; *) echo "$1" ;;
+        libCarPlayCore.so) echo core ;; libiap2session.so) echo iap2s ;; *) echo "$1" ;;
     esac
 }
 # lp_profile: "profile=<p> parts=<..> apps=<a,b> libs=<l>" from the tool (the same choice every step makes), exit 10 = no profile fits
@@ -74,7 +74,7 @@ decide() {
     IFS=,; set -- $libs; IFS=" 	
 "
     for a in "$@"; do [ "$(target_state "/system/lib/$a")" = mounted ] && PATCHED="$PATCHED,$(tag_of "$a")"; done
-    for a in libCarPlayCore.so libCarPlayAudio.so; do [ "$(target_state "/system/lib/$a")" = mounted ] && PATCHED="$PATCHED,$(tag_of "$a")"; done
+    for a in libCarPlayCore.so libCarPlayAudio.so libiap2session.so; do [ "$(target_state "/system/lib/$a")" = mounted ] && PATCHED="$PATCHED,$(tag_of "$a")"; done
     PATCHED=${PATCHED#,}
     if [ -n "$unm" ]; then STATE=failed; REASON="LivePatch took these down at boot (the firmware changed?):$unm"; return 0; fi
     if [ -n "$miss" ]; then

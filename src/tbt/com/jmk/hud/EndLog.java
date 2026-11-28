@@ -3,7 +3,7 @@ package com.jmk.hud;
 import android.util.Log;
 
 /**
- * jmk-autoplay-hud 0.2.5 (AGPL-3.0, as this package): one log line naming the caller; no text, no route data.
+ * jmk-autoplay-hud 0.3.2 (AGPL-3.0, as this package): one log line naming the caller; no text, no route data; one count line (Evt).
  */
 public final class EndLog {
     private static final String TAG = "JMKHUD";
@@ -28,6 +28,13 @@ public final class EndLog {
             // a log line is never worth a failure
         }
         if (!word.matches("[a-z0-9-]{1,24}")) word = "other";
+        String why, trig = null;
+        String[] cause = Keep.takeCause();
+        if (cause != null) { why = cause[0]; trig = cause[1]; }
+        else if ("session-end".equals(word) || "source-change".equals(word)) why = word;
+        else { why = "other"; trig = word; }
+        Evt.end(why, "cp", trig);
+        if ("session-end".equals(why)) Evt.sessionEnd();
         Keep.ended(word);
     }
 }

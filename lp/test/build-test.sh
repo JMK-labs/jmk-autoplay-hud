@@ -7,7 +7,7 @@ ok() { echo "ok    $1"; PASS=$((PASS + 1)); }
 fail() { echo "FAIL  $1${2:+: $2}"; FAILN=$((FAILN + 1)); }
 check() { local n=$1; shift; if "$@"; then ok "$n"; else fail "$n"; fi; }
 OUT=$(cd "$PROJECT" && JMK_BUILT_DATE=2026-11-28 python3 lp/build_lp_package.py 2>&1) || { echo "$OUT"; fail "build"; exit 1; }
-ZIP=$PROJECT/dist/test/jmk-autoplay-hud-0.3.1-lp.zip
+ZIP=$PROJECT/dist/test/jmk-autoplay-hud-0.3.3-lp.zip
 check "built and signed" test -f "$ZIP"
 OUT2=$(cd "$PROJECT" && JMK_BUILT_DATE=2026-11-28 python3 lp/build_lp_package.py 2>&1)
 check "deterministic (same sha twice)" test "$(echo "$OUT" | grep sha256)" = "$(echo "$OUT2" | grep sha256)"
@@ -23,8 +23,8 @@ check "every manifest patch is in the zip" bash -c "cd '$U/tools/patches'; for m
 NEM=$U/NEMESIS.data
 check "os is Korean only" grep -q '^os="\*.KOR.\*"' "$NEM"
 check "depends has the LivePatch version, AutoPlay 0.5.0 or newer and the three refusals" grep -q '^depends="jmk-autoplay@>=0.5.0,usb-handler@>=1.17,!danpung,!enhanced.projection,!wireless.carplay.aa"' "$NEM"
-check "8 patch sections (5 odex, infobank, core, audio)" test "$(grep -c '^\[patch\.' "$NEM")" = 8
-check "every patch section is an exec step of tools/hud-step and optional" bash -c "[ \$(grep -c '^tool=tools/hud-step' '$NEM') = 8 ] && [ \$(grep -c '^optional=1' '$NEM') = 8 ] && [ \$(grep -c '^engine=exec' '$NEM') = 8 ]"
+check "9 patch sections (5 odex, infobank, core, audio, the lane lib)" test "$(grep -c '^\[patch\.' "$NEM")" = 9
+check "every patch section is an exec step of tools/hud-step and optional" bash -c "[ \$(grep -c '^tool=tools/hud-step' '$NEM') = 9 ] && [ \$(grep -c '^optional=1' '$NEM') = 9 ] && [ \$(grep -c '^engine=exec' '$NEM') = 9 ]"
 check "no [file.N] (no new file in /system)" bash -c "! grep -q '^\[file\.' '$NEM'"
 check "migrate.meta keys" bash -c "grep -q '^mode=reinstall' '$U/migrate.meta' && grep -q '^restore=scripts/legacy-restore.sh' '$U/migrate.meta' && grep -q '^verify=scripts/legacy-verify.sh' '$U/migrate.meta' && grep -q '^needs-nemesis=1.17' '$U/migrate.meta' && grep -q '^legacy_below=0.3.1' '$U/migrate.meta' && grep -q '^gate=scripts/converter-check.sh' '$U/migrate.meta' && grep -q '^preflight=scripts/preflight.sh' '$U/migrate.meta'"
 check "exec bits kept" bash -c "unzip -Z '$ZIP' tools/hud-step tools/lpatch scripts/legacy-restore.sh | grep -c 'rwxr-xr-x' | grep -qx 3"

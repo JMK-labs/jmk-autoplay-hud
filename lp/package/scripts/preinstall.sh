@@ -5,6 +5,7 @@
 #     until a firmware update makes the converter state NATIVE (report "install: needs-converter"; the same check is scripts/converter-check.sh)
 #  2. NEMESIS older than 1.17, or its LivePatch wrapper not active / safe mode on (when `nemesis livepatch status` says so)
 #  3. JMK Wireless AutoPlay missing, or another phone-projection package next to us
+#  4. (last) a HUD odex of this unit whose code no profile knows (tools/hud-step unknown): report "install: hud-unknown-code" "app=<name> code=<8hex>"
 . ./scripts/lp-common.sh
 log "preinstall $ID $VER (LivePatch)"
 out=$(sh "$PKG/scripts/converter-check.sh" 2>&1); rc=$?
@@ -34,5 +35,22 @@ fi
 if other=$(other_projection); then
     log "FAIL: another phone-projection package is installed: $other. Uninstall it and reboot first (다른 프로젝션 프로그램이 설치되어 있습니다)"
     report preinstall-other-projection "$other"; exit 1
+fi
+# 4. a HUD odex whose code is in no profile (neither a stock code nor a result of ours): refused before anything is written. One rule: another port's output and the stock of a
+#    firmware without a profile are both "unknown", and the text does not say which. A code that cannot be read is not judged (exit other than 11 = not refused).
+hs=$PKG/tools/hud-step
+case "$hs" in /*) ;; *) hs=$(pwd)/${hs#./} ;; esac
+if [ -f "$hs" ]; then
+    out=$(sh "$hs" unknown 2>&1); rc=$?
+    out=${out##*
+}
+    log "unknown-code check: $out (exit $rc)"
+    if [ "$rc" = 11 ]; then
+        log "unknown code: $out"
+        log "FAIL: 확인되지 않은 시스템 파일이 있어 설치하지 않았습니다"
+        report hud-unknown-code "$out"; exit 1
+    fi
+else
+    log "unknown-code check: tools/hud-step not in the package, not judged"
 fi
 exit 0

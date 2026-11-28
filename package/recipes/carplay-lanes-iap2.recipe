@@ -1,0 +1,21 @@
+# libiap2session: the lane message (0x5204) gets through and arrives raw
+#   0x30c80   the lane row of the handler table answers 0x5204 (stock: 0x5202, a copy of the maneuver row)
+#   0x23690   the group callback of the lane parser is NULL (stock: the lane GetPointer, whose param-2 answer is a data slot, not a group handler: the group handler is a stub)
+#   0x33b7c 0x33b94 0x33bac 0x33bc4   the four params of the lane list are raw blobs (stock: 5, 5, group, string)
+# only for the stock file below (the Korean Ioniq 5 260902 libiap2session); any other md5: not applied
+# holds only hashes of the stock bytes and the new bytes written
+id carplay-lanes-iap2
+file /system/lib/libiap2session.so
+verify 0x23690 2 ce52790629679d930ca16c39a4f619c3 9286618fe0b2c104a3fbbec4c6cd20a4
+patch 0x23690 00
+patch 0x23691 20
+verify 0x30c80 4 7854bf9d170009565c2c9028213539a2 dd92dc890f4f1e381a54d7e674e96ae7
+patch 0x30c80 04
+verify 0x33b7c 4 cbe23d9655fccd4311acdd6261c81bd8 c31b034959815c44d4dafd6f30846159
+patch 0x33b7c 0b
+verify 0x33b94 4 cbe23d9655fccd4311acdd6261c81bd8 c31b034959815c44d4dafd6f30846159
+patch 0x33b94 0b
+verify 0x33bac 4 72cd0fdf88475ff6f794c96d91e6cdfe c31b034959815c44d4dafd6f30846159
+patch 0x33bac 0b
+verify 0x33bc4 4 41883520c3071f5f4a4a4613fb005e0c c31b034959815c44d4dafd6f30846159
+patch 0x33bc4 0b
