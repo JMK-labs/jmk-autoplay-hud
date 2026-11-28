@@ -1,0 +1,332 @@
+#!/system/bin/sh
+# jmk-autoplay-hud (LivePatch build; AGPL-3.0, see LICENSE and NOTICE.md): one LivePatch exec step for one file.
+#   hud-step odex   <App>   <in: the app's .odex> <out>    the app's by-code build (the profile's patch rebuilds its code), put in the stock apk, optimised
+#   hud-step lib    <lib>   <in: the library>     <out>    the profile's library patch (libautoreceiver_infobank.so)
+#   hud-step recipes <lib>  <in: the library>     <out>    the CarPlay library recipes (libCarPlayCore.so, libCarPlayAudio.so)
+#   hud-step profile                                         (the settings service) which profile this unit's stock code fits: "profile=<p> parts=<..> apps=<a,b> libs=<l>" (exit 0) or "profile=none" (exit 10)
+# NEMESIS runs it as `cd <staged pkg>/tools && hud-step <args> <in> <out>` ([ASSUMED], 09-LivePatch 3.4 and livepatch.c): data is found from $0, not from the cwd.
+# Exit 0 = <out> written; 10 = pass through (this firmware gets nothing here; the log line says why); 1 = refused (the last line printed is the reason NEMESIS shows).
+# The head unit's tool shell has no printf, awk, sed, head, tail, cut, tr, find or basename (09-LivePatch 3.4): only builtins, read, case, grep, cmp, md5, cp, dd.
+# The output depends only on <in> and the unit's own stock files (read through stock_of, the one place that asks NEMESIS), so a re-port gives the same file.
+case "$0" in /*) ;; *) echo "hud-step: \$0 is not an absolute path ($0)"; exit 1 ;; esac
+TOOLS=${0%/*}
+R=${JMK_HUD_TEST_ROOT:-}                       # a sandbox root for the Mac tests only; empty on the car
+[ -n "$R" ] || export PATH=/sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
+LPATCH=$TOOLS/lpatch
+DEXOPT=$R/system/bin/dexopt
+NEMESIS=$R/system/xbin/nemesis
+if [ -n "$R" ]; then LPATCH=${JMK_LPATCH:-$LPATCH}; DEXOPT=${JMK_DEXOPT:-$DEXOPT}; [ -z "$JMK_LR_SHIMS" ] || . "$JMK_LR_SHIMS"; fi
+BYCODE=$TOOLS/patches/bycode
+PATCHES=$TOOLS/patches
+RECIPES=$TOOLS/recipes
+KNOWN=$TOOLS/legacy-known
+LOGF=$R/data/nemesis/livepatch-jmk-autoplay-hud.log
+# what dexopt builds against when the exec environment has no BOOTCLASSPATH (NEMESIS's BOOT_CP_DEFAULT is this same order)
+DEXOPT_BCP=/system/framework/core.jar:/system/framework/conscrypt.jar:/system/framework/okhttp.jar:/system/framework/core-junit.jar:/system/framework/bouncycastle.jar:/system/framework/ext.jar:/system/framework/framework.jar:/system/framework/framework2.jar:/system/framework/telephony-common.jar:/system/framework/voip-common.jar:/system/framework/mms-common.jar:/system/framework/android.policy.jar:/system/framework/services.jar:/system/framework/apache-xml.jar:/system/framework/webviewchromium.jar:/system/framework/automotive.jar
+
+MODE=$1; NAME=$2; IN=$3; OUT=$4
+say() { echo "$1"; mkdir -p "${LOGF%/*}" 2>/dev/null; echo "$(date) hud-step $MODE $NAME: $1" >> "$LOGF" 2>/dev/null; true; }
+pass() { say "pass-through: $1"; cleanup; exit 10; }
+refuse() { say "$1"; cleanup; exit 1; }
+W=$R/data/local/tmp/jmk-hud-step.$$
+cleanup() { rm -rf "$W" 2>/dev/null; }
+trap cleanup 0
+mkdir -p "$W" 2>/dev/null || { echo "hud-step: cannot make $W"; exit 1; }
+if [ "$MODE" != profile ]; then [ -f "$IN" ] && [ -n "$OUT" ] || { echo "hud-step: usage: hud-step odex|lib|recipes <name> <in> <out>   |   hud-step profile"; exit 1; }; fi
+chmod 0755 "$LPATCH" 2>/dev/null
+[ -x "$LPATCH" ] || refuse "lpatch is not executable ($LPATCH)"
+
+md5of() { set -- $(md5 "$1" 2>/dev/null); echo "$1"; }
+has_line() {
+    local l
+    [ -f "$2" ] || return 1
+    while IFS= read -r l || [ -n "$l" ]; do [ "$l" = "$1" ] && return 0; done < "$2"
+    return 1
+}
+# ---------------------------------------------------------------- the one place that reads other stock files (Q2 [ASSUMED])
+# stock_of <target path under /system> <dest>: the stock bytes of that file, whatever is mounted over them now.
+# 0 = copied; 2 = this unit's stock has no such file; 3 = cannot be read (nemesis livepatch stock failed and the live file is one of our mounted results,
+# so it is never read in its place). When the command itself fails and the target is NOT mounted, the live file is the stock file and is read ([ASSUMED]).
+# LY3LOBUL 2026-11-28: the command failed for the settings service, the old fallback read the mounted result and the status said "locked".
+STOCK_BLOCKED=
+target_mounted() {   # target_mounted <path>: `nemesis livepatch status` lists it as mounted or farmed
+    local l st
+    st=$("$NEMESIS" livepatch status 2>/dev/null)
+    while IFS= read -r l || [ -n "$l" ]; do
+        case "$l" in "$1 "*) case "$l" in *unmounted*) return 1 ;; *mounted*|*farmed*) return 0 ;; esac ;; esac
+    done <<EOT
+$st
+EOT
+    return 1
+}
+stock_of() {
+    local rc err
+    err=$("$NEMESIS" livepatch stock "$1" "$2" 2>&1 >/dev/null); rc=$?
+    [ $rc = 0 ] && return 0
+    [ $rc = 2 ] && return 2
+    say "stock_of $1: nemesis livepatch stock exited $rc ${err:+($err)}"
+    if target_mounted "$1"; then say "stock_of $1: mounted, the live file is our result and is not read as stock"; STOCK_BLOCKED=1; return 3; fi
+    cp "$R$1" "$2" 2>/dev/null && return 0
+    return 2
+}
+
+# ---------------------------------------------------------------- this unit's stock code, and the profile that fits it
+CODES=" "; LIBS=" "
+# The code inside an .odex comes from tools/codesum.jar (app_process, jmkhud.CodeSum), exactly as the legacy HUD reads it: the ARM lpatch has no odexdex
+# (LY3LOBUL 2026-11-28: every odex step read "none" and passed through). The jar is the one the legacy HUD ships (src/jmkhud/CodeSum.java).
+# One app_process run reads every odex at once ("<App>.code=<md5> ..."), one more extracts the dex of this step's own app.
+JAR=$TOOLS/codesum.jar
+codesum_once() {   # codesum_once <args>: the one line CodeSum prints, with a 20 s guard against a hang
+    local f pid n out=
+    f=$W/cs.out; rm -f "$f"
+    CLASSPATH=$JAR app_process /system/bin jmkhud.CodeSum "$@" > "$f" 2>/dev/null &
+    pid=$!; n=0
+    while kill -0 "$pid" 2>/dev/null && [ $n -lt 20 ]; do sleep 1; n=$((n + 1)); done
+    kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
+    [ -f "$f" ] && read -r out < "$f"
+    rm -f "$f"
+    echo "$out"
+}
+codesum_run() {   # codesum_run <args>: as codesum_once, once more with a private ANDROID_DATA when nothing came back (an exec environment without a usable one)
+    local out
+    [ -f "$JAR" ] || return 0
+    out=$(codesum_once "$@")
+    if [ -z "$out" ]; then
+        mkdir -p "$W/var/dalvik-cache" 2>/dev/null
+        out=$(export ANDROID_DATA=$W/var; codesum_once "$@")
+    fi
+    echo "$out"
+}
+codes_of() {   # codes_of <odex files named <App>.odex>: " <App>.code=<md5> ... " (none = unreadable)
+    [ $# -gt 0 ] || { echo " "; return 0; }
+    echo " $(codesum_run "$@") "
+}
+dex_of() {   # dex_of <odex file> <dst.dex>: the dex inside an .odex written to dst; its md5 on stdout
+    local out
+    [ -f "$JAR" ] || return 1
+    rm -f "$2"
+    out=$(codesum_run extract "$1" "$2")
+    case "$out" in code=?*) [ "$out" != code=none ] && [ -s "$2" ] && { echo "${out#code=}"; return 0; } ;; esac
+    return 1
+}
+bycode_names() {   # bycode_names <app|file>: the names any profile mentions, once
+    local d p k n c x w out=" "
+    for d in "$BYCODE"/*/manifest; do
+        [ -f "$d" ] || continue
+        while read -r p k n c x w || [ -n "$p" ]; do
+            case "$p" in ''|'#'*) continue ;; esac
+            [ "$k" = "$1" ] || continue
+            case "$out" in *" $n "*) ;; *) out="$out$n " ;; esac
+        done < "$d"
+    done
+    echo $out
+}
+collect_stock() {
+    local n m files= missing=
+    mkdir -p "$W/o"
+    for n in $(bycode_names app); do
+        if [ "$MODE" = odex ] && [ "$n" = "$NAME" ]; then cp "$IN" "$W/o/$n.odex" || refuse "cannot read $IN"
+        else stock_of "/system/app/$n.odex" "$W/o/$n.odex" || { missing="$missing $n"; continue; }; fi
+        files="$files $W/o/$n.odex"
+    done
+    CODES=$(codes_of $files)
+    for n in $missing; do CODES="$CODES$n.code=none "; done
+    for n in $(bycode_names app); do case "$CODES" in *" $n.code="*) ;; *) CODES="$CODES$n.code=none " ;; esac; done
+    for n in $(bycode_names file); do
+        if [ "$MODE" = lib ] && [ "$n" = "$NAME" ]; then m=$(md5of "$IN")
+        else stock_of "/system/lib/$n" "$W/l.$n" && m=$(md5of "$W/l.$n") || m=none; fi
+        LIBS="$LIBS$n=${m:-none} "
+    done
+}
+bridge_fw_seen() {   # a profile's "bridge_framework <file>=<md5> ..." lines are alternatives: any one all matching = the framework was seen
+    local a rest f m got bad found=
+    while read -r a rest || [ -n "$a" ]; do
+        [ "$a" = bridge_framework ] || continue
+        bad=
+        for f in $rest; do m=${f#*=}; f=${f%%=*}; got=$(md5of "$R/system/framework/$f"); [ "$got" = "$m" ] || bad=1; done
+        [ -n "$bad" ] || return 0
+    done < "$1/manifest"
+    return 1
+}
+part_fits() {   # part_fits <profile dir> <part>: every line of the part matches this unit's stock code / libraries
+    local p k n c x w any= a b bp=
+    while read -r p k n c x w || [ -n "$p" ]; do
+        case "$p" in ''|'#'*) continue ;; esac
+        [ "$p" = "$2" ] || continue
+        any=1
+        if [ "$k" = app ]; then case "$CODES" in *" $n.code=$c "*) ;; *) return 1 ;; esac
+        else case "$LIBS" in *" $n=$c "*) ;; *) return 1 ;; esac; fi
+    done < "$1/manifest"
+    [ -n "$any" ] || return 1
+    if [ "$2" = 3_bridge ]; then   # the bridge only on a framework that was seen (its android:id numbers), else turn-by-turn only
+        while read -r a b || [ -n "$a" ]; do [ "$a" = bridge_products ] && bp="$bp $b"; done < "$1/manifest"
+        if [ -n "$bp" ]; then case " $bp " in *" $(getprop ro.build.product) "*) ;; *) bridge_fw_seen "$1" || return 1 ;; esac; fi
+    fi
+    return 0
+}
+PROFILE=; PARTS=
+live_state() {   # live_state <profile dir> <part>: every line of the part is this unit's stock or our result in the live files; HITS counts the results
+    local p k n c x w any=
+    HITS=0
+    while read -r p k n c x w || [ -n "$p" ]; do
+        case "$p" in ''|'#'*) continue ;; esac
+        [ "$p" = "$2" ] || continue
+        any=1
+        if [ "$k" = app ]; then case "$LIVECODE" in *" $n.code=$w "*) HITS=$((HITS + 1)); continue ;; *" $n.code=$c "*) continue ;; esac
+        else case "$LIVELIBS" in *" $n=$w "*) HITS=$((HITS + 1)); continue ;; *" $n=$c "*) continue ;; esac; fi
+        return 1
+    done < "$1/manifest"
+    [ -n "$any" ]
+}
+choose_live() {   # the profile read from the LIVE files: what LivePatch mounted is our result, so its code md5 names the profile line (used when the stock cannot be read)
+    local n want dir parts part files=
+    LIVECODE=" "; LIVELIBS=" "
+    for n in $(bycode_names app); do [ -f "$R/system/app/$n.odex" ] && files="$files $R/system/app/$n.odex"; done
+    LIVECODE=$(codes_of $files)
+    for n in $(bycode_names file); do [ -f "$R/system/lib/$n" ] && LIVELIBS="$LIVELIBS$n=$(md5of "$R/system/lib/$n") "; done
+    for want in 2 1; do
+        for dir in "$BYCODE"/*; do
+            [ -s "$dir/manifest" ] || continue
+            parts=; hits=0
+            for part in 2_tbt 3_bridge; do
+                if live_state "$dir" "$part"; then
+                    # a part with no result in the live files is only "stock"; at least one result must be there for this to be our mount
+                    parts="$parts $part"; hits=$((hits + HITS))
+                fi
+            done
+            set -- $parts
+            [ $# -eq $want ] && [ $hits -gt 0 ] || continue
+            PROFILE=${dir##*/}; PARTS=$parts
+            say "choose profile=$PROFILE parts=${PARTS# } via=results ($hits live results of this profile)"
+            return 0
+        done
+    done
+    return 1
+}
+choose() {   # the profile that fits the most parts wins; equal counts keep the name order (both parts first, then one part)
+    local want dir parts part
+    collect_stock
+    for want in 2 1; do
+        for dir in "$BYCODE"/*; do
+            [ -s "$dir/manifest" ] || continue
+            parts=
+            for part in 2_tbt 3_bridge; do part_fits "$dir" "$part" && parts="$parts $part"; done
+            set -- $parts
+            [ $# -eq $want ] || continue
+            PROFILE=${dir##*/}; PARTS=$parts
+            say "choose profile=$PROFILE parts=${PARTS# }"
+            return 0
+        done
+    done
+    say "choose profile=none (stock code:${CODES}libraries:${LIBS})"
+    return 1
+}
+line_for() {   # line_for <kind app|file> <name>: the profile's line for it, the bridge part before turn-by-turn; sets L_C L_X L_W
+    local p k n c x w part
+    for part in 3_bridge 2_tbt; do
+        case " $PARTS " in *" $part "*) ;; *) continue ;; esac
+        while read -r p k n c x w || [ -n "$p" ]; do
+            [ "$p" = "$part" ] && [ "$k" = "$1" ] && [ "$n" = "$2" ] || continue
+            L_P=$p; L_C=$c; L_X=$x; L_W=$w; return 0
+        done < "$BYCODE/$PROFILE/manifest"
+    done
+    return 1
+}
+lp_state() {   # lp_state <recipe id> <file>
+    local out w st=ERROR
+    out=$("$LPATCH" check "$RECIPES/$1.recipe" "$2" 2>&1)
+    set -f; for w in $out; do case "$w" in status=*) st=${w#status=} ;; esac; done; set +f
+    echo "$st"
+}
+recipe_file() { local k v rest; while read -r k v rest || [ -n "$k" ]; do [ "$k" = file ] && { echo "${v##*/}"; return 0; }; done < "$RECIPES/$1.recipe"; return 1; }
+recipe_gate() {   # recipe_gate <id> <1 stock|2 result>
+    local gi gs gr
+    [ -f "$RECIPES/gates" ] || return 0
+    while read -r gi gs gr || [ -n "$gi" ]; do
+        case "$gi" in ''|'#'*) continue ;; esac
+        [ "$gi" = "$1" ] || continue
+        if [ "$2" = 1 ]; then echo "$gs"; else echo "$gr"; fi
+        return 0
+    done < "$RECIPES/gates"
+    return 0
+}
+
+BCP=${BOOTCLASSPATH:-$DEXOPT_BCP}
+case "$MODE" in
+profile)
+    via=stock
+    if ! choose >/dev/null; then
+        if choose_live >/dev/null; then via=results; else echo "profile=none${STOCK_BLOCKED:+ (the stock could not be read)}"; exit 10; fi
+    fi
+    apps=; libs=
+    for n in $(bycode_names app); do line_for app "$n" && apps="$apps,$n"; done
+    for n in $(bycode_names file); do line_for file "$n" && libs="$libs,$n"; done
+    echo "profile=$PROFILE parts=${PARTS# } apps=${apps#,} libs=${libs#,} via=$via"
+    exit 0 ;;
+odex)
+    choose || { [ -z "$STOCK_BLOCKED" ] || refuse "cannot read this unit's stock files (nemesis livepatch stock failed while another target is mounted): not guessing from the mounted ones"; pass "no profile fits this firmware's stock code"; }
+    mine=${CODES#*" $NAME.code="}; mine=${mine%% *}
+    [ "$mine" != none ] && [ -n "$mine" ] || pass "no code could be read from $IN"
+    # the pin: the code must be a stock code of some profile line, and never one of our own results
+    if has_line "$NAME.dex $mine" "$KNOWN"; then refuse "$IN is a build of this add-on (code $mine): restore the stock files first (legacy-restore)"; fi
+    line_for app "$NAME" || pass "profile $PROFILE has no line for $NAME (${PARTS# })"
+    [ "$L_C" = "$mine" ] || pass "$NAME's code is $mine, the profile's line wants $L_C"
+    say "pin ok $NAME code $mine ($L_P, profile $PROFILE)"
+    [ -f "$PATCHES/$L_X" ] || refuse "missing patch $L_X"
+    got=$(dex_of "$IN" "$W/d.$NAME") || refuse "could not read the code of $IN"
+    [ "$got" = "$mine" ] || refuse "the code of $IN reads $got now, $mine before"
+    "$LPATCH" delta "$PATCHES/$L_X" "$W/d.$NAME" "$W/classes.dex" >/dev/null 2>&1 || refuse "the patch $L_X did not apply to $NAME's code"
+    got=$(md5of "$W/classes.dex")
+    [ "$got" = "$L_W" ] || refuse "$NAME rebuilt to $got, not the profile's $L_W"
+    stock_of "/system/app/$NAME.apk" "$W/stock.apk" || refuse "no stock $NAME.apk to carry the code"
+    "$LPATCH" zipadd "$W/stock.apk" "$W/classes.dex" "$W/new.apk" >/dev/null 2>&1 && [ -s "$W/new.apk" ] || refuse "could not put the code into $NAME.apk"
+    [ -x "$DEXOPT" ] || refuse "dexopt is missing ($DEXOPT)"
+    rm -f "$OUT"
+    BOOTCLASSPATH=$BCP "$DEXOPT" --preopt "$W/new.apk" "$OUT" "m=y,u=n" >/dev/null 2>&1
+    [ -s "$OUT" ] || { rm -f "$OUT"; refuse "dexopt gave no odex for $NAME"; }
+    chmod 0644 "$OUT" 2>/dev/null
+    say "built $NAME.odex ($L_P, code $L_W, odex $(md5of "$OUT"))"
+    exit 0 ;;
+lib)
+    choose || { [ -z "$STOCK_BLOCKED" ] || refuse "cannot read this unit's stock files (nemesis livepatch stock failed while another target is mounted): not guessing from the mounted ones"; pass "no profile fits this firmware's stock code"; }
+    line_for file "$NAME" || pass "profile $PROFILE has no line for $NAME"
+    mine=$(md5of "$IN")
+    if has_line "$NAME $mine" "$KNOWN"; then refuse "$IN is a build of this add-on (md5 $mine): restore the stock files first (legacy-restore)"; fi
+    [ "$mine" = "$L_C" ] || pass "$NAME is $mine, the profile's line wants $L_C"
+    say "pin ok $NAME $mine ($L_P, profile $PROFILE)"
+    [ -f "$PATCHES/$L_X" ] || refuse "missing patch $L_X"
+    rm -f "$OUT"
+    "$LPATCH" delta "$PATCHES/$L_X" "$IN" "$OUT" >/dev/null 2>&1 || { rm -f "$OUT"; refuse "the patch $L_X did not apply to $NAME"; }
+    got=$(md5of "$OUT")
+    [ "$got" = "$L_W" ] || { rm -f "$OUT"; refuse "$NAME rebuilt to $got, not the profile's $L_W"; }
+    say "built $NAME ($L_P, $got)"
+    exit 0 ;;
+recipes)
+    mine=$(md5of "$IN")
+    if has_line "$NAME $mine" "$KNOWN"; then refuse "$IN is a build of this add-on (md5 $mine): restore the stock files first (legacy-restore)"; fi
+    done_id=
+    for id in carplay-audio-formats carplay-core-frames-ef49c09b carplay-core-wifi; do
+        [ -f "$RECIPES/$id.recipe" ] || continue
+        f=$(recipe_file "$id") || continue
+        [ "$f" = "$NAME" ] || continue
+        st=$(lp_state "$id" "$IN")
+        case "$st" in
+            PATCHABLE) ;;
+            APPLIED) refuse "$IN already carries the recipe $id (md5 $mine): it is not the stock file, restore the stock files first (legacy-restore)" ;;
+            *) say "recipe $id: $st: nothing to do"; continue ;;
+        esac
+        gs=$(recipe_gate "$id" 1)
+        if [ -n "$gs" ] && [ "$mine" != "$gs" ]; then say "recipe $id: $NAME is $mine, the recipe is for $gs: skipped"; continue; fi
+        rm -f "$OUT"
+        "$LPATCH" apply "$RECIPES/$id.recipe" "$IN" "$OUT" >/dev/null 2>&1 && [ -s "$OUT" ] && [ "$(lp_state "$id" "$OUT")" = APPLIED ] || { rm -f "$OUT"; refuse "recipe $id did not apply to $NAME"; }
+        gr=$(recipe_gate "$id" 2)
+        got=$(md5of "$OUT")
+        if [ -n "$gr" ] && [ "$got" != "$gr" ]; then rm -f "$OUT"; refuse "recipe $id gave $got, not the $gr it must give"; fi
+        say "built $NAME with recipe $id ($got)"
+        done_id=$id
+        break      # one recipe at most writes a file
+    done
+    [ -n "$done_id" ] || pass "no recipe applies to $NAME"
+    exit 0 ;;
+*) echo "hud-step: unknown mode $MODE"; exit 1 ;;
+esac

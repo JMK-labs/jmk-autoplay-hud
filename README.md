@@ -46,6 +46,7 @@ history say which build was driven. A car whose files are not exactly a known st
 
 ## Releases (results)
 
+- **0.3.1**: Installs through NEMESIS 1.17 LivePatch: no file in /system is edited.
 - **0.2.6**: Wireless CarPlay keeps the phone's Bluetooth connected.
 - **0.2.5**: HUD DiPO bridge: a local JMK service (`jmk.core`) decides how the route display proceeds.
 - **0.2.3**: 업데이트할 때 바뀌는 순정 앱만 다시 시작합니다.
